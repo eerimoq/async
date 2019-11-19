@@ -30,8 +30,12 @@
 #define ASYNC_H
 
 #include <stdbool.h>
+#include <stdlib.h>
 
-#define ASYNC_TIMER_PERIODIC (1 << 0)
+#define ASYNC_TIMER_PERIODIC                     (1 << 0)
+
+#define ASYNC_ERROR_NOT_IMPLMENETED              1
+#define ASYNC_ERROR_QUEUE_FULL                   2
 
 /**
  * Create a unique identifier.
@@ -40,6 +44,9 @@
     struct async_uid_t name = {                 \
         .name_p = #name                         \
     }
+
+struct async_uid_t;
+struct async_task_t;
 
 typedef void (*async_task_on_message_t)(struct async_task_t *self_p,
                                         struct async_uid_t *uid_p,
@@ -58,11 +65,20 @@ struct async_message_header_t {
 };
 
 struct async_t {
-    struct heap_t heap;
+    int tick_in_ms;
+};
+
+struct async_queue_t {
+    volatile int rdpos;
+    volatile int wrpos;
+    int length;
+    struct async_message_header_t **messages_p;
 };
 
 struct async_task_t {
     struct async_queue_t messages;
+    async_task_on_message_t on_message;
+    struct async_t *async_p;
 };
 
 struct async_timer_t {
@@ -70,7 +86,8 @@ struct async_timer_t {
 };
 
 /**
- * Initailize given async object.
+ * Initailize given async object. The buffer is not used yet in the
+ * current implementation. Using malloc() and free() instead.
  */
 void async_init(struct async_t *self_p,
                 int tick_in_ms,

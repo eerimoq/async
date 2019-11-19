@@ -29,7 +29,6 @@
 #include <stdio.h>
 #include "async.h"
 
-static char buf[1024];
 static struct async_t async;
 static struct async_task_t ping_task;
 static struct async_task_t pong_task;
@@ -52,7 +51,7 @@ static void ping_on_message(struct async_task_t *self_p,
         ping_p = async_message_alloc(&async, &ping, 0);
         async_send(&pong_task, ping_p);
     } else if (uid_p == &pong) {
-        printf("Pong received. Done.\n")
+        printf("Pong received. Done.\n");
     }
 }
 
@@ -76,7 +75,7 @@ int main()
 {
     void *start_p;
 
-    async_init(&async, &buf[0], sizeof(buf));
+    async_init(&async, 100, NULL, 0);
     async_task_init(&ping_task, &async, ping_on_message);
     async_task_init(&pong_task, &async, pong_on_message);
     start_p = async_message_alloc(&async, &start, 0);
