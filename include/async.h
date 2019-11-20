@@ -146,11 +146,6 @@ void *async_message_alloc(struct async_t *async_p,
                           size_t size);
 
 /**
- * Free given message.
- */
-void async_message_free(void *message_p);
-
-/**
  * Initialize given timer. Sends a message with given id to given task
  * on expiry. Give ASYNC_TIMER_PERIODIC in flags to make the timer
  * periodic.

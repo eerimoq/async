@@ -41,6 +41,8 @@ static inline void *message_from_header(struct async_message_header_t *header_p)
     return (&header_p[1]);
 }
 
+void async_message_free(void *message_p);
+
 void async_queue_init(struct async_queue_t *self_p, int length);
 
 struct async_uid_t *async_queue_get(struct async_queue_t *self_p,
