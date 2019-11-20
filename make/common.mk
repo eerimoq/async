@@ -5,6 +5,7 @@ SRC += \
 	$(ASYNC_ROOT)/src/async_message.c \
 	$(ASYNC_ROOT)/src/async_timer.c \
 	$(ASYNC_ROOT)/src/async_queue.c \
+	$(ASYNC_ROOT)/src/async_tcp.c \
 	$(ASYNC_ROOT)/src/async_mqtt_client.c
 OBJ = $(patsubst %,$(BUILD)%,$(abspath $(SRC:%.c=%.o)))
 CFLAGS += $(INC:%=-I%)

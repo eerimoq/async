@@ -26,11 +26,25 @@
  * This file is part of the Async project.
  */
 
-#ifndef ASYNC_H
-#define ASYNC_H
-
-#include "async_core.h"
+#include <stdio.h>
 #include "async_tcp.h"
-#include "async_mqtt_client.h"
 
-#endif
+ASYNC_UID_DEFINE(async_tcp_message_id_connect);
+ASYNC_UID_DEFINE(async_tcp_message_id_data);
+
+void async_tcp_connect(const char *host_p, int port)
+{
+    (void)host_p;
+    (void)port;
+
+    printf("TCP connect.\n");
+}
+
+void async_tcp_write(int handle, const void *buf_p, size_t size)
+{
+    (void)handle;
+    (void)buf_p;
+    (void)size;
+
+    printf("TCP write.\n");
+}
