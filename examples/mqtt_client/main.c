@@ -33,6 +33,7 @@
 #include <stdio.h>
 #include <string.h>
 #include "async.h"
+#include "async_linux.h"
 
 static struct async_mqtt_client_t client;
 
@@ -73,7 +74,9 @@ int main()
     struct async_task_t publisher;
     void *start_p;
     struct async_timer_t timer;
+    struct async_linux_t async_linux;
 
+    /* Setup. */
     async_init(&async, 100, NULL, 0);
     async_mqtt_client_init(&client, &async, "localhost", 1883);
     async_task_init(&publisher, &async, publisher_on_message);
@@ -88,7 +91,10 @@ int main()
                                   &async_mqtt_client_message_id_start,
                                   0);
     async_send(async_mqtt_client_get_task(&client), start_p);
-    async_process(&async);
+
+    /* Start. */
+    async_linux_create(&async_linux, &async);
+    async_linux_join(&async_linux);
 
     return (0);
 }

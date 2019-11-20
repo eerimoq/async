@@ -283,6 +283,10 @@ static void on_message(struct async_task_t *self_p,
     if (uid_p == &async_mqtt_client_message_id_start) {
         printf("MQTT start.\n");
         /* Connect to the broker. */
+    } else if (uid_p == &async_mqtt_client_message_id_publish) {
+        printf("MQTT should publish.\n");
+    } else {
+        printf("MQTT unknown message.\n");
     }
 }
 
