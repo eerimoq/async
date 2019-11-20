@@ -40,18 +40,8 @@ void *async_message_alloc(struct async_t *async_p,
     header_p = malloc(sizeof(*header_p) + size);
     header_p->count = 1;
     header_p->uid_p = uid_p;
-    header_p->on_free = NULL;
 
     return (message_from_header(header_p));
-}
-
-void async_message_set_on_free(void *message_p,
-                               async_message_on_free_t on_free)
-{
-    struct async_message_header_t *header_p;
-
-    header_p = message_to_header(message_p);
-    header_p->on_free = on_free;
 }
 
 void async_message_free(void *message_p)
@@ -65,10 +55,6 @@ void async_message_free(void *message_p)
     count = header_p->count;
 
     if (count == 0) {
-        if (header_p->on_free != NULL) {
-            header_p->on_free(message_p);
-        }
-
         free(header_p);
     }
 }

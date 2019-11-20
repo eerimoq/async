@@ -48,11 +48,13 @@
 struct async_uid_t;
 struct async_task_t;
 
+/**
+ * The received message is freed automatically when this function
+ * returns.
+ */
 typedef void (*async_task_on_message_t)(struct async_task_t *self_p,
                                         struct async_uid_t *uid_p,
                                         void *message_p);
-
-typedef void (*async_message_on_free_t)(void *message_p);
 
 struct async_uid_t {
     const char *name_p;
@@ -61,7 +63,6 @@ struct async_uid_t {
 struct async_message_header_t {
     struct async_uid_t *uid_p;
     int count;
-    async_message_on_free_t on_free;
 };
 
 struct async_timer_t {
@@ -143,13 +144,6 @@ int async_send(struct async_task_t *receiver_p, void *message_p);
 void *async_message_alloc(struct async_t *async_p,
                           struct async_uid_t *uid_p,
                           size_t size);
-
-/**
- * Set the on free callback. Must be called before putting the message
- * on a queue or broadcasting it on a bus.
- */
-void async_message_set_on_free(void *message_p,
-                               async_message_on_free_t on_free);
 
 /**
  * Free given message.
