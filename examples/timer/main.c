@@ -35,9 +35,9 @@
 
 #define TICK_IN_MS 100
 
-static ASYNC_UID(timeout_1);
-static ASYNC_UID(timeout_2);
-static ASYNC_UID(timeout_3);
+static ASYNC_UID_DEFINE(timeout_1);
+static ASYNC_UID_DEFINE(timeout_2);
+static ASYNC_UID_DEFINE(timeout_3);
 
 static struct async_t async;
 static struct async_task_t task;

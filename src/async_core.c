@@ -26,7 +26,7 @@
  * This file is part of the Async project.
  */
 
-#include "async.h"
+#include "async_core.h"
 #include "internal.h"
 
 void async_init(struct async_t *self_p,

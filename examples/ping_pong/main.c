@@ -33,9 +33,9 @@ static struct async_t async;
 static struct async_task_t ping_task;
 static struct async_task_t pong_task;
 
-static ASYNC_UID(start);
-static ASYNC_UID(ping);
-static ASYNC_UID(pong);
+static ASYNC_UID_DEFINE(start);
+static ASYNC_UID_DEFINE(ping);
+static ASYNC_UID_DEFINE(pong);
 
 static void ping_on_message(struct async_task_t *self_p,
                             struct async_uid_t *uid_p,
