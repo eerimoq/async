@@ -68,6 +68,7 @@ static void handle_tcp_data(struct async_tcp_data_t *message_p)
         printf("'\n");
     } else {
         printf("Connection closed by server.\n");
+        async_timer_stop(&timer);
         handle = -1;
     }
 }
