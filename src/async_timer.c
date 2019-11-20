@@ -26,8 +26,78 @@
  * This file is part of the Async project.
  */
 
+#include <stdio.h>
 #include "async.h"
 #include "internal.h"
+
+static void timer_list_insert(struct async_timer_list_t *self_p,
+                              struct async_timer_t *timer_p)
+{
+    struct async_timer_t *elem_p;
+    struct async_timer_t *prev_p;
+
+    /* Find element preceeding this timer. */
+    elem_p = self_p->head_p;
+    prev_p = NULL;
+
+    /* Find the element to insert this timer before. Delta is
+       initially the timeout. */
+    while (elem_p->delta < timer_p->delta) {
+        timer_p->delta -= elem_p->delta;
+        prev_p = elem_p;
+        elem_p = elem_p->next_p;
+    }
+
+    /* Adjust the next timer for this timers delta. Do not adjust the
+       tail timer. */
+    if (elem_p != &self_p->tail) {
+        elem_p->delta -= timer_p->delta;
+    }
+
+    /* Insert the new timer into list. */
+    timer_p->next_p = elem_p;
+
+    if (prev_p == NULL) {
+        self_p->head_p = timer_p;
+    } else {
+        prev_p->next_p = timer_p;
+    }
+}
+
+/**
+ * Remove given timer from given list of active timers.
+ */
+static void timer_list_remove(struct async_timer_list_t *self_p,
+                              struct async_timer_t *timer_p)
+{
+    struct async_timer_t *elem_p;
+    struct async_timer_t *prev_p;
+
+    /* Find element preceeding this timer.*/
+    elem_p = self_p->head_p;
+    prev_p = NULL;
+
+    while (elem_p != NULL) {
+        if (elem_p == timer_p) {
+            /* Remove the timer from the list. */
+            if (prev_p != NULL) {
+                prev_p->next_p = elem_p->next_p;
+            } else {
+                self_p->head_p = elem_p->next_p;
+            }
+
+            /* Add the delta timeout to the next timer. */
+            if (elem_p->next_p != &self_p->tail) {
+                elem_p->next_p->delta += elem_p->delta;
+            }
+
+            return;
+        }
+
+        prev_p = elem_p;
+        elem_p = elem_p->next_p;
+    }
+}
 
 void async_timer_init(struct async_timer_t *self_p,
                       struct async_t *async_p,
@@ -36,22 +106,35 @@ void async_timer_init(struct async_timer_t *self_p,
                       struct async_task_t *task_p,
                       int flags)
 {
-    (void)self_p;
-    (void)async_p;
-    (void)timeout_ms;
-    (void)message_p;
-    (void)task_p;
-    (void)flags;
+    self_p->async_p = async_p;
+    self_p->timeout = (timeout_ms / async_p->tick_in_ms);
+
+    if (self_p->timeout == 0) {
+        self_p->timeout = 1;
+    }
+
+    self_p->message_p = message_p;
+    self_p->task_p = task_p;
+    self_p->flags = flags;
+    self_p->stopped = false;
 }
 
 void async_timer_start(struct async_timer_t *self_p)
 {
-    (void)self_p;
+    self_p->delta = self_p->timeout;
+    self_p->stopped = false;
+
+    /* Must wait at least two ticks to ensure the timer does not
+       expire early since it may be started close to the next tick
+       occurs. */
+    self_p->delta++;
+
+    timer_list_insert(&self_p->async_p->running_timers, self_p);
 }
 
 void async_timer_stop(struct async_timer_t *self_p)
 {
-    (void)self_p;
+    timer_list_remove(&self_p->async_p->running_timers, self_p);
 }
 
 bool async_timer_is_stopped(struct async_timer_t *self_p)
@@ -59,4 +142,37 @@ bool async_timer_is_stopped(struct async_timer_t *self_p)
     (void)self_p;
 
     return (false);
+}
+
+void async_timer_list_init(struct async_timer_list_t *self_p)
+{
+    self_p->head_p = &self_p->tail;
+    self_p->tail.next_p = NULL;
+    self_p->tail.delta = -1;
+}
+
+void async_timer_list_tick(struct async_timer_list_t *self_p)
+{
+    struct async_timer_t *timer_p;
+
+    /* Return if no timers are active.*/
+    if (self_p->head_p != &self_p->tail) {
+        /* Fire all expired timers.*/
+        self_p->head_p->delta--;
+
+        while (self_p->head_p->delta == 0) {
+            timer_p = self_p->head_p;
+            self_p->head_p = timer_p->next_p;
+            async_send(timer_p->task_p,
+                       async_message_alloc(timer_p->async_p,
+                                           timer_p->message_p,
+                                           0));
+
+            /* Re-set periodic timers. */
+            if (timer_p->flags & ASYNC_TIMER_PERIODIC) {
+                timer_p->delta = timer_p->timeout;
+                timer_list_insert(self_p, timer_p);
+            }
+        }
+    }
 }

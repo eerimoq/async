@@ -12,5 +12,12 @@ Features
 - Message passing.
 
 - Timers.
-  
+
+Examples
+========
+
+There are a few example in the `examples folder`_.
+
 .. _Monolinux C library: https://github.com/eerimoq/monolinux-c-library
+
+.. _examples folder: https://github.com/eerimoq/async/tree/master/examples

@@ -64,25 +64,45 @@ struct async_message_header_t {
     async_message_on_free_t on_free;
 };
 
-struct async_t {
-    int tick_in_ms;
+struct async_timer_t {
+    struct async_t *async_p;
+    unsigned int timeout;
+    unsigned int delta;
+    struct async_uid_t *message_p;
+    struct async_task_t *task_p;
+    int flags;
+    bool stopped;
+    struct async_timer_t *next_p;
+};
+
+struct async_timer_list_t {
+    /* List of timers sorted by expiry time. */
+    struct async_timer_t *head_p;
+    /* Tail element of list. */
+    struct async_timer_t tail;
+};
+
+struct async_queue_message_t {
+    struct async_task_t *receiver_p;
+    struct async_message_header_t *message_p;
 };
 
 struct async_queue_t {
-    volatile int rdpos;
-    volatile int wrpos;
+    int rdpos;
+    int wrpos;
     int length;
-    struct async_message_header_t **messages_p;
+    struct async_queue_message_t *messages_p;
+};
+
+struct async_t {
+    int tick_in_ms;
+    struct async_timer_list_t running_timers;
+    struct async_queue_t messages;
 };
 
 struct async_task_t {
-    struct async_queue_t messages;
-    async_task_on_message_t on_message;
     struct async_t *async_p;
-};
-
-struct async_timer_t {
-    int delta;
+    async_task_on_message_t on_message;
 };
 
 /**

@@ -33,9 +33,37 @@
 #include <stdio.h>
 #include "async.h"
 
+#define TICK_IN_MS 100
+
 static ASYNC_UID(timeout_1);
 static ASYNC_UID(timeout_2);
 static ASYNC_UID(timeout_3);
+
+static struct async_t async;
+static struct async_task_t task;
+static struct async_timer_t timer_1;
+static struct async_timer_t timer_2;
+static struct async_timer_t timer_3;
+
+static int create_periodic_timer(void)
+{
+    int timer_fd;
+    struct itimerspec timeout;
+
+    timer_fd = timerfd_create(CLOCK_REALTIME, 0);
+
+    if (timer_fd == -1) {
+        return (timer_fd);
+    }
+
+    timeout.it_value.tv_sec = 0;
+    timeout.it_value.tv_nsec = TICK_IN_MS * 1000000;
+    timeout.it_interval.tv_sec= 0;
+    timeout.it_interval.tv_nsec = TICK_IN_MS * 1000000;
+    timerfd_settime(timer_fd, 0, &timeout, NULL);
+
+    return (timer_fd);
+}
 
 static void on_message(struct async_task_t *self_p,
                        struct async_uid_t *uid_p,
@@ -45,26 +73,30 @@ static void on_message(struct async_task_t *self_p,
     (void)message_p;
 
     if (uid_p == &timeout_1) {
-        printf("Timer 1 expired.\n");
+        if (!async_timer_is_stopped(&timer_1)) {
+            printf("Timer 1 expired.\n");
+        }
     } else if (uid_p == &timeout_2) {
         printf("Timer 2 expired.\n");
     } else if (uid_p == &timeout_3) {
-        printf("Timer 3 expired.\n");
+        printf("Timer 3 expired. Stopping timer 1.\n");
+        async_timer_stop(&timer_1);
     }
 }
 
 int main()
 {
-    struct async_timer_t timer_1;
-    struct async_timer_t timer_2;
-    struct async_timer_t timer_3;
-    struct async_t async;
-    struct async_task_t task;
     uint64_t value;
     ssize_t res;
     int timer_fd;
-    
-    async_init(&async, 100, NULL, 0);
+
+    timer_fd = create_periodic_timer();
+
+    if (timer_fd == -1) {
+        return (1);
+    }
+
+    async_init(&async, TICK_IN_MS, NULL, 0);
     async_task_init(&task, &async, on_message);
     async_timer_init(&timer_1, &async, 1000, &timeout_1, &task, ASYNC_TIMER_PERIODIC);
     async_timer_init(&timer_2, &async, 3000, &timeout_2, &task, ASYNC_TIMER_PERIODIC);
@@ -79,8 +111,6 @@ int main()
     printf("Starting timer 3.\n");
     async_timer_start(&timer_3);
 
-    timer_fd = timerfd_create(CLOCK_REALTIME, 0);
-    
     while (true) {
         res = read(timer_fd, &value, sizeof(value));
 

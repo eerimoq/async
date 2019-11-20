@@ -40,22 +40,26 @@ static bool is_full(struct async_queue_t *self_p)
 }
 
 static void push_message(struct async_queue_t *self_p,
+                         struct async_task_t *receiver_p,
                          struct async_message_header_t *header_p)
 {
-    self_p->messages_p[self_p->wrpos] = header_p;
+    self_p->messages_p[self_p->wrpos].receiver_p = receiver_p;
+    self_p->messages_p[self_p->wrpos].message_p = header_p;
     self_p->wrpos++;
     self_p->wrpos %= self_p->length;
 }
 
-static struct async_message_header_t *pop_message(struct async_queue_t *self_p)
+static struct async_task_t *pop_message(struct async_queue_t *self_p,
+                                        struct async_message_header_t **header_pp)
 {
-    struct async_message_header_t *header_p;
+    struct async_task_t *receiver_p;
 
-    header_p = self_p->messages_p[self_p->rdpos];
+    receiver_p = self_p->messages_p[self_p->rdpos].receiver_p;
+    *header_pp = self_p->messages_p[self_p->rdpos].message_p;
     self_p->rdpos++;
     self_p->rdpos %= self_p->length;
 
-    return (header_p);
+    return (receiver_p);
 }
 
 void async_queue_init(struct async_queue_t *self_p, int length)
@@ -63,10 +67,11 @@ void async_queue_init(struct async_queue_t *self_p, int length)
     self_p->rdpos = 0;
     self_p->wrpos = 0;
     self_p->length = (length + 1);
-    self_p->messages_p = malloc(sizeof(void *) * (length + 1));
+    self_p->messages_p = malloc(sizeof(*self_p->messages_p) * self_p->length);
 }
 
 struct async_uid_t *async_queue_get(struct async_queue_t *self_p,
+                                    struct async_task_t **receiver_pp,
                                     void **message_pp)
 {
     struct async_message_header_t *header_p;
@@ -75,19 +80,21 @@ struct async_uid_t *async_queue_get(struct async_queue_t *self_p,
         return (NULL);
     }
 
-    header_p = pop_message(self_p);
+    *receiver_pp = pop_message(self_p, &header_p);
     *message_pp = message_from_header(header_p);
 
     return (header_p->uid_p);
 }
 
-int async_queue_put(struct async_queue_t *self_p, void *message_p)
+int async_queue_put(struct async_queue_t *self_p,
+                    struct async_task_t *receiver_p,
+                    void *message_p)
 {
     if (is_full(self_p)) {
         return (ASYNC_ERROR_QUEUE_FULL);
     }
 
-    push_message(self_p, message_to_header(message_p));
+    push_message(self_p, receiver_p, message_to_header(message_p));
 
     return (0);
 }

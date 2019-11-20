@@ -38,28 +38,44 @@ void async_init(struct async_t *self_p,
     (void)size;
 
     self_p->tick_in_ms = tick_in_ms;
+    async_timer_list_init(&self_p->running_timers);
+    async_queue_init(&self_p->messages, 32);
 }
 
 void async_process(struct async_t *self_p)
 {
-    (void)self_p;
+    struct async_uid_t *uid_p;
+    struct async_task_t *receiver_p;
+    void *message_p;
+    
+    while (true) {
+        uid_p = async_queue_get(&self_p->messages, &receiver_p, &message_p);
+
+        if (uid_p == NULL) {
+            break;
+        }
+
+        receiver_p->on_message(receiver_p, uid_p, message_p);
+        async_message_free(message_p);
+    }
 }
 
 void async_tick(struct async_t *self_p)
 {
-    (void)self_p;
+    async_timer_list_tick(&self_p->running_timers);
 }
 
 void async_task_init(struct async_task_t *self_p,
                      struct async_t *async_p,
                      async_task_on_message_t on_message)
 {
-    async_queue_init(&self_p->messages, 32);
     self_p->on_message = on_message;
     self_p->async_p = async_p;
 }
 
 int async_send(struct async_task_t *receiver_p, void *message_p)
 {
-    return (async_queue_put(&receiver_p->messages, message_p));
+    return (async_queue_put(&receiver_p->async_p->messages,
+                            receiver_p,
+                            message_p));
 }
