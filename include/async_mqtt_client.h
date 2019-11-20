@@ -40,6 +40,7 @@ struct async_mqtt_client_t {
     int keep_alive_s;
     int response_timeout;
     int session_expiry_interval;
+    bool connected;
 };
 
 struct async_mqtt_client_message_subscribe_t {
@@ -85,5 +86,7 @@ void async_mqtt_client_set_session_expiry_interval(struct async_mqtt_client_t *s
                                                    int session_expiry_interval);
 
 struct async_task_t *async_mqtt_client_get_task(struct async_mqtt_client_t *self_p);
+
+bool async_mqtt_client_is_connected(struct async_mqtt_client_t *self_p);
 
 #endif

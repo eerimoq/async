@@ -28,6 +28,7 @@
 
 #include <stdio.h>
 #include "async.h"
+#include "internal.h"
 
 /* Connection flags. */
 #define CLEAN_START     0x02
@@ -184,8 +185,6 @@ ASYNC_UID_DEFINE(async_mqtt_client_message_id_stop);
 ASYNC_UID_DEFINE(async_mqtt_client_message_id_subscribe);
 ASYNC_UID_DEFINE(async_mqtt_client_message_id_unsubscribe);
 ASYNC_UID_DEFINE(async_mqtt_client_message_id_publish);
-ASYNC_UID_DEFINE(async_mqtt_client_message_id_connected);
-ASYNC_UID_DEFINE(async_mqtt_client_message_id_disconnected);
 
 #if 0
 
@@ -273,20 +272,24 @@ static ssize_t pack_connect(uint8_t *dst_p,
 
 #endif
 
-static void on_message(struct async_task_t *self_p,
+static void on_message(struct async_task_t *task_p,
                        struct async_uid_t *uid_p,
                        void *message_p)
 {
-    (void)self_p;
     (void)message_p;
 
+    struct async_mqtt_client_t *self_p;
+
+    self_p = container_of(task_p, struct async_mqtt_client_t, task);
+
     if (uid_p == &async_mqtt_client_message_id_start) {
-        printf("MQTT start.\n");
-        /* Connect to the broker. */
+        printf("MQTT client should connect to '%s:%d'.\n",
+               self_p->host_p,
+               self_p->port);
     } else if (uid_p == &async_mqtt_client_message_id_publish) {
-        printf("MQTT should publish.\n");
+        printf("MQTT client should publish.\n");
     } else {
-        printf("MQTT unknown message.\n");
+        printf("MQTT client got an unknown message.\n");
     }
 }
 
@@ -301,6 +304,7 @@ void async_mqtt_client_init(struct async_mqtt_client_t *self_p,
     self_p->client_id_p = NULL;
     self_p->response_timeout = 5;
     self_p->session_expiry_interval = 0;
+    self_p->connected = false;
     async_task_init(&self_p->task, async_p, on_message);
 }
 
@@ -325,4 +329,9 @@ void async_mqtt_client_set_session_expiry_interval(struct async_mqtt_client_t *s
 struct async_task_t *async_mqtt_client_get_task(struct async_mqtt_client_t *self_p)
 {
     return (&self_p->task);
+}
+
+bool async_mqtt_client_is_connected(struct async_mqtt_client_t *self_p)
+{
+    return (self_p->connected);
 }

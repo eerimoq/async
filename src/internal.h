@@ -31,6 +31,14 @@
 
 #include "async.h"
 
+#define offsetof(type, member) ((size_t) &((type *)0)->member)
+
+#define container_of(ptr, type, member)                         \
+    ({                                                          \
+        const typeof( ((type *)0)->member) *__mptr = (ptr);     \
+        (type *)( (char *)__mptr - offsetof(type,member) );     \
+    })
+
 static inline struct async_message_header_t *message_to_header(void *message_p)
 {
     return (&((struct async_message_header_t *)message_p)[-1]);

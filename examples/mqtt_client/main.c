@@ -45,6 +45,11 @@ static void handle_timeout(struct async_task_t *self_p)
     const char *topic_p = "async/examples/mqtt_client";
     const char *message_p = "Hello world!";
 
+    if (!async_mqtt_client_is_connected(&client)) {
+        printf("MQTT client is not connected. Not publishing...\n");
+        return;
+    }
+
     printf("Publishing '%s' on '%s'...\n", message_p, topic_p);
 
     publish_p = async_message_alloc(
