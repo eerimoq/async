@@ -26,40 +26,59 @@
  * This file is part of the Async project.
  */
 
-#include "async.h"
-#include "internal.h"
+#include <stdio.h>
+#include "asyncio_tcp.h"
 
-void *async_message_alloc(struct async_t *async_p,
-                          struct async_uid_t *uid_p,
-                          size_t size)
+void asyncio_tcp_init(struct asyncio_tcp_t *self_p,
+                      async_func_t on_status_change,
+                      async_func_t on_data,
+                      void *obj_p,
+                      struct asyncio_t *asyncio_p)
 {
-    (void)async_p;
-
-    struct async_message_header_t *header_p;
-
-    header_p = malloc(sizeof(*header_p) + size);
-    header_p->count = 1;
-    header_p->uid_p = uid_p;
-
-    return (message_from_header(header_p));
+    (void)self_p;
+    (void)on_status_change;
+    (void)on_data;
+    (void)obj_p;
+    (void)asyncio_p;
 }
 
-void async_message_free(void *message_p)
+void asyncio_tcp_connect(struct asyncio_tcp_t *self_p,
+                         const char *host_p,
+                         int port)
 {
-    struct async_message_header_t *header_p;
-    int count;
-
-    header_p = message_to_header(message_p);
-
-    header_p->count--;
-    count = header_p->count;
-
-    if (count == 0) {
-        free(header_p);
-    }
+    (void)self_p;
+    (void)host_p;
+    (void)port;
 }
 
-void async_message_share(void *message_p, int count)
+bool asyncio_tcp_is_connected(struct asyncio_tcp_t *self_p)
 {
-    message_to_header(message_p)->count += count;
+    return (self_p->sock != -1);
+}
+
+void asyncio_tcp_disconnect(struct asyncio_tcp_t *self_p)
+{
+    (void)self_p;
+}
+
+size_t asyncio_tcp_write(struct asyncio_tcp_t *self_p,
+                         const void *buf_p,
+                         size_t size)
+{
+    (void)self_p;
+    (void)buf_p;
+    (void)size;
+
+    return (0);
+}
+
+size_t asyncio_tcp_read(struct asyncio_tcp_t *self_p,
+                        void *buf_p,
+                        size_t size)
+{
+    (void)self_p;
+    (void)buf_p;
+    (void)size;
+
+    return (-1);
 }

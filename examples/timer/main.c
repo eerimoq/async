@@ -64,29 +64,22 @@ int main()
                      (async_func_t)on_timeout_1,
                      &timers,
                      ASYNC_TIMER_PERIODIC,
-                     &async);
+                     &asyncio.async);
     async_timer_init(&timers.timer_2,
                      3000,
                      (async_func_t)on_timeout_2,
                      &timers,
                      ASYNC_TIMER_PERIODIC,
-                     &async);
+                     &asyncio.async);
     async_timer_init(&timers.timer_3,
                      5000,
                      (async_func_t)on_timeout_3,
                      &timers,
                      0,
-                     &async);
-
-    printf("Starting timer 1.\n");
+                     &asyncio.async);
     async_timer_start(&timers.timer_1);
-
-    printf("Starting timer 2.\n");
     async_timer_start(&timers.timer_2);
-
-    printf("Starting timer 3.\n");
     async_timer_start(&timers.timer_3);
-
     asyncio_run_forever(&asyncio);
 
     return (0);

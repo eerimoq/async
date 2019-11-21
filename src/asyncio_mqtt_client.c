@@ -27,7 +27,7 @@
  */
 
 #include <stdio.h>
-#include "async.h"
+#include "asyncio.h"
 #include "internal.h"
 
 /* Connection flags. */
@@ -180,12 +180,6 @@ enum property_ids_t {
 
 #define MAXIMUM_PACKET_SIZE (268435455)  /* (128 ^ 4 - 1) */
 
-ASYNC_UID_DEFINE(async_mqtt_client_message_id_start);
-ASYNC_UID_DEFINE(async_mqtt_client_message_id_stop);
-ASYNC_UID_DEFINE(async_mqtt_client_message_id_subscribe);
-ASYNC_UID_DEFINE(async_mqtt_client_message_id_unsubscribe);
-ASYNC_UID_DEFINE(async_mqtt_client_message_id_publish);
-
 #if 0
 
 static int pack_u32(uint8_t *dst_p, uint32_t value, size_t size)
@@ -270,8 +264,6 @@ static ssize_t pack_connect(uint8_t *dst_p,
     return (packed);
 }
 
-#endif
-
 static void on_message(struct async_task_t *task_p,
                        struct async_uid_t *uid_p,
                        void *message_p)
@@ -335,3 +327,5 @@ bool async_mqtt_client_is_connected(struct async_mqtt_client_t *self_p)
 {
     return (self_p->connected);
 }
+
+#endif

@@ -35,7 +35,7 @@
 #include <sys/socket.h>
 #include <stdio.h>
 #include "async.h"
-#include "async_linux.h"
+#include "asyncio.h"
 
 #define MESSAGE_TYPE_TIMEOUT 1
 #define MESSAGE_TYPE_SEND    2
@@ -67,7 +67,7 @@ static int create_periodic_timer(struct async_t *async_p)
     return (timer_fd);
 }
 
-static void io_handle_timeout(struct async_linux_t *self_p,
+static void io_handle_timeout(struct asyncio_t *self_p,
                               int timer_fd)
 {
     uint64_t value;
@@ -89,7 +89,7 @@ static void io_handle_timeout(struct async_linux_t *self_p,
     }
 }
 
-static void *io_main(struct async_linux_t *self_p)
+static void *io_main(struct asyncio_t *self_p)
 {
     ssize_t res;
     int timer_fd;
@@ -103,7 +103,7 @@ static void *io_main(struct async_linux_t *self_p)
         return (NULL);
     }
 
-    timer_fd = create_periodic_timer(self_p->async_p);
+    timer_fd = create_periodic_timer(&self_p->async);
 
     if (timer_fd == -1) {
         return (NULL);
@@ -133,28 +133,31 @@ static void *io_main(struct async_linux_t *self_p)
     return (NULL);
 }
 
-static void async_handle_timeout(struct async_linux_t *self_p)
+static void async_handle_timeout(struct asyncio_t *self_p)
 {
-    async_tick(self_p->async_p);
+    async_tick(&self_p->async);
 }
 
-static void async_handle_send(struct async_linux_t *self_p,
+static void async_handle_send(struct asyncio_t *self_p,
                               struct message_header_t *header_p)
 {
-    void *message_p;
-    ssize_t res;
+    (void)self_p;
+    (void)header_p;
 
-    message_p = async_message_alloc(self_p->async_p,
-                                    header_p->uid_p,
-                                    header_p->size);
-    res = read(self_p->async_fd, message_p, header_p->size);
+    /* void *message_p; */
+    /* ssize_t res; */
 
-    if (res == header_p->size) {
-        async_send(header_p->receiver_p, message_p);
-    }
+    /* message_p = async_message_alloc(&self_p->async, */
+    /*                                 header_p->uid_p, */
+    /*                                 header_p->size); */
+    /* res = read(self_p->async_fd, message_p, header_p->size); */
+
+    /* if (res == header_p->size) { */
+    /*     async_send(header_p->receiver_p, message_p); */
+    /* } */
 }
 
-static void *async_main(struct async_linux_t *self_p)
+static void *async_main(struct asyncio_t *self_p)
 {
     struct message_header_t header;
     ssize_t res;
@@ -180,14 +183,13 @@ static void *async_main(struct async_linux_t *self_p)
             break;
         }
 
-        async_process(self_p->async_p);
+        async_process(&self_p->async);
     }
 
     return (NULL);
 }
 
-void async_linux_create(struct async_linux_t *self_p,
-                        struct async_t *async_p)
+void asyncio_init(struct asyncio_t *self_p)
 {
     int sockets[2];
     int res;
@@ -200,7 +202,7 @@ void async_linux_create(struct async_linux_t *self_p,
 
     self_p->io_fd = sockets[0];
     self_p->async_fd = sockets[1];
-    self_p->async_p = async_p;
+    async_init(&self_p->async, 100);
 
     pthread_create(&self_p->io_pthread,
                    NULL,
@@ -212,7 +214,7 @@ void async_linux_create(struct async_linux_t *self_p,
                    self_p);
 }
 
-void async_linux_join(struct async_linux_t *self_p)
+void asyncio_run_forever(struct asyncio_t *self_p)
 {
     pthread_join(self_p->io_pthread, NULL);
     pthread_join(self_p->async_pthread, NULL);

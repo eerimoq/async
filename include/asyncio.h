@@ -26,25 +26,22 @@
  * This file is part of the Async project.
  */
 
-#include <stdio.h>
-#include "async_tcp.h"
+#ifndef ASYNCIO_H
+#define ASYNCIO_H
 
-ASYNC_UID_DEFINE(async_tcp_message_id_connect);
-ASYNC_UID_DEFINE(async_tcp_message_id_data);
+#include <pthread.h>
+#include "async.h"
 
-void async_tcp_connect(const char *host_p, int port)
-{
-    (void)host_p;
-    (void)port;
+struct asyncio_t {
+    struct async_t async;
+    int io_fd;
+    int async_fd;
+    pthread_t io_pthread;
+    pthread_t async_pthread;
+};
 
-    printf("TCP connect.\n");
-}
+void asyncio_init(struct asyncio_t *self_p);
 
-void async_tcp_write(int handle, const void *buf_p, size_t size)
-{
-    (void)handle;
-    (void)buf_p;
-    (void)size;
+void asyncio_run_forever(struct asyncio_t *self_p);
 
-    printf("TCP write.\n");
-}
+#endif

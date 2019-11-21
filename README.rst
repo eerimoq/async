@@ -7,7 +7,7 @@ important.
 Features
 ========
 
-- Enqueued function calls.
+- Delayed function calls.
 
 - Timers.
 

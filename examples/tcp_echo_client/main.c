@@ -29,6 +29,7 @@
 #include <stdio.h>
 #include <string.h>
 #include "asyncio.h"
+#include "asyncio_tcp.h"
 
 struct echo_client_t {
     struct async_timer_t timer;
@@ -80,12 +81,12 @@ int main()
     struct echo_client_t echo_client;
 
     asyncio_init(&asyncio);
-    asyncio_tcp_init(&tcp,
+    asyncio_tcp_init(&echo_client.tcp,
                      (async_func_t)on_tcp_connect_complete,
                      (async_func_t)on_tcp_data,
                      &echo_client,
                      &asyncio);
-    async_timer_init(&timer,
+    async_timer_init(&echo_client.timer,
                      1000,
                      (async_func_t)on_timeout,
                      &echo_client,

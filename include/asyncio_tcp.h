@@ -26,8 +26,8 @@
  * This file is part of the Async project.
  */
 
-#ifndef ASYNC_TCP_H
-#define ASYNC_TCP_H
+#ifndef ASYNCIO_TCP_H
+#define ASYNCIO_TCP_H
 
 #include "asyncio.h"
 
@@ -59,6 +59,11 @@ void asyncio_tcp_connect(struct asyncio_tcp_t *self_p,
  * Disconnect from the remote host.
  */
 void asyncio_tcp_disconnect(struct asyncio_tcp_t *self_p);
+
+/**
+ *
+ */
+bool asyncio_tcp_is_connected(struct asyncio_tcp_t *self_p);
 
 /**
  * Write up to size bytes to the remote host.

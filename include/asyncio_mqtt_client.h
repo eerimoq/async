@@ -26,10 +26,10 @@
  * This file is part of the Async project.
  */
 
-#ifndef ASYNC_MQTT_CLIENT_H
-#define ASYNC_MQTT_CLIENT_H
+#ifndef ASYNCIO_MQTT_CLIENT_H
+#define ASYNCIO_MQTT_CLIENT_H
 
-#include "async_core.h"
+#include "asyncio.h"
 
 struct async_mqtt_client_t {
     struct async_task_t task;
