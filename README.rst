@@ -1,4 +1,4 @@
-📬 Async
+😺 Async
 =======
 
 Asynchronous framework in C for systems where low memory usage is
