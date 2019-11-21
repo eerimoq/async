@@ -28,92 +28,71 @@
 
 #include <stdio.h>
 #include <string.h>
-#include "async.h"
-#include "async_linux.h"
+#include "asyncio.h"
 
-static int handle = -1;
-static struct async_timer_t timer;
+struct echo_client_t {
+    struct async_timer_t timer;
+    struct asyncio_tcp_t tcp;
+};
 
-static ASYNC_UID_DEFINE(start);
-static ASYNC_UID_DEFINE(timeout);
-
-static void handle_start(void)
+static void on_start(struct echo_client_t *self_p)
 {
-    async_tcp_connect("localhost", 33000);
+    asyncio_tcp_connect(&self_p->tcp, "localhost", 33000);
 }
 
-static void handle_timeout()
+static void on_tcp_connect_complete(struct echo_client_t *self_p)
 {
-    if (handle != -1) {
-        printf("TX: 'Hello!'\n");
-        async_tcp_write(handle, "Hello!", 6);
-    }
-}
-
-static void handle_tcp_connect_response(struct async_tcp_connect_t *message_p)
-{
-    if (message_p->handle != -1) {
-        handle = message_p->handle;
-        async_timer_start(&timer);
+    if (asyncio_tcp_is_connected(&self_p->tcp)) {
+        async_timer_start(&self_p->timer);
     } else {
         printf("Connect failed.\n");
     }
 }
 
-static void handle_tcp_data(struct async_tcp_data_t *message_p)
+static void on_tcp_data(struct echo_client_t *self_p)
 {
-    if (message_p->length > 0) {
+    char buf[32];
+    size_t size;
+
+    size = asyncio_tcp_read(&self_p->tcp, &buf[0], sizeof(buf));
+
+    if (size > 0) {
         printf("RX: '");
-        fwrite(&message_p->data[0], message_p->length, 1, stdout);
+        fwrite(&buf[0], size, 1, stdout);
         printf("'\n");
     } else {
-        printf("Connection closed by server.\n");
-        async_timer_stop(&timer);
-        handle = -1;
+        printf("Connection closed.\n");
+        async_timer_stop(&self_p->timer);
     }
 }
 
-static void client_on_message(struct async_task_t *self_p,
-                              struct async_uid_t *uid_p,
-                              void *message_p)
+static void on_timeout(struct echo_client_t *self_p)
 {
-    (void)self_p;
-
-    if (uid_p == &start) {
-        handle_start();
-    } else if (uid_p == &timeout) {
-        handle_timeout();
-    } else if (uid_p == &async_tcp_message_id_connect) {
-        handle_tcp_connect_response(message_p);
-    } else if (uid_p == &async_tcp_message_id_data) {
-        handle_tcp_data(message_p);
-    } else {
-        printf("Unexpected message.\n");
+    if (asyncio_tcp_is_connected(&self_p->tcp)) {
+        printf("TX: 'Hello!'\n");
+        asyncio_tcp_write(&self_p->tcp, "Hello!", 6);
     }
 }
 
 int main()
 {
-    struct async_t async;
-    struct async_task_t client;
-    void *start_p;
-    struct async_linux_t async_linux;
+    struct asyncio_t asyncio;
+    struct echo_client_t echo_client;
 
-    /* Setup. */
-    async_init(&async, 100, NULL, 0);
-    async_task_init(&client, &async, client_on_message);
+    asyncio_init(&asyncio);
+    asyncio_tcp_init(&tcp,
+                     (async_func_t)on_tcp_connect_complete,
+                     (async_func_t)on_tcp_data,
+                     &echo_client,
+                     &asyncio);
     async_timer_init(&timer,
-                     &async,
                      1000,
-                     &timeout,
-                     &client,
-                     ASYNC_TIMER_PERIODIC);
-    start_p = async_message_alloc(&async, &start, 0);
-    async_send(&client, start_p);
-
-    /* Start. */
-    async_linux_create(&async_linux, &async);
-    async_linux_join(&async_linux);
+                     (async_func_t)on_timeout,
+                     &echo_client,
+                     ASYNC_TIMER_PERIODIC,
+                     &asyncio.async);
+    async_call(&asyncio.async, (async_func_t)on_start, &echo_client);
+    asyncio_run_forever(&asyncio);
 
     return (0);
 }

@@ -32,74 +32,55 @@
 
 #include <stdio.h>
 #include <string.h>
-#include "async.h"
-#include "async_linux.h"
+#include "asyncio.h"
 
-static struct async_mqtt_client_t client;
+struct publisher_t {
+    struct asyncio_mqtt_client_t client;
+    struct async_timer_t timer;
+};
 
-static ASYNC_UID_DEFINE(timeout);
-
-static void handle_timeout(struct async_task_t *self_p)
+static void on_connected(struct publisher_t *self_p)
 {
-    struct async_mqtt_client_message_publish_t *publish_p;
-    const char *topic_p = "async/examples/mqtt_client";
-    const char *message_p = "Hello world!";
-
-    if (!async_mqtt_client_is_connected(&client)) {
-        printf("MQTT client is not connected. Not publishing...\n");
-        return;
-    }
-
-    printf("Publishing '%s' on '%s'...\n", message_p, topic_p);
-
-    publish_p = async_message_alloc(
-        self_p->async_p,
-        &async_mqtt_client_message_id_publish,
-        sizeof(struct async_mqtt_client_message_publish_t));
-    publish_p->topic_p = topic_p;
-    publish_p->message_p = (uint8_t *)message_p;
-    publish_p->size = strlen(message_p);
-    async_send(async_mqtt_client_get_task(&client), publish_p);
+    printf("Connected.\n");
+    async_timer_start(&self_p->timer);
 }
 
-static void publisher_on_message(struct async_task_t *self_p,
-                                 struct async_uid_t *uid_p,
-                                 void *message_p)
+static void on_disconnected(struct publisher_t *self_p)
 {
-    (void)message_p;
+    printf("Disconnected.\n");
+    async_timer_stop(&self_p->timer);
+}
 
-    if (uid_p == &timeout) {
-        handle_timeout(self_p);
-    }
+static void on_timeout(struct publisher_t *self_p)
+{
+    printf("Publishing.\n");
+    asyncio_mqtt_client_publish(&self_p->client,
+                                "async/examples/mqtt_client",
+                                "Hello world!",
+                                12);
 }
 
 int main()
 {
-    struct async_t async;
-    struct async_task_t publisher;
-    void *start_p;
-    struct async_timer_t timer;
-    struct async_linux_t async_linux;
+    struct asyncio_t asyncio;
+    struct publisher_t publisher;
 
-    /* Setup. */
-    async_init(&async, 100, NULL, 0);
-    async_mqtt_client_init(&client, &async, "localhost", 1883);
-    async_task_init(&publisher, &async, publisher_on_message);
-    async_timer_init(&timer,
-                     &async,
+    asyncio_init(&asyncio);
+    asyncio_mqtt_client_init(&publisher.client,
+                             "localhost",
+                             1883,
+                             (async_func_t)on_connected,
+                             (async_func_t)on_disconnected,
+                             &publisher,
+                             &asyncio);
+    async_timer_init(&publisher.timer,
                      1000,
-                     &timeout,
+                     (async_func_t)on_timeout,
                      &publisher,
-                     ASYNC_TIMER_PERIODIC);
-    async_timer_start(&timer);
-    start_p = async_message_alloc(&async,
-                                  &async_mqtt_client_message_id_start,
-                                  0);
-    async_send(async_mqtt_client_get_task(&client), start_p);
-
-    /* Start. */
-    async_linux_create(&async_linux, &async);
-    async_linux_join(&async_linux);
+                     ASYNC_TIMER_PERIODIC,
+                     &asyncio.async);
+    asyncio_mqtt_client_start(&publisher.client);
+    asyncio_run_forever(&asyncio);
 
     return (0);
 }

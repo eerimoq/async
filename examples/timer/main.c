@@ -26,83 +26,68 @@
  * This file is part of the Async project.
  */
 
-#include <stdbool.h>
-#include <stdint.h>
-#include <unistd.h>
-#include <sys/timerfd.h>
 #include <stdio.h>
-#include "async.h"
-#include "async_linux.h"
+#include "asyncio.h"
 
-#define TICK_IN_MS 100
+struct timers_t {
+    struct async_timer_t timer_1;
+    struct async_timer_t timer_2;
+    struct async_timer_t timer_3;
+};
 
-static ASYNC_UID_DEFINE(timeout_1);
-static ASYNC_UID_DEFINE(timeout_2);
-static ASYNC_UID_DEFINE(timeout_3);
-
-static struct async_t async;
-static struct async_task_t task;
-static struct async_timer_t timer_1;
-static struct async_timer_t timer_2;
-static struct async_timer_t timer_3;
-
-static void on_message(struct async_task_t *self_p,
-                       struct async_uid_t *uid_p,
-                       void *message_p)
+static void on_timeout_1(struct timers_t *self_p)
 {
-    (void)self_p;
-    (void)message_p;
-
-    if (uid_p == &timeout_1) {
-        if (!async_timer_is_stopped(&timer_1)) {
-            printf("Timer 1 expired.\n");
-        }
-    } else if (uid_p == &timeout_2) {
-        printf("Timer 2 expired.\n");
-    } else if (uid_p == &timeout_3) {
-        printf("Timer 3 expired. Stopping timer 1.\n");
-        async_timer_stop(&timer_1);
+    if (!async_timer_is_stopped(&self_p->timer_1)) {
+        printf("Timer 1 expired.\n");
     }
+}
+
+static void on_timeout_2(void)
+{
+    printf("Timer 2 expired.\n");
+}
+
+static void on_timeout_3(struct timers_t *self_p)
+{
+    printf("Timer 3 expired. Stopping timer 1.\n");
+    async_timer_stop(&self_p->timer_1);
 }
 
 int main()
 {
-    struct async_linux_t async_linux;
+    struct asyncio_t asyncio;
+    struct timers_t timers;
 
-    /* Setup. */
-    async_init(&async, TICK_IN_MS, NULL, 0);
-    async_task_init(&task, &async, on_message);
-    async_timer_init(&timer_1,
-                     &async,
+    asyncio_init(&asyncio);
+    async_timer_init(&timers.timer_1,
                      1000,
-                     &timeout_1,
-                     &task,
-                     ASYNC_TIMER_PERIODIC);
-    async_timer_init(&timer_2,
-                     &async,
+                     (async_func_t)on_timeout_1,
+                     &timers,
+                     ASYNC_TIMER_PERIODIC,
+                     &async);
+    async_timer_init(&timers.timer_2,
                      3000,
-                     &timeout_2,
-                     &task,
-                     ASYNC_TIMER_PERIODIC);
-    async_timer_init(&timer_3,
-                     &async,
+                     (async_func_t)on_timeout_2,
+                     &timers,
+                     ASYNC_TIMER_PERIODIC,
+                     &async);
+    async_timer_init(&timers.timer_3,
                      5000,
-                     &timeout_3,
-                     &task,
-                     0);
+                     (async_func_t)on_timeout_3,
+                     &timers,
+                     0,
+                     &async);
 
     printf("Starting timer 1.\n");
-    async_timer_start(&timer_1);
+    async_timer_start(&timers.timer_1);
 
     printf("Starting timer 2.\n");
-    async_timer_start(&timer_2);
+    async_timer_start(&timers.timer_2);
 
     printf("Starting timer 3.\n");
-    async_timer_start(&timer_3);
+    async_timer_start(&timers.timer_3);
 
-    /* Start. */
-    async_linux_create(&async_linux, &async);
-    async_linux_join(&async_linux);
+    asyncio_run_forever(&asyncio);
 
     return (0);
 }

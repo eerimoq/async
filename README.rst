@@ -1,15 +1,13 @@
 📬 Async
 =======
 
-Asynchronous message passing framework in C for system where low
-memory usage is important.
-
-Based on the `Monolinux C library`_ API design.
+Asynchronous framework in C for systems where low memory usage is
+important.
 
 Features
 ========
 
-- Message passing.
+- Enqueued function calls.
 
 - Timers.
 
@@ -23,7 +21,7 @@ Linux design
 
 Two threads:
 
-- Async thread - executing all async tasks
+- Async thread - executing async functions
 
 - IO thread - performing IO and timing
 

@@ -29,27 +29,49 @@
 #ifndef ASYNC_TCP_H
 #define ASYNC_TCP_H
 
-#include "async_core.h"
+#include "asyncio.h"
 
-struct async_tcp_connect_t {
-    int handle;
+struct asyncio_tcp_t {
+    async_func_t on_status_change;
+    async_func_t on_data;
+    void *obj_p;
+    int sock;
 };
 
-struct async_tcp_data_t {
-    int handle;
-    size_t length;
-    uint8_t data[1];
-};
-
-ASYNC_UID(async_tcp_message_id_connect);
-ASYNC_UID(async_tcp_message_id_data);
+/**
+ * Initialize given TCP object.
+ */
+void asyncio_tcp_init(struct asyncio_tcp_t *self_p,
+                      async_func_t on_status_change,
+                      async_func_t on_data,
+                      void *obj_p,
+                      struct asyncio_t *asyncio_p);
 
 /**
  * Opens a TCP connection to a remote host. The connection handle is
  * received in the response message.
  */
-void async_tcp_connect(const char *host_p, int port);
+void asyncio_tcp_connect(struct asyncio_tcp_t *self_p,
+                         const char *host_p,
+                         int port);
 
-void async_tcp_write(int handle, const void *buf_p, size_t size);
+/**
+ * Disconnect from the remote host.
+ */
+void asyncio_tcp_disconnect(struct asyncio_tcp_t *self_p);
+
+/**
+ * Write up to size bytes to the remote host.
+ */
+size_t asyncio_tcp_write(struct asyncio_tcp_t *self_p,
+                         const void *buf_p,
+                         size_t size);
+
+/**
+ * Read up to size bytes from the remote host.
+ */
+size_t asyncio_tcp_read(struct asyncio_tcp_t *self_p,
+                        void *buf_p,
+                        size_t size);
 
 #endif

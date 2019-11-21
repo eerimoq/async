@@ -39,41 +39,16 @@
 #define ASYNC_ERROR_QUEUE_FULL                   2
 
 /**
- * Create a unique identifier.
+ * Async function.
  */
-#define ASYNC_UID_DEFINE(name)                  \
-    struct async_uid_t name = {                 \
-        .name_p = #name                         \
-    }
-
-#define ASYNC_UID(name) extern struct async_uid_t name
-
-struct async_uid_t;
-struct async_task_t;
-
-/**
- * The received message is freed automatically when this function
- * returns.
- */
-typedef void (*async_task_on_message_t)(struct async_task_t *self_p,
-                                        struct async_uid_t *uid_p,
-                                        void *message_p);
-
-struct async_uid_t {
-    const char *name_p;
-};
-
-struct async_message_header_t {
-    struct async_uid_t *uid_p;
-    int count;
-};
+typedef void (*async_func_t)(void *obj_p);
 
 struct async_timer_t {
     struct async_t *async_p;
     unsigned int timeout;
     unsigned int delta;
-    struct async_uid_t *message_p;
-    struct async_task_t *task_p;
+    async_func_t on_timeout;
+    void *obj_p;
     int flags;
     bool stopped;
     struct async_timer_t *next_p;
@@ -86,27 +61,22 @@ struct async_timer_list_t {
     struct async_timer_t tail;
 };
 
-struct async_queue_message_t {
-    struct async_task_t *receiver_p;
-    struct async_message_header_t *message_p;
+struct async_func_queue_elem_t {
+    async_func_t func;
+    void *obj_p;
 };
 
-struct async_queue_t {
+struct async_func_queue_t {
     int rdpos;
     int wrpos;
     int length;
-    struct async_queue_message_t *messages_p;
+    struct async_func_queue_elem_t *list_p;
 };
 
 struct async_t {
     int tick_in_ms;
     struct async_timer_list_t running_timers;
-    struct async_queue_t messages;
-};
-
-struct async_task_t {
-    struct async_t *async_p;
-    async_task_on_message_t on_message;
+    struct async_func_queue_t funcs;
 };
 
 /**
@@ -129,24 +99,11 @@ void async_process(struct async_t *self_p);
 void async_tick(struct async_t *self_p);
 
 /**
- * Create a queue of given length. on_message is called to process
- * received messages.
+ * Call given function with given arguments later.
  */
-void async_task_init(struct async_task_t *self_p,
-                     struct async_t *async_p,
-                     async_task_on_message_t on_message);
-
-/**
- * Send given message to given task.
- */
-int async_send(struct async_task_t *receiver_p, void *message_p);
-
-/**
- * Allocate a message with given id and size. The size may be zero.
- */
-void *async_message_alloc(struct async_t *async_p,
-                          struct async_uid_t *uid_p,
-                          size_t size);
+int async_call(struct async_t *self_p,
+               async_func_t func,
+               void *obj_p);
 
 /**
  * Initialize given timer. Sends a message with given id to given task
@@ -154,11 +111,11 @@ void *async_message_alloc(struct async_t *async_p,
  * periodic.
  */
 void async_timer_init(struct async_timer_t *self_p,
-                      struct async_t *async_p,
                       int timeout_ms,
-                      struct async_uid_t *message_p,
-                      struct async_task_t *task_p,
-                      int flags);
+                      async_func_t on_timeout,
+                      void *obj_p,
+                      int flags,
+                      struct async_t *async_p);
 
 /**
  * (Re)start given timer.
