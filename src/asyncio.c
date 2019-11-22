@@ -26,7 +26,9 @@
  * This file is part of the Async project.
  */
 
+#include <dbg.h>
 #include <stdbool.h>
+#include <string.h>
 #include <stdint.h>
 #include <unistd.h>
 #include <sys/timerfd.h>
@@ -37,14 +39,27 @@
 #include "async.h"
 #include "asyncio.h"
 
-#define MESSAGE_TYPE_TIMEOUT 1
-#define MESSAGE_TYPE_SEND    2
+#define MESSAGE_TYPE_TIMEOUT                             1
+#define MESSAGE_TYPE_TCP_CONNECT                         2
+#define MESSAGE_TYPE_TCP_CONNECT_COMPLETE                3
+#define MESSAGE_TYPE_TCP_DISCONNECT                      4
 
 struct message_header_t {
     int type;
     int size;
-    struct async_uid_t *uid_p;
-    struct async_task_t *receiver_p;
+    async_func_t func;
+    void *obj_p;
+};
+
+struct message_tcp_connect_t {
+    struct message_header_t header;
+    const char *host_p;
+    int port;
+};
+
+struct message_tcp_disconnect_t {
+    struct message_header_t header;
+    int sock;
 };
 
 static int create_periodic_timer(struct async_t *async_p)
@@ -89,6 +104,61 @@ static void io_handle_timeout(struct asyncio_t *self_p,
     }
 }
 
+static void io_handle_tcp_connect(struct asyncio_t *self_p,
+                                  struct message_header_t *header_p)
+{
+    (void)self_p;
+    (void)header_p;
+
+    dbg("");
+
+#if 0
+    socket(); SOCK_NONBLOCK
+    connect();
+
+    struct message_tcp_connect_complete_t message;
+
+    message.header.type = MESSAGE_TYPE_TCP_CONNECT_COMPLETE;
+    message.sock = sock;
+    write(self_p->async_fd, &message, sizeof(message));
+#endif
+}
+
+static void io_handle_tcp_disconnect(struct asyncio_t *self_p,
+                                     struct message_header_t *header_p)
+{
+    (void)self_p;
+    (void)header_p;
+
+    dbg("");
+}
+
+static void io_handle_async(struct asyncio_t *self_p)
+{
+    ssize_t res;
+    struct message_header_t header;
+
+    res = read(self_p->io_fd, &header, sizeof(header));
+
+    if (res != sizeof(header)) {
+        return;
+    }
+
+    switch (header.type) {
+
+    case MESSAGE_TYPE_TCP_CONNECT:
+        io_handle_tcp_connect(self_p, &header);
+        break;
+
+    case MESSAGE_TYPE_TCP_DISCONNECT:
+        io_handle_tcp_disconnect(self_p, &header);
+        break;
+
+    default:
+        break;
+    }
+}
+
 static void *io_main(struct asyncio_t *self_p)
 {
     ssize_t res;
@@ -111,8 +181,15 @@ static void *io_main(struct asyncio_t *self_p)
 
     event.events = EPOLLIN;
     event.data.fd = timer_fd;
-
     res = epoll_ctl(epoll_fd, EPOLL_CTL_ADD, timer_fd, &event);
+
+    if (res == -1) {
+        return (NULL);
+    }
+
+    event.events = EPOLLIN;
+    event.data.fd = self_p->io_fd;
+    res = epoll_ctl(epoll_fd, EPOLL_CTL_ADD, self_p->io_fd, &event);
 
     if (res == -1) {
         return (NULL);
@@ -124,8 +201,8 @@ static void *io_main(struct asyncio_t *self_p)
         if (nfds == 1) {
             if (event.data.fd == timer_fd) {
                 io_handle_timeout(self_p, timer_fd);
-            } else if (event.data.fd == self_p->async_fd) {
-                /* Manage sockets. */
+            } else if (event.data.fd == self_p->io_fd) {
+                io_handle_async(self_p);
             }
         }
     }
@@ -138,23 +215,11 @@ static void async_handle_timeout(struct asyncio_t *self_p)
     async_tick(&self_p->async);
 }
 
-static void async_handle_send(struct asyncio_t *self_p,
-                              struct message_header_t *header_p)
+static void async_handle_tcp_connect_complete(struct asyncio_t *self_p,
+                                              struct message_header_t *header_p)
 {
-    (void)self_p;
-    (void)header_p;
-
-    /* void *message_p; */
-    /* ssize_t res; */
-
-    /* message_p = async_message_alloc(&self_p->async, */
-    /*                                 header_p->uid_p, */
-    /*                                 header_p->size); */
-    /* res = read(self_p->async_fd, message_p, header_p->size); */
-
-    /* if (res == header_p->size) { */
-    /*     async_send(header_p->receiver_p, message_p); */
-    /* } */
+    //asyncio_tcp_set_sock(message.tcp_p, message.sock);
+    async_call(&self_p->async, header_p->func, header_p->obj_p);
 }
 
 static void *async_main(struct asyncio_t *self_p)
@@ -175,11 +240,12 @@ static void *async_main(struct asyncio_t *self_p)
             async_handle_timeout(self_p);
             break;
 
-        case MESSAGE_TYPE_SEND:
-            async_handle_send(self_p, &header);
+        case MESSAGE_TYPE_TCP_CONNECT_COMPLETE:
+            async_handle_tcp_connect_complete(self_p, &header);
             break;
 
         default:
+            dbg(header.type);
             break;
         }
 
@@ -218,4 +284,38 @@ void asyncio_run_forever(struct asyncio_t *self_p)
 {
     pthread_join(self_p->io_pthread, NULL);
     pthread_join(self_p->async_pthread, NULL);
+}
+
+void asyncio_write(struct asyncio_t *self_p, const void *buf_p, size_t size)
+{
+    ssize_t res;
+    dbg("");
+    res = write(self_p->async_fd, buf_p, size);
+
+    if (res != (ssize_t)size) {
+        exit(1);
+    }
+}
+
+void asyncio_tcp_connect_write(struct asyncio_t *self_p,
+                               const char *host_p,
+                               int port)
+{
+    struct message_tcp_connect_t message;
+
+    message.header.type = MESSAGE_TYPE_TCP_CONNECT;
+    message.header.size = (sizeof(message) - sizeof(message.header));
+    message.host_p = strdup(host_p);
+    message.port = port;
+    asyncio_write(self_p, &message, sizeof(message));
+}
+
+void asyncio_tcp_disconnect_write(struct asyncio_t *self_p, int sock)
+{
+    struct message_tcp_disconnect_t message;
+
+    message.header.type = MESSAGE_TYPE_TCP_DISCONNECT;
+    message.header.size = (sizeof(message) - sizeof(message.header));
+    message.sock = sock;
+    asyncio_write(self_p, &message, sizeof(message));
 }

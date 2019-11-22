@@ -27,28 +27,33 @@
  */
 
 #include <stdio.h>
+#include <string.h>
+#include <unistd.h>
 #include "asyncio_tcp.h"
+#include "internalio.h"
 
 void asyncio_tcp_init(struct asyncio_tcp_t *self_p,
-                      async_func_t on_status_change,
+                      async_func_t on_connect_complete,
                       async_func_t on_data,
                       void *obj_p,
                       struct asyncio_t *asyncio_p)
 {
-    (void)self_p;
-    (void)on_status_change;
-    (void)on_data;
-    (void)obj_p;
-    (void)asyncio_p;
+    self_p->on_connect_complete = on_connect_complete;
+    self_p->on_data = on_data;
+    self_p->obj_p = obj_p;
+    self_p->asyncio_p = asyncio_p;
 }
 
 void asyncio_tcp_connect(struct asyncio_tcp_t *self_p,
                          const char *host_p,
                          int port)
 {
-    (void)self_p;
-    (void)host_p;
-    (void)port;
+    asyncio_tcp_connect_write(self_p->asyncio_p, host_p, port);
+}
+
+void asyncio_tcp_disconnect(struct asyncio_tcp_t *self_p)
+{
+    asyncio_tcp_disconnect_write(self_p->asyncio_p, self_p->sock);
 }
 
 bool asyncio_tcp_is_connected(struct asyncio_tcp_t *self_p)
@@ -56,29 +61,16 @@ bool asyncio_tcp_is_connected(struct asyncio_tcp_t *self_p)
     return (self_p->sock != -1);
 }
 
-void asyncio_tcp_disconnect(struct asyncio_tcp_t *self_p)
+ssize_t asyncio_tcp_write(struct asyncio_tcp_t *self_p,
+                          const void *buf_p,
+                          size_t size)
 {
-    (void)self_p;
-}
-
-size_t asyncio_tcp_write(struct asyncio_tcp_t *self_p,
-                         const void *buf_p,
-                         size_t size)
-{
-    (void)self_p;
-    (void)buf_p;
-    (void)size;
-
-    return (0);
+    return (write(self_p->sock, buf_p, size));
 }
 
 size_t asyncio_tcp_read(struct asyncio_tcp_t *self_p,
                         void *buf_p,
                         size_t size)
 {
-    (void)self_p;
-    (void)buf_p;
-    (void)size;
-
-    return (-1);
+    return (read(self_p->sock, buf_p, size));
 }

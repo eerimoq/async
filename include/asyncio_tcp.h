@@ -32,9 +32,10 @@
 #include "asyncio.h"
 
 struct asyncio_tcp_t {
-    async_func_t on_status_change;
+    async_func_t on_connect_complete;
     async_func_t on_data;
     void *obj_p;
+    struct asyncio_t *asyncio_p;
     int sock;
 };
 
@@ -42,7 +43,7 @@ struct asyncio_tcp_t {
  * Initialize given TCP object.
  */
 void asyncio_tcp_init(struct asyncio_tcp_t *self_p,
-                      async_func_t on_status_change,
+                      async_func_t on_connect_complete,
                       async_func_t on_data,
                       void *obj_p,
                       struct asyncio_t *asyncio_p);
@@ -68,9 +69,9 @@ bool asyncio_tcp_is_connected(struct asyncio_tcp_t *self_p);
 /**
  * Write up to size bytes to the remote host.
  */
-size_t asyncio_tcp_write(struct asyncio_tcp_t *self_p,
-                         const void *buf_p,
-                         size_t size);
+ssize_t asyncio_tcp_write(struct asyncio_tcp_t *self_p,
+                          const void *buf_p,
+                          size_t size);
 
 /**
  * Read up to size bytes from the remote host.

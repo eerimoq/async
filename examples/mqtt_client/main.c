@@ -26,10 +26,6 @@
  * This file is part of the Async project.
  */
 
-/*
- * Publishes a message periodically.
- */
-
 #include <stdio.h>
 #include <string.h>
 #include "asyncio.h"
@@ -49,6 +45,15 @@ static void on_disconnected(struct publisher_t *self_p)
 {
     printf("Disconnected.\n");
     async_timer_stop(&self_p->timer);
+}
+
+static void on_publish(struct publisher_t *self_p)
+{
+    struct asyncio_mqtt_client_message_t *message_p;
+
+    message_p = asyncio_mqtt_client_get_message(self_p);
+    printf("Got message on topic '%s'.\n", message_p->topic_p);
+    asyncio_mqtt_client_message_free(message_p);
 }
 
 static void on_timeout(struct publisher_t *self_p)
@@ -71,6 +76,7 @@ int main()
                              1883,
                              (async_func_t)on_connected,
                              (async_func_t)on_disconnected,
+                             (async_func_t)on_publish,
                              &publisher,
                              &asyncio);
     async_timer_init(&publisher.timer,

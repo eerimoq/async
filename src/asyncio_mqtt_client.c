@@ -196,7 +196,6 @@ static int pack_u32(uint8_t *dst_p, uint32_t value, size_t size)
     return (0);
 }
 
-
 static int unpack_u32(uint32_t *dst_p, uint8_t *src_p, size_t size)
 {
     if (size < 4) {
@@ -264,68 +263,133 @@ static ssize_t pack_connect(uint8_t *dst_p,
     return (packed);
 }
 
-static void on_message(struct async_task_t *task_p,
-                       struct async_uid_t *uid_p,
-                       void *message_p)
+static void handle_connack()
 {
-    (void)message_p;
+}
 
-    struct async_mqtt_client_t *self_p;
+static void on_tcp_connect_complete()
+{
+}
 
-    self_p = container_of(task_p, struct async_mqtt_client_t, task);
+static void handle_tcp_data(struct asyncio_mqtt_client_t *self_p)
+{
+    res = read(&self_p->tcp);
 
-    if (uid_p == &async_mqtt_client_message_id_start) {
-        printf("MQTT client should connect to '%s:%d'.\n",
-               self_p->host_p,
-               self_p->port);
-    } else if (uid_p == &async_mqtt_client_message_id_publish) {
-        printf("MQTT client should publish.\n");
-    } else {
-        printf("MQTT client got an unknown message.\n");
+    if (res <= 0) {
+        return;
+    }
+
+    if (unpack()) {
+        return;
+    }
+
+    switch (packet.type) {
+
+    case control_packet_type_connack_t:
+        handle_connack();
+        break;
+
+    case control_packet_type_publish_t:
+        handle_publish();
+        break;
+
+    case control_packet_type_suback_t:
+        handle_suback();
+        break;
+
+    case control_packet_type_unsuback_t:
+        handle_unsuback();
+        break;
+
+    case control_packet_type_pingreq_t:
+        handle_pingreq();
+        break;
+
+    case control_packet_type_pingresp_t:
+        handle_pingresp();
+        break;
+
+    case control_packet_type_disconnect_t:
+        handle_disconnect();
+        break;
+
+    default:
+        break;
     }
 }
 
-void async_mqtt_client_init(struct async_mqtt_client_t *self_p,
-                            struct async_t *async_p,
-                            const char *host_p,
-                            int port)
+void asyncio_mqtt_client_init(struct asyncio_mqtt_client_t *self_p,
+                              const char *host_p,
+                              int port,
+                              async_func_t on_connected,
+                              async_func_t on_disconnected,
+                              async_func_t on_publish,
+                              void *obj_p,
+                              struct asyncio_t *asyncio_p)
 {
-    self_p->async_p = async_p;
     self_p->host_p = host_p;
     self_p->port = port;
+    self_p->on_connected = on_connected;
+    self_p->on_disconnected = on_disconnected;
+    self_p->on_publish = on_publish;
+    self_p->asyncio_p = asyncio_p;
     self_p->client_id_p = NULL;
+    self_p->keep_alive_s = 10;
     self_p->response_timeout = 5;
     self_p->session_expiry_interval = 0;
     self_p->connected = false;
-    async_task_init(&self_p->task, async_p, on_message);
 }
 
-void async_mqtt_client_set_client_id(struct async_mqtt_client_t *self_p,
-                                     const char *client_id_p)
+void asyncio_mqtt_client_set_client_id(struct asyncio_mqtt_client_t *self_p,
+                                       const char *client_id_p)
 {
     self_p->client_id_p = client_id_p;
 }
 
-void async_mqtt_client_set_response_timeout(struct async_mqtt_client_t *self_p,
-                                            int value)
+void asyncio_mqtt_client_set_response_timeout(struct asyncio_mqtt_client_t *self_p,
+                                              int response_timeout)
 {
-    self_p->response_timeout = value;
+    self_p->response_timeout = response_timeout;
 }
 
-void async_mqtt_client_set_session_expiry_interval(struct async_mqtt_client_t *self_p,
-                                                   int value)
+void asyncio_mqtt_client_set_session_expiry_interval(
+    struct asyncio_mqtt_client_t *self_p,
+    int session_expiry_interval)
 {
-    self_p->session_expiry_interval = value;
+    self_p->session_expiry_interval = session_expiry_interval;
 }
 
-struct async_task_t *async_mqtt_client_get_task(struct async_mqtt_client_t *self_p)
+void asyncio_mqtt_client_start(struct asyncio_mqtt_client_t *self_p)
 {
-    return (&self_p->task);
+    mqtt_connect();
 }
 
-bool async_mqtt_client_is_connected(struct async_mqtt_client_t *self_p)
+void asyncio_mqtt_client_stop(struct asyncio_mqtt_client_t *self_p)
 {
-    return (self_p->connected);
+    mqtt_disconnect();
+}
+
+void asyncio_mqtt_client_subscribe(struct asyncio_mqtt_client_t *self_p,
+                                   const char *topic_p)
+{
+}
+
+void asyncio_mqtt_client_unsubscribe(struct asyncio_mqtt_client_t *self_p,
+                                     const char *topic_p)
+{
+}
+
+void asyncio_mqtt_client_publish(struct asyncio_mqtt_client_t *self_p,
+                                 const char *topic_p,
+                                 const void *buf_p,
+                                 size_t size)
+{
+    pack_publish();
+    write(self_p->sock, buf_p, size);
+}
+
+void asyncio_mqtt_client_message_free(struct asyncio_mqtt_client_message_t *self_p)
+{
 }
 
 #endif
