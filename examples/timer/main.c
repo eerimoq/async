@@ -27,7 +27,9 @@
  */
 
 #include <stdio.h>
-#include "asyncio.h"
+#include <unistd.h>
+#include "async.h"
+#include "async_linux.h"
 
 struct timers_t {
     struct async_timer_t timer_1;
@@ -55,29 +57,44 @@ static void on_timeout_3(struct timers_t *self_p)
 
 int main()
 {
-    struct asyncio_t asyncio;
+    struct async_t async;
     struct timers_t timers;
+    int timer_fd;
+    ssize_t res;
+    uint64_t value;
 
-    asyncio_init(&asyncio);
+    async_init(&async, 100);
     async_timer_init(&timers.timer_1,
                      (async_func_t)on_timeout_1,
                      &timers,
                      ASYNC_TIMER_PERIODIC,
-                     &asyncio.async);
+                     &async);
     async_timer_init(&timers.timer_2,
                      (async_func_t)on_timeout_2,
                      &timers,
                      ASYNC_TIMER_PERIODIC,
-                     &asyncio.async);
+                     &async);
     async_timer_init(&timers.timer_3,
                      (async_func_t)on_timeout_3,
                      &timers,
                      0,
-                     &asyncio.async);
+                     &async);
     async_timer_start(&timers.timer_1, 1000);
     async_timer_start(&timers.timer_2, 3000);
     async_timer_start(&timers.timer_3, 5000);
-    asyncio_run_forever(&asyncio);
 
-    return (0);
+    timer_fd = async_linux_create_periodic_timer(&async);
+
+    while (true) {
+        res = read(timer_fd, &value, sizeof(value));
+
+        if (res != sizeof(value)) {
+            break;
+        }
+
+        async_tick(&async);
+        async_process(&async);
+    }
+
+    return (1);
 }

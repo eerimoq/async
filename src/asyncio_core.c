@@ -29,17 +29,16 @@
 #include <fcntl.h>
 #include <errno.h>
 #include <netinet/in.h>
-#include <dbg.h>
 #include <stdbool.h>
 #include <arpa/inet.h>
 #include <string.h>
 #include <stdint.h>
 #include <unistd.h>
-#include <sys/timerfd.h>
 #include <sys/epoll.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <stdio.h>
+#include "async_linux.h"
 #include "asyncio.h"
 #include "internalio.h"
 
@@ -107,26 +106,6 @@ static void write_message(int fd, int type, const void *buf_p, size_t size)
     write_buf(fd, buf_p, size);
 }
 
-static int create_periodic_timer(struct async_t *async_p)
-{
-    int timer_fd;
-    struct itimerspec timeout;
-
-    timer_fd = timerfd_create(CLOCK_REALTIME, 0);
-
-    if (timer_fd == -1) {
-        return (timer_fd);
-    }
-
-    timeout.it_value.tv_sec = 0;
-    timeout.it_value.tv_nsec = async_p->tick_in_ms * 1000000;
-    timeout.it_interval.tv_sec= 0;
-    timeout.it_interval.tv_nsec = async_p->tick_in_ms * 1000000;
-    timerfd_settime(timer_fd, 0, &timeout, NULL);
-
-    return (timer_fd);
-}
-
 static void io_handle_timeout(struct asyncio_t *self_p,
                               int timer_fd)
 {
@@ -190,8 +169,6 @@ static void io_handle_tcp_connect(struct asyncio_t *self_p,
 static void io_handle_tcp_disconnect(struct asyncio_t *self_p)
 {
     (void)self_p;
-
-    dbg("");
 }
 
 static void io_handle_tcp_data_complete(struct asyncio_t *self_p,
@@ -265,7 +242,7 @@ static void *io_main(struct asyncio_t *self_p)
         return (NULL);
     }
 
-    timer_fd = create_periodic_timer(&self_p->async);
+    timer_fd = async_linux_create_periodic_timer(&self_p->async);
 
     if (timer_fd == -1) {
         return (NULL);
@@ -357,7 +334,6 @@ static void *async_main(struct asyncio_t *self_p)
             break;
 
         default:
-            dbg(type);
             break;
         }
 

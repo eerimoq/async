@@ -26,7 +26,6 @@
  * This file is part of the Async project.
  */
 
-#include <dbg.h>
 #include <stdio.h>
 #include <string.h>
 #include "asyncio.h"
