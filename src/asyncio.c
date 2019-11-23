@@ -55,7 +55,7 @@
 
 struct message_connect_t {
     struct asyncio_tcp_t *tcp_p;
-    const char *host_p;
+    char *host_p;
     int port;
 };
 
@@ -156,6 +156,7 @@ static void io_handle_tcp_connect(struct asyncio_t *self_p,
     addr.sin_family = AF_INET;
     addr.sin_port = htons(req.port);
     inet_aton(req.host_p, (struct in_addr *)&addr.sin_addr.s_addr);
+    free(req.host_p);
 
     sockfd = socket(AF_INET, SOCK_STREAM, 0);
 
@@ -311,13 +312,13 @@ static void async_handle_timeout(struct asyncio_t *self_p)
 
 static void async_handle_tcp_connect_complete(struct asyncio_t *self_p)
 {
-    struct message_connect_complete_t data;
+    struct message_connect_complete_t ind;
 
-    read_buf(self_p->async_fd, &data, sizeof(data));
-    asyncio_tcp_set_sockfd(data.tcp_p, data.sockfd);
+    read_buf(self_p->async_fd, &ind, sizeof(ind));
+    asyncio_tcp_set_sockfd(ind.tcp_p, ind.sockfd);
     async_call(&self_p->async,
-               data.tcp_p->on_connect_complete,
-               data.tcp_p->obj_p);
+               ind.tcp_p->on_connect_complete,
+               ind.tcp_p->obj_p);
 }
 
 static void async_handle_tcp_data(struct asyncio_t *self_p)

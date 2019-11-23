@@ -34,23 +34,26 @@
 struct echo_client_t {
     struct async_timer_t timer;
     struct asyncio_tcp_t tcp;
+    struct async_timer_t reconnect_timer;
 };
 
 static void on_start(struct echo_client_t *self_p)
 {
+    printf("Connecting to 'localhost:33000'...\n");
     asyncio_tcp_connect(&self_p->tcp, "localhost", 33000);
 }
 
-static void on_tcp_connect_complete(struct echo_client_t *self_p)
+static void on_connect_complete(struct echo_client_t *self_p)
 {
     if (asyncio_tcp_is_connected(&self_p->tcp)) {
         async_timer_start(&self_p->timer);
     } else {
         printf("Connect failed.\n");
+        async_timer_start(&self_p->reconnect_timer);
     }
 }
 
-static void on_tcp_data(struct echo_client_t *self_p)
+static void on_data(struct echo_client_t *self_p)
 {
     char buf[8];
     ssize_t size;
@@ -75,8 +78,8 @@ int main()
 
     asyncio_init(&asyncio);
     asyncio_tcp_init(&echo_client.tcp,
-                     (async_func_t)on_tcp_connect_complete,
-                     (async_func_t)on_tcp_data,
+                     (async_func_t)on_connect_complete,
+                     (async_func_t)on_data,
                      &echo_client,
                      &asyncio);
     async_timer_init(&echo_client.timer,
@@ -84,6 +87,12 @@ int main()
                      (async_func_t)on_timeout,
                      &echo_client,
                      ASYNC_TIMER_PERIODIC,
+                     &asyncio.async);
+    async_timer_init(&echo_client.reconnect_timer,
+                     1000,
+                     (async_func_t)on_start,
+                     &echo_client,
+                     0,
                      &asyncio.async);
     async_call(&asyncio.async, (async_func_t)on_start, &echo_client);
     asyncio_run_forever(&asyncio);
