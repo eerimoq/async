@@ -31,7 +31,6 @@
 
 #include <stdbool.h>
 #include "asyncio.h"
-#include "asyncio_tcp.h"
 
 void asyncio_tcp_connect_write(struct asyncio_tcp_t *self_p,
                                const char *host_p,

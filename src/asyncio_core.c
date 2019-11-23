@@ -31,7 +31,6 @@
 #include <netinet/in.h>
 #include <dbg.h>
 #include <stdbool.h>
-#include <netinet/in.h>
 #include <arpa/inet.h>
 #include <string.h>
 #include <stdint.h>
@@ -41,9 +40,7 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <stdio.h>
-#include "async.h"
 #include "asyncio.h"
-#include "asyncio_tcp.h"
 #include "internalio.h"
 
 #define MESSAGE_TYPE_TIMEOUT                             1

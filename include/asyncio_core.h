@@ -26,12 +26,22 @@
  * This file is part of the Async project.
  */
 
-#ifndef ASYNCIO_H
-#define ASYNCIO_H
+#ifndef ASYNCIO_CORE_H
+#define ASYNCIO_CORE_H
 
+#include <pthread.h>
 #include "async.h"
-#include "asyncio_core.h"
-#include "asyncio_tcp.h"
-#include "asyncio_mqtt_client.h"
+
+struct asyncio_t {
+    struct async_t async;
+    int io_fd;
+    int async_fd;
+    pthread_t io_pthread;
+    pthread_t async_pthread;
+};
+
+void asyncio_init(struct asyncio_t *self_p);
+
+void asyncio_run_forever(struct asyncio_t *self_p);
 
 #endif

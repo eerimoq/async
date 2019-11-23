@@ -3,7 +3,7 @@ SRC += \
 	main.c \
 	$(ASYNC_ROOT)/src/async.c \
 	$(ASYNC_ROOT)/src/async_timer.c \
-	$(ASYNC_ROOT)/src/asyncio.c \
+	$(ASYNC_ROOT)/src/asyncio_core.c \
 	$(ASYNC_ROOT)/src/asyncio_tcp.c \
 	$(ASYNC_ROOT)/src/asyncio_mqtt_client.c
 OBJ = $(patsubst %,$(BUILD)%,$(abspath $(SRC:%.c=%.o)))

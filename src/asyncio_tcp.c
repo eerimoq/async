@@ -31,8 +31,7 @@
 #include <dbg.h>
 #include <string.h>
 #include <unistd.h>
-#include <sys/ioctl.h>
-#include "asyncio_tcp.h"
+#include "asyncio.h"
 #include "internalio.h"
 
 void asyncio_tcp_init(struct asyncio_tcp_t *self_p,
