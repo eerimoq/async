@@ -29,12 +29,20 @@
 #ifndef ASYNC_INTERNALIO_H
 #define ASYNC_INTERNALIO_H
 
+#include <stdbool.h>
 #include "asyncio.h"
+#include "asyncio_tcp.h"
 
-void asyncio_tcp_connect_write(struct asyncio_t *self_p,
+void asyncio_tcp_connect_write(struct asyncio_tcp_t *self_p,
                                const char *host_p,
                                int port);
 
-void asyncio_tcp_disconnect_write(struct asyncio_t *self_p, int sock);
+void asyncio_tcp_disconnect_write(struct asyncio_tcp_t *self_p);
+
+void asyncio_tcp_data_complete_write(struct asyncio_tcp_t *self_p,
+                                     bool closed);
+
+void asyncio_tcp_set_sockfd(struct asyncio_tcp_t *self_p,
+                            int sockfd);
 
 #endif

@@ -52,27 +52,20 @@ static void on_tcp_connect_complete(struct echo_client_t *self_p)
 
 static void on_tcp_data(struct echo_client_t *self_p)
 {
-    char buf[32];
-    size_t size;
+    char buf[8];
+    ssize_t size;
 
     size = asyncio_tcp_read(&self_p->tcp, &buf[0], sizeof(buf));
 
-    if (size > 0) {
-        printf("RX: '");
-        fwrite(&buf[0], size, 1, stdout);
-        printf("'\n");
-    } else {
-        printf("Connection closed.\n");
-        async_timer_stop(&self_p->timer);
-    }
+    printf("RX: '");
+    fwrite(&buf[0], 1, size, stdout);
+    printf("'\n");
 }
 
 static void on_timeout(struct echo_client_t *self_p)
 {
-    if (asyncio_tcp_is_connected(&self_p->tcp)) {
-        printf("TX: 'Hello!'\n");
-        asyncio_tcp_write(&self_p->tcp, "Hello!", 6);
-    }
+    printf("TX: 'Hello!'\n");
+    asyncio_tcp_write(&self_p->tcp, "Hello!", 6);
 }
 
 int main()

@@ -36,7 +36,7 @@ struct asyncio_tcp_t {
     async_func_t on_data;
     void *obj_p;
     struct asyncio_t *asyncio_p;
-    int sock;
+    int sockfd;
 };
 
 /**
