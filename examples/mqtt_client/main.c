@@ -55,13 +55,24 @@ static void on_publish(struct publisher_t *self_p,
                        size_t size)
 {
     int timeout_ms;
-
+    char buf[16];
+    
     printf("Got message '");
     fwrite(buf_p, 1, size, stdout);
     printf("' on topic '%s'.\n", topic_p);
 
     if (strcmp(topic_p, "async/start") == 0) {
-        timeout_ms = atoi((char *)buf_p);
+        if (size > 0) {
+            if (size > (sizeof(buf) - 1)) {
+                size = (sizeof(buf) - 1);
+            }
+
+            memcpy(&buf[0], buf_p, size);
+            buf[size] = '\0';
+            timeout_ms = atoi(&buf[0]);
+        } else {
+            timeout_ms = 1000;
+        }
 
         if (timeout_ms < 100) {
             timeout_ms = 100;

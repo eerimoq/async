@@ -14,6 +14,9 @@ First of all, start an `MQTT broker`_ in another terminal.
 
 Then build and run the example program.
 
+In another terminal, publish on ``async/start`` and ``async/stop`` to
+start and stop the publish timer.
+
 .. code-block:: text
 
    $ make -s
@@ -28,16 +31,18 @@ Then build and run the example program.
    TCP connected.
    Connected.
    Publishing 'count: 0'.
-   Got message 'count: 0' on topic 'async/hello'.
    Publishing 'count: 1'.
-   Got message 'count: 1' on topic 'async/hello'.
    Publishing 'count: 2'.
-   Got message 'count: 2' on topic 'async/hello'.
    Publishing 'count: 3'.
-   Got message 'count: 3' on topic 'async/hello'.
    Publishing 'count: 4'.
-   Got message 'count: 4' on topic 'async/hello'.
    Publishing 'count: 5'.
-   Got message 'count: 5' on topic 'async/hello'.
+   Got message '0' on topic 'async/stop'.
+   Got message '2000' on topic 'async/start'.
+   Timeout is 2000 ms.
+   Publishing 'count: 6'.
+   Publishing 'count: 7'.
+   Publishing 'count: 8'.
+   Publishing 'count: 9'.
+   Publishing 'count: 10'.
 
 .. _MQTT broker: https://github.com/eerimoq/mqttools
