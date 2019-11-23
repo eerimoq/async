@@ -37,6 +37,15 @@ struct asyncio_mqtt_client_message_t {
     size_t size;
 };
 
+struct asyncio_mqtt_client_packet_t {
+    uint8_t buf[256];
+    int size;
+    int state;
+    int offset;
+    int type;
+    int flags;
+};
+
 struct asyncio_mqtt_client_t {
     const char *host_p;
     int port;
@@ -45,11 +54,13 @@ struct asyncio_mqtt_client_t {
     async_func_t on_publish;
     void *obj_p;
     struct asyncio_t *asyncio_p;
-    const char *client_id_p;
+    char client_id[64];
     int keep_alive_s;
     int response_timeout;
     int session_expiry_interval;
     bool connected;
+    struct asyncio_tcp_t tcp;
+    struct asyncio_mqtt_client_packet_t packet;
 };
 
 void asyncio_mqtt_client_init(struct asyncio_mqtt_client_t *self_p,

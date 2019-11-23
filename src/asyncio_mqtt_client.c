@@ -26,10 +26,12 @@
  * This file is part of the Async project.
  */
 
+#include <dbg.h>
 #include <stdio.h>
 #include <string.h>
 #include "asyncio.h"
 #include "internal.h"
+#include "bitstream.h"
 
 /* Connection flags. */
 #define CLEAN_START     0x02
@@ -39,6 +41,12 @@
 #define WILL_RETAIN     0x20
 #define PASSWORD_FLAG   0x40
 #define USER_NAME_FLAG  0x80
+
+enum packet_state_t {
+    packet_state_read_type_t = 0,
+    packet_state_read_size_t,
+    packet_state_read_data_t
+};
 
 /* Control packet types. */
 enum control_packet_type_t {
@@ -181,145 +189,275 @@ enum property_ids_t {
 
 #define MAXIMUM_PACKET_SIZE (268435455)  /* (128 ^ 4 - 1) */
 
-#if 0
+struct writer_t {
+    struct bitstream_writer_t writer;
+    int size;
+};
 
-static int pack_u32(uint8_t *dst_p, uint32_t value, size_t size)
+static void writer_init(struct writer_t *self_p, uint8_t *buf_p, int size)
 {
-    if (size < 4) {
-        return (-1);
-    }
-
-    dst_p[0] = (value >> 24);
-    dst_p[1] = (value >> 16);
-    dst_p[2] = (value >> 8);
-    dst_p[3] = (value >> 0);
-
-    return (0);
+    bitstream_writer_init(&self_p->writer, buf_p);
+    self_p->size = size;
 }
 
-static int unpack_u32(uint32_t *dst_p, uint8_t *src_p, size_t size)
+static int writer_written(struct writer_t *self_p)
 {
-    if (size < 4) {
-        return (-1);
-    }
-
-    *dst_p = (src_p[0]);
-
-    return (0);
+    return (bitstream_writer_size_in_bytes(&self_p->writer));
 }
 
-static ssize_t pack_connect(uint8_t *dst_p,
-                            const char *client_id_p,
-                            bool clean_start,
-                            const char *will_topic_p,
-                            const uint8_t *will_message_p,
-                            int will_qos,
-                            int keep_alive_s,
-                            int properties)
+static bool writer_available(struct writer_t *self_p, int size)
 {
-    uint8_t flags;
+    return ((self_p->size - writer_written(self_p)) >= size);
+}
+
+static void writer_write_u8(struct writer_t *self_p, uint8_t value)
+{
+    if (writer_available(self_p, 1)) {
+        bitstream_writer_write_u8(&self_p->writer, value);
+    }
+}
+
+static void writer_write_u16(struct writer_t *self_p, uint16_t value)
+{
+    if (writer_available(self_p, 2)) {
+        bitstream_writer_write_u16(&self_p->writer, value);
+    }
+}
+
+static void writer_write_bytes(struct writer_t *self_p,
+                               const uint8_t *buf_p,
+                               int size)
+{
+    if (writer_available(self_p, size)) {
+        bitstream_writer_write_bytes(&self_p->writer, buf_p, size);
+    }
+}
+
+static void writer_write_string(struct writer_t *self_p, const char *string_p)
+{
+    int length;
+
+    length = strlen(string_p);
+
+    if (writer_available(self_p, length + 2)) {
+        bitstream_writer_write_u16(&self_p->writer, length);
+        bitstream_writer_write_bytes(&self_p->writer,
+                                     (const uint8_t *)string_p,
+                                     length);
+    }
+}
+
+static void pack_variable_integer(struct writer_t *writer_p, int value)
+{
+    uint8_t encoded_byte;
+
+    if (value == 0) {
+        writer_write_u8(writer_p, 0);
+    } else {
+        while (value > 0) {
+            encoded_byte = (value & 0x7f);
+            value >>= 7;
+
+            if (value > 0) {
+                encoded_byte |= 0x80;
+            }
+
+            writer_write_u8(writer_p, encoded_byte);
+        }
+    }
+}
+
+static void pack_fixed_header(struct writer_t *writer_p,
+                              uint8_t message_type,
+                              uint8_t flags,
+                              uint16_t size)
+{
+    writer_write_u8(writer_p, (message_type << 4) | flags);
+    pack_variable_integer(writer_p, size);
+}
+
+static size_t pack_connect(struct writer_t *writer_p,
+                           const char *client_id_p,
+                           int keep_alive_s)
+{
     int payload_length;
 
-    flags = 0;
+    payload_length = strlen(client_id_p) + 2;
+    pack_fixed_header(writer_p,
+                      control_packet_type_connect_t,
+                      0,
+                      10 + payload_length + 1);
+    writer_write_string(writer_p, "MQTT");
+    writer_write_u8(writer_p, PROTOCOL_VERSION);
+    writer_write_u8(writer_p, 0);
+    writer_write_u16(writer_p, keep_alive_s);
+    pack_variable_integer(writer_p, 0);
+    writer_write_string(writer_p, client_id_p);
 
-    if (clean_start) {
-        flags |= CLEAN_START;
+    return (writer_written(writer_p));
+}
+
+static size_t pack_publish(struct writer_t *writer_p,
+                           const char *topic_p,
+                           const void *buf_p,
+                           size_t size)
+{
+    pack_fixed_header(writer_p,
+                      control_packet_type_publish_t,
+                      0,
+                      size + strlen(topic_p) + 3);
+    writer_write_string(writer_p, topic_p);
+    pack_variable_integer(writer_p, 0);
+    writer_write_bytes(writer_p, buf_p, size);
+
+    return (writer_written(writer_p));
+}
+
+static void on_tcp_connect_complete(struct asyncio_mqtt_client_t *self_p)
+{
+    struct writer_t writer;
+    uint8_t buf[256];
+
+    if (asyncio_tcp_is_connected(&self_p->tcp)) {
+        printf("TCP connected.\n");
+        writer_init(&writer, &buf[0], sizeof(buf));
+        asyncio_tcp_write(&self_p->tcp,
+                          &buf[0],
+                          pack_connect(&writer,
+                                       &self_p->client_id[0],
+                                       30));
+    } else {
+        printf("TCP connect failed.\n");
+    }
+}
+
+static bool read_packet_type(struct asyncio_mqtt_client_t *self_p)
+{
+    uint8_t ch;
+    size_t size;
+
+    size = asyncio_tcp_read(&self_p->tcp, &ch, 1);
+
+    if (size == 1) {
+        self_p->packet.type = (ch >> 4);
+        self_p->packet.flags = (ch & 0xf);
+        self_p->packet.offset = 0;
+        self_p->packet.state = packet_state_read_size_t;
     }
 
-    payload_length = strlen(client_id_p) + 2;
+    return (false);
+}
 
-    if (will_topic_p != NULL) {
-        flags |= WILL_FLAG;
+static bool read_packet_size(struct asyncio_mqtt_client_t *self_p)
+{
+    size_t size;
+    bool complete;
 
-        if (will_qos == 1) {
-            flags |= WILL_QOS_1;
-        } else if (will_qos == 2) {
-            flags |= WILL_QOS_2;
+    size = asyncio_tcp_read(&self_p->tcp,
+                            &self_p->packet.buf[self_p->packet.offset],
+                            1);
+
+    if (size == 0) {
+        return (false);
+    }
+
+    complete = false;
+    self_p->packet.offset++;
+
+    switch (self_p->packet.offset) {
+
+    case 1:
+        if ((self_p->packet.buf[0] & 0x80) == 0) {
+            self_p->packet.size = self_p->packet.buf[0];
+            complete = true;
         }
 
-        payload_length++;
-        packed_will_topic = pack_string(will_topic_p);
-        payload_length += len(packed_will_topic);
-        payload_length += (will_message_size + 2);
-    }
-
-    properties = pack_properties('CONNECT', properties);
-    packed = pack_fixed_header(control_packet_type_connect_t,
-                               0,
-                               10 + payload_length + len(properties));
-    packed += pack_string('MQTT');
-    packed += struct.pack('>BBH',
-                          PROTOCOL_VERSION,
-                          flags,
-                          keep_alive_s);
-    packed += properties;
-    packed += pack_string(client_id);
-
-    if (flags & WILL_FLAG) {
-        packed += pack_variable_integer(0);
-        packed += packed_will_topic;
-        packed += pack_binary(will_message);
-    }
-
-    return (packed);
-}
-
-static void handle_connack()
-{
-}
-
-static void on_tcp_connect_complete()
-{
-}
-
-static void handle_tcp_data(struct asyncio_mqtt_client_t *self_p)
-{
-    res = read(&self_p->tcp);
-
-    if (res <= 0) {
-        return;
-    }
-
-    if (unpack()) {
-        return;
-    }
-
-    switch (packet.type) {
-
-    case control_packet_type_connack_t:
-        handle_connack();
-        break;
-
-    case control_packet_type_publish_t:
-        handle_publish();
-        break;
-
-    case control_packet_type_suback_t:
-        handle_suback();
-        break;
-
-    case control_packet_type_unsuback_t:
-        handle_unsuback();
-        break;
-
-    case control_packet_type_pingreq_t:
-        handle_pingreq();
-        break;
-
-    case control_packet_type_pingresp_t:
-        handle_pingresp();
-        break;
-
-    case control_packet_type_disconnect_t:
-        handle_disconnect();
         break;
 
     default:
+        self_p->packet.state = packet_state_read_type_t;
         break;
     }
+
+    if (complete) {
+        self_p->packet.state = packet_state_read_data_t;
+        self_p->packet.offset = 0;
+        complete = (self_p->packet.size == 0);
+    }
+
+    return (complete);
 }
 
-#endif
+static bool read_packet_data(struct asyncio_mqtt_client_t *self_p)
+{
+    size_t size;
+
+    if (self_p->packet.offset == sizeof(self_p->packet.buf)) {
+        self_p->packet.state = packet_state_read_type_t;
+
+        return (false);
+    }
+
+    size = asyncio_tcp_read(&self_p->tcp,
+                            &self_p->packet.buf[self_p->packet.offset],
+                            self_p->packet.size - self_p->packet.offset);
+    self_p->packet.offset += size;
+
+    if (self_p->packet.offset != self_p->packet.size) {
+        return (false);
+    }
+
+    self_p->packet.state = packet_state_read_type_t;
+
+    return (true);
+}
+
+static bool read_packet(struct asyncio_mqtt_client_t *self_p)
+{
+    bool complete;
+
+    switch (self_p->packet.state) {
+
+    case packet_state_read_type_t:
+        complete = read_packet_type(self_p);
+        break;
+
+    case packet_state_read_size_t:
+        complete = read_packet_size(self_p);
+        break;
+
+    case packet_state_read_data_t:
+        complete = read_packet_data(self_p);
+        break;
+
+    default:
+        complete = false;
+        break;
+    }
+
+    return (complete);
+}
+
+static void handle_connack(struct asyncio_mqtt_client_t *self_p)
+{
+    self_p->connected = true;
+    async_call(&self_p->asyncio_p->async, self_p->on_connected, self_p->obj_p);
+}
+
+static void on_tcp_data(struct asyncio_mqtt_client_t *self_p)
+{
+    if (read_packet(self_p)) {
+        switch (self_p->packet.type) {
+
+        case control_packet_type_connack_t:
+            handle_connack(self_p);
+            break;
+
+        default:
+            break;
+        }
+    }
+}
 
 void asyncio_mqtt_client_init(struct asyncio_mqtt_client_t *self_p,
                               const char *host_p,
@@ -337,17 +475,24 @@ void asyncio_mqtt_client_init(struct asyncio_mqtt_client_t *self_p,
     self_p->on_publish = on_publish;
     self_p->obj_p = obj_p;
     self_p->asyncio_p = asyncio_p;
-    self_p->client_id_p = NULL;
+    sprintf(&self_p->client_id[0], "async-12345");
     self_p->keep_alive_s = 10;
     self_p->response_timeout = 5;
     self_p->session_expiry_interval = 0;
     self_p->connected = false;
+    asyncio_tcp_init(&self_p->tcp,
+                     (async_func_t)on_tcp_connect_complete,
+                     NULL,
+                     (async_func_t)on_tcp_data,
+                     self_p,
+                     asyncio_p);
+    self_p->packet.state = packet_state_read_type_t;
 }
 
 void asyncio_mqtt_client_set_client_id(struct asyncio_mqtt_client_t *self_p,
                                        const char *client_id_p)
 {
-    self_p->client_id_p = client_id_p;
+    strncpy(&self_p->client_id[0], client_id_p, sizeof(self_p->client_id));
 }
 
 void asyncio_mqtt_client_set_response_timeout(struct asyncio_mqtt_client_t *self_p,
@@ -365,8 +510,7 @@ void asyncio_mqtt_client_set_session_expiry_interval(
 
 void asyncio_mqtt_client_start(struct asyncio_mqtt_client_t *self_p)
 {
-    (void)self_p;
-    /* mqtt_connect(); */
+    asyncio_tcp_connect(&self_p->tcp, self_p->host_p, self_p->port);
 }
 
 void asyncio_mqtt_client_stop(struct asyncio_mqtt_client_t *self_p)
@@ -394,12 +538,13 @@ void asyncio_mqtt_client_publish(struct asyncio_mqtt_client_t *self_p,
                                  const void *buf_p,
                                  size_t size)
 {
-    (void)self_p;
-    (void)topic_p;
-    (void)buf_p;
-    (void)size;
-    /* pack_publish(); */
-    /* write(self_p->sock, buf_p, size); */
+    struct writer_t writer;
+    uint8_t buf[512];
+
+    writer_init(&writer, &buf[0], sizeof(buf));
+    asyncio_tcp_write(&self_p->tcp,
+                      &buf[0],
+                      pack_publish(&writer, topic_p, buf_p, size));
 }
 
 void asyncio_mqtt_client_message_free(struct asyncio_mqtt_client_message_t *self_p)

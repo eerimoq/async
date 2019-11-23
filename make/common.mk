@@ -5,11 +5,13 @@ SRC += \
 	$(ASYNC_ROOT)/src/async_timer.c \
 	$(ASYNC_ROOT)/src/asyncio_core.c \
 	$(ASYNC_ROOT)/src/asyncio_tcp.c \
-	$(ASYNC_ROOT)/src/asyncio_mqtt_client.c
+	$(ASYNC_ROOT)/src/asyncio_mqtt_client.c \
+	$(ASYNC_ROOT)/src/bitstream.c
 OBJ = $(patsubst %,$(BUILD)%,$(abspath $(SRC:%.c=%.o)))
 CFLAGS += $(INC:%=-I%)
 CFLAGS += -ffunction-sections -fdata-sections
 CFLAGS += -D_GNU_SOURCE=1
+CFLAGS += -fsanitize=address
 LDFLAGS += -Wl,--gc-sections
 DEPSDIR = $(BUILD)/deps
 

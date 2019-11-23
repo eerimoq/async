@@ -58,11 +58,16 @@ static void on_publish(struct publisher_t *self_p)
 
 static void on_timeout(struct publisher_t *self_p)
 {
-    printf("Publishing.\n");
+    char buf[32];
+    size_t size;
+    static int counter = 0;
+
+    size = sprintf(&buf[0], "count: %d", counter++);
+    printf("Publishing '%s'.\n", &buf[0]);
     asyncio_mqtt_client_publish(&self_p->client,
-                                "async/examples/mqtt_client",
-                                "Hello world!",
-                                12);
+                                "async/examples/asyncio_mqtt_client",
+                                &buf[0],
+                                size);
 }
 
 int main()
