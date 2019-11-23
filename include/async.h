@@ -109,7 +109,6 @@ int async_call(struct async_t *self_p,
  * periodic.
  */
 void async_timer_init(struct async_timer_t *self_p,
-                      int timeout_ms,
                       async_func_t on_timeout,
                       void *obj_p,
                       int flags,
@@ -118,7 +117,8 @@ void async_timer_init(struct async_timer_t *self_p,
 /**
  * (Re)start given timer.
  */
-void async_timer_start(struct async_timer_t *self_p);
+void async_timer_start(struct async_timer_t *self_p,
+                       int timeout_ms);
 
 /**
  * Stop given timer. This is a noop if the timer has already been

@@ -60,26 +60,23 @@ int main()
 
     asyncio_init(&asyncio);
     async_timer_init(&timers.timer_1,
-                     1000,
                      (async_func_t)on_timeout_1,
                      &timers,
                      ASYNC_TIMER_PERIODIC,
                      &asyncio.async);
     async_timer_init(&timers.timer_2,
-                     3000,
                      (async_func_t)on_timeout_2,
                      &timers,
                      ASYNC_TIMER_PERIODIC,
                      &asyncio.async);
     async_timer_init(&timers.timer_3,
-                     5000,
                      (async_func_t)on_timeout_3,
                      &timers,
                      0,
                      &asyncio.async);
-    async_timer_start(&timers.timer_1);
-    async_timer_start(&timers.timer_2);
-    async_timer_start(&timers.timer_3);
+    async_timer_start(&timers.timer_1, 1000);
+    async_timer_start(&timers.timer_2, 3000);
+    async_timer_start(&timers.timer_3, 5000);
     asyncio_run_forever(&asyncio);
 
     return (0);

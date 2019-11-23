@@ -38,8 +38,9 @@ struct publisher_t {
 static void on_connected(struct publisher_t *self_p)
 {
     printf("Connected.\n");
-    async_timer_start(&self_p->publish_timer);
-    asyncio_mqtt_client_subscribe(&self_p->client, "async/hello");
+    async_timer_start(&self_p->publish_timer, 1000);
+    asyncio_mqtt_client_subscribe(&self_p->client, "async/start");
+    asyncio_mqtt_client_subscribe(&self_p->client, "async/stop");
 }
 
 static void on_disconnected(struct publisher_t *self_p)
@@ -53,11 +54,24 @@ static void on_publish(struct publisher_t *self_p,
                        const uint8_t *buf_p,
                        size_t size)
 {
-    (void)self_p;
+    int timeout_ms;
 
     printf("Got message '");
     fwrite(buf_p, 1, size, stdout);
     printf("' on topic '%s'.\n", topic_p);
+
+    if (strcmp(topic_p, "async/start") == 0) {
+        timeout_ms = atoi((char *)buf_p);
+
+        if (timeout_ms < 100) {
+            timeout_ms = 100;
+        }
+
+        printf("Timeout is %d ms.\n", timeout_ms);
+        async_timer_start(&self_p->publish_timer, timeout_ms);
+    } else if (strcmp(topic_p, "async/stop") == 0) {
+        async_timer_stop(&self_p->publish_timer);
+    }
 }
 
 static void on_timeout(struct publisher_t *self_p)
@@ -86,7 +100,6 @@ int main()
                              &publisher,
                              &asyncio);
     async_timer_init(&publisher.publish_timer,
-                     1000,
                      (async_func_t)on_timeout,
                      &publisher,
                      ASYNC_TIMER_PERIODIC,

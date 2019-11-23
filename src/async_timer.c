@@ -100,27 +100,29 @@ static void timer_list_remove(struct async_timer_list_t *self_p,
 }
 
 void async_timer_init(struct async_timer_t *self_p,
-                      int timeout_ms,
                       async_func_t on_timeout,
                       void *obj_p,
                       int flags,
                       struct async_t *async_p)
 {
     self_p->async_p = async_p;
-    self_p->timeout = (timeout_ms / async_p->tick_in_ms);
-
-    if (self_p->timeout == 0) {
-        self_p->timeout = 1;
-    }
-
     self_p->on_timeout = on_timeout;
     self_p->obj_p = obj_p;
     self_p->flags = flags;
     self_p->stopped = false;
 }
 
-void async_timer_start(struct async_timer_t *self_p)
+void async_timer_start(struct async_timer_t *self_p,
+                       int timeout_ms)
 {
+    async_timer_stop(self_p);
+
+    self_p->timeout = (timeout_ms / self_p->async_p->tick_in_ms);
+
+    if (self_p->timeout == 0) {
+        self_p->timeout = 1;
+    }
+
     self_p->delta = self_p->timeout;
     self_p->stopped = false;
 
