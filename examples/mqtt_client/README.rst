@@ -28,11 +28,16 @@ Then build and run the example program.
    TCP connected.
    Connected.
    Publishing 'count: 0'.
+   Got message 'count: 0' on topic 'async/hello'.
    Publishing 'count: 1'.
+   Got message 'count: 1' on topic 'async/hello'.
    Publishing 'count: 2'.
+   Got message 'count: 2' on topic 'async/hello'.
    Publishing 'count: 3'.
+   Got message 'count: 3' on topic 'async/hello'.
    Publishing 'count: 4'.
+   Got message 'count: 4' on topic 'async/hello'.
    Publishing 'count: 5'.
-   Publishing 'count: 6'.
+   Got message 'count: 5' on topic 'async/hello'.
 
 .. _MQTT broker: https://github.com/eerimoq/mqttools

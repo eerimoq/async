@@ -247,6 +247,40 @@ static void writer_write_string(struct writer_t *self_p, const char *string_p)
     }
 }
 
+struct reader_t {
+    uint8_t *buf_p;
+    int size;
+    int offset;
+};
+
+static void reader_init(struct reader_t *self_p,
+                        uint8_t *buf_p,
+                        size_t size)
+{
+    self_p->buf_p = buf_p;
+    self_p->size = size;
+    self_p->offset = 0;
+}
+
+static void reader_get_string(struct reader_t *self_p,
+                              char **string_pp,
+                              size_t *size_p)
+{
+    *size_p = ((self_p->buf_p[self_p->offset] << 8)
+               | self_p->buf_p[self_p->offset + 1]);
+    self_p->offset += 2;
+    *string_pp = (char *)&self_p->buf_p[self_p->offset];
+    self_p->offset += *size_p;
+}
+
+static void reader_get_bytes(struct reader_t *self_p,
+                             uint8_t **buf_pp,
+                             int *offset_p)
+{
+    *buf_pp = &self_p->buf_p[self_p->offset];
+    *offset_p = self_p->offset;
+}
+
 static void pack_variable_integer(struct writer_t *writer_p, int value)
 {
     uint8_t encoded_byte;
@@ -297,6 +331,22 @@ static size_t pack_connect(struct writer_t *writer_p,
     return (writer_written(writer_p));
 }
 
+static size_t pack_subscribe(struct writer_t *writer_p,
+                             const char *topic_p,
+                             uint16_t packet_identifier)
+{
+    pack_fixed_header(writer_p,
+                      control_packet_type_subscribe_t,
+                      packet_identifier,
+                      strlen(topic_p) + 6);
+    writer_write_u16(writer_p, 1);
+    writer_write_u8(writer_p, 0);
+    writer_write_string(writer_p, topic_p);
+    writer_write_u8(writer_p, 0);
+
+    return (writer_written(writer_p));
+}
+
 static size_t pack_publish(struct writer_t *writer_p,
                            const char *topic_p,
                            const void *buf_p,
@@ -311,6 +361,23 @@ static size_t pack_publish(struct writer_t *writer_p,
     writer_write_bytes(writer_p, buf_p, size);
 
     return (writer_written(writer_p));
+}
+
+static void unpack_publish(struct asyncio_mqtt_client_t *self_p,
+                           char **topic_pp,
+                           void *buf_pp,
+                           size_t *size_p)
+{
+    struct reader_t reader;
+    size_t topic_size;
+    int buf_offset;
+
+    reader_init(&reader, &self_p->packet.buf[0], self_p->packet.size);
+    reader_get_string(&reader, topic_pp, &topic_size);
+    reader.offset++;
+    reader_get_bytes(&reader, buf_pp, &buf_offset);
+    (*topic_pp)[topic_size] = '\0';
+    *size_p = (self_p->packet.size - buf_offset);
 }
 
 static void on_tcp_connect_complete(struct asyncio_mqtt_client_t *self_p)
@@ -444,6 +511,24 @@ static void handle_connack(struct asyncio_mqtt_client_t *self_p)
     async_call(&self_p->asyncio_p->async, self_p->on_connected, self_p->obj_p);
 }
 
+static void handle_suback(struct asyncio_mqtt_client_t *self_p)
+{
+    (void)self_p;
+}
+
+static void handle_publish(struct asyncio_mqtt_client_t *self_p)
+{
+    char *topic_p;
+    void *buf_p;
+    size_t size;
+
+    unpack_publish(self_p,
+                   &topic_p,
+                   &buf_p,
+                   &size);
+    self_p->on_publish(self_p->obj_p, topic_p, buf_p, size);
+}
+
 static void on_tcp_data(struct asyncio_mqtt_client_t *self_p)
 {
     if (read_packet(self_p)) {
@@ -453,10 +538,32 @@ static void on_tcp_data(struct asyncio_mqtt_client_t *self_p)
             handle_connack(self_p);
             break;
 
+        case control_packet_type_suback_t:
+            handle_suback(self_p);
+            break;
+
+        case control_packet_type_publish_t:
+            handle_publish(self_p);
+            break;
+
         default:
             break;
         }
     }
+}
+
+static uint16_t next_packet_identifier(struct asyncio_mqtt_client_t *self_p)
+{
+    uint16_t packet_identifier;
+
+    packet_identifier = self_p->next_packet_identifier;
+    self_p->next_packet_identifier++;
+
+    if (self_p->next_packet_identifier == 0) {
+        self_p->next_packet_identifier = 1;
+    }
+
+    return (packet_identifier);
 }
 
 void asyncio_mqtt_client_init(struct asyncio_mqtt_client_t *self_p,
@@ -464,7 +571,7 @@ void asyncio_mqtt_client_init(struct asyncio_mqtt_client_t *self_p,
                               int port,
                               async_func_t on_connected,
                               async_func_t on_disconnected,
-                              async_func_t on_publish,
+                              asyncio_mqtt_client_on_publish_t on_publish,
                               void *obj_p,
                               struct asyncio_t *asyncio_p)
 {
@@ -480,6 +587,7 @@ void asyncio_mqtt_client_init(struct asyncio_mqtt_client_t *self_p,
     self_p->response_timeout = 5;
     self_p->session_expiry_interval = 0;
     self_p->connected = false;
+    self_p->next_packet_identifier = 1;
     asyncio_tcp_init(&self_p->tcp,
                      (async_func_t)on_tcp_connect_complete,
                      NULL,
@@ -522,8 +630,15 @@ void asyncio_mqtt_client_stop(struct asyncio_mqtt_client_t *self_p)
 void asyncio_mqtt_client_subscribe(struct asyncio_mqtt_client_t *self_p,
                                    const char *topic_p)
 {
-    (void)self_p;
-    (void)topic_p;
+    struct writer_t writer;
+    uint8_t buf[512];
+
+    writer_init(&writer, &buf[0], sizeof(buf));
+    asyncio_tcp_write(&self_p->tcp,
+                      &buf[0],
+                      pack_subscribe(&writer,
+                                     topic_p,
+                                     next_packet_identifier(self_p)));
 }
 
 void asyncio_mqtt_client_unsubscribe(struct asyncio_mqtt_client_t *self_p,
@@ -545,17 +660,4 @@ void asyncio_mqtt_client_publish(struct asyncio_mqtt_client_t *self_p,
     asyncio_tcp_write(&self_p->tcp,
                       &buf[0],
                       pack_publish(&writer, topic_p, buf_p, size));
-}
-
-void asyncio_mqtt_client_message_free(struct asyncio_mqtt_client_message_t *self_p)
-{
-    (void)self_p;
-}
-
-struct asyncio_mqtt_client_message_t *asyncio_mqtt_client_get_message(
-    struct asyncio_mqtt_client_t *self_p)
-{
-    (void)self_p;
-
-    return (NULL);
 }

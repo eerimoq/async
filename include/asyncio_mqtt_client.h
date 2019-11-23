@@ -31,11 +31,10 @@
 
 #include "asyncio.h"
 
-struct asyncio_mqtt_client_message_t {
-    const char *topic_p;
-    void *data_p;
-    size_t size;
-};
+typedef void (*asyncio_mqtt_client_on_publish_t)(void *obj_p,
+                                                 const char *topic_p,
+                                                 const uint8_t *buf_p,
+                                                 size_t size);
 
 struct asyncio_mqtt_client_packet_t {
     uint8_t buf[256];
@@ -51,7 +50,7 @@ struct asyncio_mqtt_client_t {
     int port;
     async_func_t on_connected;
     async_func_t on_disconnected;
-    async_func_t on_publish;
+    asyncio_mqtt_client_on_publish_t on_publish;
     void *obj_p;
     struct asyncio_t *asyncio_p;
     char client_id[64];
@@ -59,6 +58,7 @@ struct asyncio_mqtt_client_t {
     int response_timeout;
     int session_expiry_interval;
     bool connected;
+    uint16_t next_packet_identifier;
     struct asyncio_tcp_t tcp;
     struct asyncio_mqtt_client_packet_t packet;
 };
@@ -68,7 +68,7 @@ void asyncio_mqtt_client_init(struct asyncio_mqtt_client_t *self_p,
                               int port,
                               async_func_t on_connected,
                               async_func_t on_disconnected,
-                              async_func_t on_publish,
+                              asyncio_mqtt_client_on_publish_t on_publish,
                               void *obj_p,
                               struct asyncio_t *asyncio_p);
 
@@ -96,10 +96,5 @@ void asyncio_mqtt_client_publish(struct asyncio_mqtt_client_t *self_p,
                                  const char *topic_p,
                                  const void *buf_p,
                                  size_t size);
-
-void asyncio_mqtt_client_message_free(struct asyncio_mqtt_client_message_t *self_p);
-
-struct asyncio_mqtt_client_message_t *asyncio_mqtt_client_get_message(
-    struct asyncio_mqtt_client_t *self_p);
 
 #endif
