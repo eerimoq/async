@@ -32,26 +32,26 @@
 
 struct publisher_t {
     struct asyncio_mqtt_client_t client;
-    struct async_timer_t timer;
+    struct async_timer_t publish_timer;
 };
 
 static void on_connected(struct publisher_t *self_p)
 {
     printf("Connected.\n");
-    async_timer_start(&self_p->timer);
+    async_timer_start(&self_p->publish_timer);
 }
 
 static void on_disconnected(struct publisher_t *self_p)
 {
     printf("Disconnected.\n");
-    async_timer_stop(&self_p->timer);
+    async_timer_stop(&self_p->publish_timer);
 }
 
 static void on_publish(struct publisher_t *self_p)
 {
     struct asyncio_mqtt_client_message_t *message_p;
 
-    message_p = asyncio_mqtt_client_get_message(self_p);
+    message_p = asyncio_mqtt_client_get_message(&self_p->client);
     printf("Got message on topic '%s'.\n", message_p->topic_p);
     asyncio_mqtt_client_message_free(message_p);
 }
@@ -79,7 +79,7 @@ int main()
                              (async_func_t)on_publish,
                              &publisher,
                              &asyncio);
-    async_timer_init(&publisher.timer,
+    async_timer_init(&publisher.publish_timer,
                      1000,
                      (async_func_t)on_timeout,
                      &publisher,

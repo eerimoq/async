@@ -27,6 +27,7 @@
  */
 
 #include <stdio.h>
+#include <string.h>
 #include "asyncio.h"
 #include "internal.h"
 
@@ -318,6 +319,8 @@ static void handle_tcp_data(struct asyncio_mqtt_client_t *self_p)
     }
 }
 
+#endif
+
 void asyncio_mqtt_client_init(struct asyncio_mqtt_client_t *self_p,
                               const char *host_p,
                               int port,
@@ -332,6 +335,7 @@ void asyncio_mqtt_client_init(struct asyncio_mqtt_client_t *self_p,
     self_p->on_connected = on_connected;
     self_p->on_disconnected = on_disconnected;
     self_p->on_publish = on_publish;
+    self_p->obj_p = obj_p;
     self_p->asyncio_p = asyncio_p;
     self_p->client_id_p = NULL;
     self_p->keep_alive_s = 10;
@@ -361,22 +365,28 @@ void asyncio_mqtt_client_set_session_expiry_interval(
 
 void asyncio_mqtt_client_start(struct asyncio_mqtt_client_t *self_p)
 {
-    mqtt_connect();
+    (void)self_p;
+    /* mqtt_connect(); */
 }
 
 void asyncio_mqtt_client_stop(struct asyncio_mqtt_client_t *self_p)
 {
-    mqtt_disconnect();
+    (void)self_p;
+    /* mqtt_disconnect(); */
 }
 
 void asyncio_mqtt_client_subscribe(struct asyncio_mqtt_client_t *self_p,
                                    const char *topic_p)
 {
+    (void)self_p;
+    (void)topic_p;
 }
 
 void asyncio_mqtt_client_unsubscribe(struct asyncio_mqtt_client_t *self_p,
                                      const char *topic_p)
 {
+    (void)self_p;
+    (void)topic_p;
 }
 
 void asyncio_mqtt_client_publish(struct asyncio_mqtt_client_t *self_p,
@@ -384,12 +394,23 @@ void asyncio_mqtt_client_publish(struct asyncio_mqtt_client_t *self_p,
                                  const void *buf_p,
                                  size_t size)
 {
-    pack_publish();
-    write(self_p->sock, buf_p, size);
+    (void)self_p;
+    (void)topic_p;
+    (void)buf_p;
+    (void)size;
+    /* pack_publish(); */
+    /* write(self_p->sock, buf_p, size); */
 }
 
 void asyncio_mqtt_client_message_free(struct asyncio_mqtt_client_message_t *self_p)
 {
+    (void)self_p;
 }
 
-#endif
+struct asyncio_mqtt_client_message_t *asyncio_mqtt_client_get_message(
+    struct asyncio_mqtt_client_t *self_p)
+{
+    (void)self_p;
+
+    return (NULL);
+}

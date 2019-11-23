@@ -88,4 +88,7 @@ void asyncio_mqtt_client_publish(struct asyncio_mqtt_client_t *self_p,
 
 void asyncio_mqtt_client_message_free(struct asyncio_mqtt_client_message_t *self_p);
 
+struct asyncio_mqtt_client_message_t *asyncio_mqtt_client_get_message(
+    struct asyncio_mqtt_client_t *self_p);
+
 #endif
