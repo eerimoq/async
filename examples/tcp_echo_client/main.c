@@ -45,11 +45,19 @@ static void on_start(struct echo_client_t *self_p)
 static void on_connect_complete(struct echo_client_t *self_p)
 {
     if (asyncio_tcp_is_connected(&self_p->tcp)) {
+        printf("Connected.\n");
         async_timer_start(&self_p->transmit_timer);
     } else {
         printf("Connect failed.\n");
         async_timer_start(&self_p->reconnect_timer);
     }
+}
+
+static void on_disconnected(struct echo_client_t *self_p)
+{
+    printf("Disconnected.\n");
+    async_timer_stop(&self_p->transmit_timer);
+    async_timer_start(&self_p->reconnect_timer);
 }
 
 static void on_data(struct echo_client_t *self_p)
@@ -78,6 +86,7 @@ int main()
     asyncio_init(&asyncio);
     asyncio_tcp_init(&echo_client.tcp,
                      (async_func_t)on_connect_complete,
+                     (async_func_t)on_disconnected,
                      (async_func_t)on_data,
                      &echo_client,
                      &asyncio);

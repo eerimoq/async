@@ -33,6 +33,7 @@
 
 struct asyncio_tcp_t {
     async_func_t on_connect_complete;
+    async_func_t on_disconnected;
     async_func_t on_data;
     void *obj_p;
     struct asyncio_t *asyncio_p;
@@ -44,13 +45,14 @@ struct asyncio_tcp_t {
  */
 void asyncio_tcp_init(struct asyncio_tcp_t *self_p,
                       async_func_t on_connect_complete,
+                      async_func_t on_disconnected,
                       async_func_t on_data,
                       void *obj_p,
                       struct asyncio_t *asyncio_p);
 
 /**
- * Opens a TCP connection to a remote host. The connection handle is
- * received in the response message.
+ * Opens a TCP connection to a remote host. on_connect_complete is
+ * called once completed.
  */
 void asyncio_tcp_connect(struct asyncio_tcp_t *self_p,
                          const char *host_p,

@@ -36,11 +36,13 @@
 
 void asyncio_tcp_init(struct asyncio_tcp_t *self_p,
                       async_func_t on_connect_complete,
+                      async_func_t on_disconnected,
                       async_func_t on_data,
                       void *obj_p,
                       struct asyncio_t *asyncio_p)
 {
     self_p->on_connect_complete = on_connect_complete;
+    self_p->on_disconnected = on_disconnected;
     self_p->on_data = on_data;
     self_p->obj_p = obj_p;
     self_p->asyncio_p = asyncio_p;

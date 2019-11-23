@@ -49,6 +49,7 @@
 #define MESSAGE_TYPE_TCP_DISCONNECT                      4
 #define MESSAGE_TYPE_TCP_DATA                            5
 #define MESSAGE_TYPE_TCP_DATA_COMPLETE                   6
+#define MESSAGE_TYPE_TCP_DISCONNECTED                    7
 
 struct message_connect_t {
     struct asyncio_tcp_t *tcp_p;
@@ -207,6 +208,7 @@ static void io_handle_tcp_data_complete(struct asyncio_t *self_p,
     if (ind.closed) {
         close(sockfd);
         epoll_ctl(epoll_fd, EPOLL_CTL_MOD, sockfd, NULL);
+        write_message_type(self_p->io_fd, MESSAGE_TYPE_TCP_DISCONNECTED);
     } else {
         event.events = EPOLLIN;
         event.data.fd = sockfd;
@@ -323,6 +325,12 @@ static void async_handle_tcp_data(struct asyncio_t *self_p)
     async_call(&self_p->async, tcp_p->on_data, tcp_p->obj_p);
 }
 
+static void async_handle_tcp_disconnected(struct asyncio_t *self_p)
+{
+    asyncio_tcp_set_sockfd(tcp_p, -1);
+    async_call(&self_p->async, tcp_p->on_disconnected, tcp_p->obj_p);
+}
+
 static void *async_main(struct asyncio_t *self_p)
 {
     int type;
@@ -342,6 +350,10 @@ static void *async_main(struct asyncio_t *self_p)
 
         case MESSAGE_TYPE_TCP_DATA:
             async_handle_tcp_data(self_p);
+            break;
+
+        case MESSAGE_TYPE_TCP_DISCONNECTED:
+            async_handle_tcp_disconnected(self_p);
             break;
 
         default:
