@@ -48,8 +48,13 @@ static void async_func_queue_init(struct async_func_queue_t *self_p,
     self_p->list_p = malloc(sizeof(*self_p->list_p) * self_p->length);
 }
 
+static void async_func_queue_destroy(struct async_func_queue_t *self_p)
+{
+    free(self_p->list_p);
+}
+
 static async_func_t async_func_queue_get(struct async_func_queue_t *self_p,
-                                  void **obj_pp)
+                                         void **obj_pp)
 {
     async_func_t func;
 
@@ -66,11 +71,11 @@ static async_func_t async_func_queue_get(struct async_func_queue_t *self_p,
 }
 
 static int async_func_queue_put(struct async_func_queue_t *self_p,
-                         async_func_t func,
-                         void *obj_p)
+                                async_func_t func,
+                                void *obj_p)
 {
     if (is_full(self_p)) {
-        return (ASYNC_ERROR_QUEUE_FULL);
+        return (-ASYNC_ERROR_QUEUE_FULL);
     }
 
     self_p->list_p[self_p->wrpos].func = func;
@@ -87,6 +92,11 @@ void async_init(struct async_t *self_p,
     self_p->tick_in_ms = tick_in_ms;
     async_timer_list_init(&self_p->running_timers);
     async_func_queue_init(&self_p->funcs, 32);
+}
+
+void async_destroy(struct async_t *self_p)
+{
+    async_func_queue_destroy(&self_p->funcs);
 }
 
 void async_process(struct async_t *self_p)

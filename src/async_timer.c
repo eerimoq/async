@@ -136,14 +136,13 @@ void async_timer_start(struct async_timer_t *self_p,
 
 void async_timer_stop(struct async_timer_t *self_p)
 {
+    self_p->stopped = true;
     timer_list_remove(&self_p->async_p->running_timers, self_p);
 }
 
 bool async_timer_is_stopped(struct async_timer_t *self_p)
 {
-    (void)self_p;
-
-    return (false);
+    return (self_p->stopped);
 }
 
 void async_timer_list_init(struct async_timer_list_t *self_p)

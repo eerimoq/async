@@ -1,3 +1,6 @@
+|buildstatus|_
+|codecov|_
+
 😺 Async
 =======
 
@@ -16,15 +19,10 @@ Examples
 
 There are a few example in the `examples folder`_.
 
-Linux design
-============
+.. |buildstatus| image:: https://travis-ci.org/eerimoq/async.svg?branch=master
+.. _buildstatus: https://travis-ci.org/eerimoq/async
 
-Two threads:
-
-- Async thread - executing async functions
-
-- IO thread - performing IO and timing
-
-.. _Monolinux C library: https://github.com/eerimoq/monolinux-c-library
+.. |codecov| image:: https://codecov.io/gh/eerimoq/async/branch/master/graph/badge.svg
+.. _codecov: https://codecov.io/gh/eerimoq/async
 
 .. _examples folder: https://github.com/eerimoq/async/tree/master/examples

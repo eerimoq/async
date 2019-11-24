@@ -87,6 +87,11 @@ void async_init(struct async_t *self_p,
                 int tick_in_ms);
 
 /**
+ * Destory given instance.
+ */
+void async_destroy(struct async_t *self_p);
+
+/**
  * Returns once all async functions have been called.
  */
 void async_process(struct async_t *self_p);
