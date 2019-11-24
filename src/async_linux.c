@@ -26,6 +26,8 @@
  * This file is part of the Async project.
  */
 
+#include <unistd.h>
+#include <stdio.h>
 #include <sys/timerfd.h>
 #include "async/linux.h"
 
@@ -47,4 +49,20 @@ int async_linux_create_periodic_timer(struct async_t *async_p)
     timerfd_settime(timer_fd, 0, &timeout, NULL);
 
     return (timer_fd);
+}
+
+void async_linux_handle_timeout(struct async_t *async_p,
+                                int timer_fd)
+{
+    uint64_t value;
+    ssize_t res;
+
+    res = read(timer_fd, &value, sizeof(value));
+
+    if (res != sizeof(value)) {
+        perror("read timer");
+        exit(1);
+    }
+
+    async_tick(async_p);
 }

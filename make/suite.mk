@@ -9,9 +9,9 @@ CFLAGS += -DUNIT_TEST
 CFLAGS += -no-pie
 LDFLAGS_MOCKS = $(shell cat $(BUILD)/nala_mocks.ld)
 COVERAGE_FILTERS +=
-INC += $(ASYNC_ROOT)/tst
+INC += $(ASYNC_ROOT)/tst/utils
 INC += $(BUILD)
-SRC += $(ASYNC_ROOT)/tst/nala.c
+SRC += $(ASYNC_ROOT)/tst/utils/nala.c
 SRC += $(BUILD)/nala_mocks.c
 NALA = nala
 

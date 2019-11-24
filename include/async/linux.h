@@ -33,4 +33,7 @@
 
 int async_linux_create_periodic_timer(struct async_t *async_p);
 
+void async_linux_handle_timeout(struct async_t *async_p,
+                                int timer_fd);
+
 #endif

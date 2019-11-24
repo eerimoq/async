@@ -42,21 +42,6 @@ static void fatal_perror(const char *message_p)
     exit(1);
 }
 
-static void handle_timeout(struct async_t *async_p,
-                           int timer_fd)
-{
-    uint64_t value;
-    ssize_t res;
-
-    res = read(timer_fd, &value, sizeof(value));
-
-    if (res != sizeof(value)) {
-        fatal_perror("read timer");
-    }
-
-    async_tick(async_p);
-}
-
 static void handle_stdin(struct async_t *async_p,
                          struct bob_t *bob_p)
 {
@@ -135,7 +120,7 @@ int main()
 
         if (nfds == 1) {
             if (event.data.fd == timer_fd) {
-                handle_timeout(&async, timer_fd);
+                async_linux_handle_timeout(&async, timer_fd);
             } else if (event.data.fd == fileno(stdin)) {
                 handle_stdin(&async, &bob);
             }
