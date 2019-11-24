@@ -89,7 +89,7 @@ static void line_reset(struct bob_t *self_p)
     self_p->line.complete = false;
 }
 
-static bool got_response(struct bob_t *self_p)
+static bool bob_got_response(struct bob_t *self_p)
 {
     return (self_p->no_response_count == 0);
 }
@@ -99,7 +99,7 @@ static void say(const char *text_p)
     printf("Bob: %s\n", text_p);
 }
 
-static void expect_response(struct bob_t *self_p)
+static void bob_expect_response(struct bob_t *self_p)
 {
     printf("%s: ", &self_p->name[0]);
     fflush(stdout);
@@ -107,19 +107,19 @@ static void expect_response(struct bob_t *self_p)
     self_p->no_response_count = 0;
 }
 
-static void say_hello(struct bob_t *self_p)
+static void bob_say_hello(struct bob_t *self_p)
 {
     strcpy(&self_p->name[0], "You");
     say("Hello!");
     self_p->state = state_wait_for_greeting_t;
-    expect_response(self_p);
+    bob_expect_response(self_p);
 }
 
 static void bob_init(struct bob_t *self_p)
 {
     strcpy(&self_p->name[0], "You");
     line_reset(self_p);
-    say_hello(self_p);
+    bob_say_hello(self_p);
 }
 
 static void handle_timeout(struct async_t *async_p,
@@ -137,7 +137,7 @@ static void handle_timeout(struct async_t *async_p,
     async_tick(async_p);
 }
 
-static void on_response_timeout(struct bob_t *self_p)
+static void bob_on_response_timeout(struct bob_t *self_p)
 {
     if (!async_timer_is_stopped(&self_p->response_timer)) {
         self_p->no_response_count++;
@@ -149,65 +149,65 @@ static void on_response_timeout(struct bob_t *self_p)
             fflush(stdout);
             async_timer_start(&self_p->response_timer, 10000);
         } else {
-            say_hello(self_p);
+            bob_say_hello(self_p);
         }
     }
 }
 
-static void ask_for_name(struct bob_t *self_p)
+static void bob_ask_for_name(struct bob_t *self_p)
 {
     say("What is your name?");
     self_p->state = state_wait_for_name_t;
-    expect_response(self_p);
+    bob_expect_response(self_p);
 }
 
-static int on_stdin_greeting(struct bob_t *self_p)
+static int bob_on_stdin_greeting(struct bob_t *self_p)
 {
     int res;
 
     res = -1;
 
     if (strcmp(line_get(self_p), "Hi!") == 0) {
-        ask_for_name(self_p);
+        bob_ask_for_name(self_p);
         res = 0;
     }
 
     return (res);
 }
 
-static void ask_for_age(struct bob_t *self_p)
+static void bob_ask_for_age(struct bob_t *self_p)
 {
     say("How old are you?");
     self_p->state = state_wait_for_age_t;
-    expect_response(self_p);
+    bob_expect_response(self_p);
 }
 
-static int on_stdin_name(struct bob_t *self_p)
+static int bob_on_stdin_name(struct bob_t *self_p)
 {
-    if (got_response(self_p)) {
+    if (bob_got_response(self_p)) {
         strncpy(&self_p->name[0], line_get(self_p), sizeof(self_p->name));
         self_p->name[sizeof(self_p->name) - 1] = '\0';
-        ask_for_age(self_p);
+        bob_ask_for_age(self_p);
     } else {
-        ask_for_name(self_p);
+        bob_ask_for_name(self_p);
     }
 
     return (0);
 }
 
-static int on_stdin_age(struct bob_t *self_p)
+static int bob_on_stdin_age(struct bob_t *self_p)
 {
-    if (got_response(self_p)) {
+    if (bob_got_response(self_p)) {
         say("That's it, thanks!\n");
-        say_hello(self_p);
+        bob_say_hello(self_p);
     } else {
-        ask_for_age(self_p);
+        bob_ask_for_age(self_p);
     }
 
     return (0);
 }
 
-static void on_stdin(struct bob_t *self_p)
+static void bob_on_stdin(struct bob_t *self_p)
 {
     char ch;
     ssize_t res;
@@ -225,15 +225,15 @@ static void on_stdin(struct bob_t *self_p)
     switch (self_p->state) {
 
     case state_wait_for_greeting_t:
-        res = on_stdin_greeting(self_p);
+        res = bob_on_stdin_greeting(self_p);
         break;
 
     case state_wait_for_name_t:
-        res = on_stdin_name(self_p);
+        res = bob_on_stdin_name(self_p);
         break;
 
     case state_wait_for_age_t:
-        res = on_stdin_age(self_p);
+        res = bob_on_stdin_age(self_p);
         break;
 
     default:
@@ -245,14 +245,14 @@ static void on_stdin(struct bob_t *self_p)
 
     if (res != 0) {
         say("I don't understand.");
-        say_hello(self_p);
+        bob_say_hello(self_p);
     }
 }
 
 static void handle_stdin(struct async_t *async_p,
                          struct bob_t *bob_p)
 {
-    async_call(async_p, (async_func_t)on_stdin, bob_p);
+    async_call(async_p, (async_func_t)bob_on_stdin, bob_p);
 }
 
 static int init_periodic_timer(struct async_t *async_p,
@@ -312,7 +312,7 @@ int main()
 
     async_init(&async, 100);
     async_timer_init(&bob.response_timer,
-                     (async_func_t)on_response_timeout,
+                     (async_func_t)bob_on_response_timeout,
                      &bob,
                      0,
                      &async);
