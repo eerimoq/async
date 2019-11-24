@@ -541,28 +541,30 @@ static void handle_pingresp(struct asyncio_mqtt_client_t *self_p)
 
 static void on_tcp_data(struct asyncio_mqtt_client_t *self_p)
 {
-    if (read_packet(self_p)) {
-        switch (self_p->packet.type) {
+    if (!read_packet(self_p)) {
+        return;
+    }
 
-        case control_packet_type_connack_t:
-            handle_connack(self_p);
-            break;
+    switch (self_p->packet.type) {
 
-        case control_packet_type_suback_t:
-            handle_suback(self_p);
-            break;
+    case control_packet_type_connack_t:
+        handle_connack(self_p);
+        break;
 
-        case control_packet_type_publish_t:
-            handle_publish(self_p);
-            break;
+    case control_packet_type_suback_t:
+        handle_suback(self_p);
+        break;
 
-        case control_packet_type_pingresp_t:
-            handle_pingresp(self_p);
-            break;
+    case control_packet_type_publish_t:
+        handle_publish(self_p);
+        break;
 
-        default:
-            break;
-        }
+    case control_packet_type_pingresp_t:
+        handle_pingresp(self_p);
+        break;
+
+    default:
+        break;
     }
 }
 
