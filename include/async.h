@@ -35,6 +35,7 @@
 
 #define ASYNC_TIMER_PERIODIC                     (1 << 0)
 
+/* Error codes. */
 #define ASYNC_ERROR_NOT_IMPLMENETED              1
 #define ASYNC_ERROR_QUEUE_FULL                   2
 
@@ -80,8 +81,7 @@ struct async_t {
 };
 
 /**
- * Initailize given async object. The buffer is not used yet in the
- * current implementation. Using malloc() and free() instead.
+ * Initailize given async object.
  */
 void async_init(struct async_t *self_p,
                 int tick_in_ms);
@@ -102,15 +102,15 @@ void async_process(struct async_t *self_p);
 void async_tick(struct async_t *self_p);
 
 /**
- * Call given function with given arguments later.
+ * Call given function with given argument later.
  */
 int async_call(struct async_t *self_p,
                async_func_t func,
                void *obj_p);
 
 /**
- * Initialize given timer. Sends a message with given id to given task
- * on expiry. Give ASYNC_TIMER_PERIODIC in flags to make the timer
+ * Initialize given timer. Calls given function with given argument on
+ * expiry. Give ASYNC_TIMER_PERIODIC in flags to make the timer
  * periodic.
  */
 void async_timer_init(struct async_timer_t *self_p,
@@ -120,7 +120,7 @@ void async_timer_init(struct async_timer_t *self_p,
                       struct async_t *async_p);
 
 /**
- * (Re)start given timer.
+ * (Re)start given timer with given timeout.
  */
 void async_timer_start(struct async_timer_t *self_p,
                        int timeout_ms);
@@ -133,8 +133,8 @@ void async_timer_stop(struct async_timer_t *self_p);
 
 /**
  * Returns true if given timer is stopped. Returns false if given
- * timer is running or has expired. Can be used to check if a timeout
- * message is recieved before or after given timer has been stopped.
+ * timer is running or has expired. Can be used in the timeout
+ * function to check if given timer has been stopped after it expired.
  */
 bool async_timer_is_stopped(struct async_timer_t *self_p);
 
