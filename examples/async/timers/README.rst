@@ -9,14 +9,12 @@ Compile and run
 .. code-block:: text
 
    $ make -s
-   CC /home/erik/workspace/async/src/asyncio.c
-   CC main.c
    CC timers.c
+   CC main.c
    CC /home/erik/workspace/async/src/async.c
    CC /home/erik/workspace/async/src/async_timer.c
-   CC /home/erik/workspace/async/src/asyncio_tcp.c
-   CC /home/erik/workspace/async/src/asyncio_mqtt_client.c
-   LD /home/erik/workspace/async/examples/timer/build/app
+   CC /home/erik/workspace/async/src/async_linux.c
+   LD /home/erik/workspace/async/examples/async/timers/build/app
    Timer 1 expired.
    Timer 1 expired.
    Timer 1 expired.
