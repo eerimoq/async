@@ -10,6 +10,7 @@ Compile and run
 
    $ make -s
    CC main.c
+   CC bob.c
    CC /home/erik/workspace/async/src/async.c
    CC /home/erik/workspace/async/src/async_timer.c
    CC /home/erik/workspace/async/src/async_linux.c
