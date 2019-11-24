@@ -26,34 +26,10 @@
  * This file is part of the Async project.
  */
 
-#include <stdio.h>
 #include <unistd.h>
 #include "async.h"
 #include "async/linux.h"
-
-struct timers_t {
-    struct async_timer_t timer_1;
-    struct async_timer_t timer_2;
-    struct async_timer_t timer_3;
-};
-
-static void on_timeout_1(struct timers_t *self_p)
-{
-    if (!async_timer_is_stopped(&self_p->timer_1)) {
-        printf("Timer 1 expired.\n");
-    }
-}
-
-static void on_timeout_2(void)
-{
-    printf("Timer 2 expired.\n");
-}
-
-static void on_timeout_3(struct timers_t *self_p)
-{
-    printf("Timer 3 expired. Stopping timer 1.\n");
-    async_timer_stop(&self_p->timer_1);
-}
+#include "timers.h"
 
 int main()
 {
@@ -64,24 +40,7 @@ int main()
     uint64_t value;
 
     async_init(&async, 100);
-    async_timer_init(&timers.timer_1,
-                     (async_func_t)on_timeout_1,
-                     &timers,
-                     ASYNC_TIMER_PERIODIC,
-                     &async);
-    async_timer_init(&timers.timer_2,
-                     (async_func_t)on_timeout_2,
-                     &timers,
-                     ASYNC_TIMER_PERIODIC,
-                     &async);
-    async_timer_init(&timers.timer_3,
-                     (async_func_t)on_timeout_3,
-                     &timers,
-                     0,
-                     &async);
-    async_timer_start(&timers.timer_1, 1000);
-    async_timer_start(&timers.timer_2, 3000);
-    async_timer_start(&timers.timer_3, 5000);
+    timers_init(&timers, &async);
 
     timer_fd = async_linux_create_periodic_timer(&async);
 

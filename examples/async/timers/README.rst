@@ -11,6 +11,7 @@ Compile and run
    $ make -s
    CC /home/erik/workspace/async/src/asyncio.c
    CC main.c
+   CC timers.c
    CC /home/erik/workspace/async/src/async.c
    CC /home/erik/workspace/async/src/async_timer.c
    CC /home/erik/workspace/async/src/asyncio_tcp.c
