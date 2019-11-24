@@ -1,13 +1,16 @@
 INC += $(ASYNC_ROOT)/include
-SRC += \
-	main.c \
+ASYNC_SRC ?= \
 	$(ASYNC_ROOT)/src/async.c \
 	$(ASYNC_ROOT)/src/async_timer.c \
-	$(ASYNC_ROOT)/src/async_linux.c \
+	$(ASYNC_ROOT)/src/async_linux.c
+ASYNCIO_SRC ?= \
 	$(ASYNC_ROOT)/src/asyncio_core.c \
 	$(ASYNC_ROOT)/src/asyncio_tcp.c \
 	$(ASYNC_ROOT)/src/asyncio_mqtt_client.c \
 	$(ASYNC_ROOT)/src/bitstream.c
+SRC += main.c
+SRC += $(ASYNC_SRC)
+SRC += $(ASYNCIO_SRC)
 OBJ = $(patsubst %,$(BUILD)%,$(abspath $(SRC:%.c=%.o)))
 CFLAGS += $(INC:%=-I%)
 CFLAGS += -ffunction-sections -fdata-sections

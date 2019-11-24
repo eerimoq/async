@@ -29,7 +29,7 @@
 #include <stdio.h>
 #include <unistd.h>
 #include "async.h"
-#include "async_linux.h"
+#include "async/linux.h"
 
 struct timers_t {
     struct async_timer_t timer_1;

@@ -30,8 +30,8 @@
 #define ASYNCIO_H
 
 #include "async.h"
-#include "asyncio_core.h"
-#include "asyncio_tcp.h"
-#include "asyncio_mqtt_client.h"
+#include "asyncio/core.h"
+#include "asyncio/tcp.h"
+#include "asyncio/mqtt_client.h"
 
 #endif
