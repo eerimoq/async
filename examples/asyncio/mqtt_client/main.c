@@ -122,6 +122,7 @@ int main()
                              (asyncio_mqtt_client_on_publish_t)on_publish,
                              &publisher,
                              &asyncio);
+    asyncio_mqtt_client_set_client_id(&publisher.client, "mqtt-client-example");
     async_timer_init(&publisher.publish_timer,
                      (async_func_t)on_timeout,
                      &publisher,

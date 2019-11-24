@@ -446,7 +446,12 @@ static bool read_packet_size(struct asyncio_mqtt_client_t *self_p)
     }
 
     if (complete) {
-        self_p->packet.state = packet_state_read_data_t;
+        if (self_p->packet.size > 0) {
+            self_p->packet.state = packet_state_read_data_t;
+        } else {
+            self_p->packet.state = packet_state_read_type_t;
+        }
+
         self_p->packet.offset = 0;
         complete = (self_p->packet.size == 0);
     }
@@ -507,6 +512,7 @@ static bool read_packet(struct asyncio_mqtt_client_t *self_p)
 static void handle_connack(struct asyncio_mqtt_client_t *self_p)
 {
     self_p->connected = true;
+    async_timer_start(&self_p->keep_alive_timer, 1000 * self_p->keep_alive_s);
     async_call(&self_p->asyncio_p->async, self_p->on_connected, self_p->obj_p);
 }
 
@@ -528,6 +534,11 @@ static void handle_publish(struct asyncio_mqtt_client_t *self_p)
     self_p->on_publish(self_p->obj_p, topic_p, buf_p, size);
 }
 
+static void handle_pingresp(struct asyncio_mqtt_client_t *self_p)
+{
+    (void)self_p;
+}
+
 static void on_tcp_data(struct asyncio_mqtt_client_t *self_p)
 {
     if (read_packet(self_p)) {
@@ -543,6 +554,10 @@ static void on_tcp_data(struct asyncio_mqtt_client_t *self_p)
 
         case control_packet_type_publish_t:
             handle_publish(self_p);
+            break;
+
+        case control_packet_type_pingresp_t:
+            handle_pingresp(self_p);
             break;
 
         default:
@@ -563,6 +578,22 @@ static uint16_t next_packet_identifier(struct asyncio_mqtt_client_t *self_p)
     }
 
     return (packet_identifier);
+}
+
+static size_t pack_pingreq(struct writer_t *writer_p)
+{
+    pack_fixed_header(writer_p, control_packet_type_pingreq_t, 0, 0);
+
+    return (writer_written(writer_p));
+}
+
+static void on_keep_alive_timeout(struct asyncio_mqtt_client_t *self_p)
+{
+    struct writer_t writer;
+    uint8_t buf[8];
+
+    writer_init(&writer, &buf[0], sizeof(buf));
+    asyncio_tcp_write(&self_p->tcp, &buf[0], pack_pingreq(&writer));
 }
 
 void asyncio_mqtt_client_init(struct asyncio_mqtt_client_t *self_p,
@@ -594,6 +625,11 @@ void asyncio_mqtt_client_init(struct asyncio_mqtt_client_t *self_p,
                      self_p,
                      asyncio_p);
     self_p->packet.state = packet_state_read_type_t;
+    async_timer_init(&self_p->keep_alive_timer,
+                     (async_func_t)on_keep_alive_timeout,
+                     self_p,
+                     ASYNC_TIMER_PERIODIC,
+                     &asyncio_p->async);
 }
 
 void asyncio_mqtt_client_set_client_id(struct asyncio_mqtt_client_t *self_p,
