@@ -97,7 +97,7 @@ static void on_publish(struct publisher_t *self_p,
     }
 }
 
-static void on_timeout(struct publisher_t *self_p)
+static void on_publish_timeout(struct publisher_t *self_p)
 {
     char buf[32];
     size_t size;
@@ -124,7 +124,7 @@ int main()
                              &asyncio);
     asyncio_mqtt_client_set_client_id(&publisher.client, "mqtt-client-example");
     async_timer_init(&publisher.publish_timer,
-                     (async_func_t)on_timeout,
+                     (async_func_t)on_publish_timeout,
                      &publisher,
                      ASYNC_TIMER_PERIODIC,
                      &asyncio.async);
