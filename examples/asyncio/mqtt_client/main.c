@@ -49,39 +49,51 @@ static void on_disconnected(struct publisher_t *self_p)
     async_timer_stop(&self_p->publish_timer);
 }
 
+static void on_publish_start(struct publisher_t *self_p,
+                             const uint8_t *buf_p,
+                             size_t size)
+{
+    int timeout_ms;
+    char buf[16];
+
+    if (size > 0) {
+        if (size > (sizeof(buf) - 1)) {
+            size = (sizeof(buf) - 1);
+        }
+
+        memcpy(&buf[0], buf_p, size);
+        buf[size] = '\0';
+        timeout_ms = atoi(&buf[0]);
+    } else {
+        timeout_ms = 1000;
+    }
+
+    if (timeout_ms < 100) {
+        timeout_ms = 100;
+    }
+
+    printf("Timeout is %d ms.\n", timeout_ms);
+    async_timer_start(&self_p->publish_timer, timeout_ms);
+}
+
+static void on_publish_stop(struct publisher_t *self_p)
+{
+    async_timer_stop(&self_p->publish_timer);
+}
+
 static void on_publish(struct publisher_t *self_p,
                        const char *topic_p,
                        const uint8_t *buf_p,
                        size_t size)
 {
-    int timeout_ms;
-    char buf[16];
-    
     printf("Got message '");
     fwrite(buf_p, 1, size, stdout);
     printf("' on topic '%s'.\n", topic_p);
 
     if (strcmp(topic_p, "async/start") == 0) {
-        if (size > 0) {
-            if (size > (sizeof(buf) - 1)) {
-                size = (sizeof(buf) - 1);
-            }
-
-            memcpy(&buf[0], buf_p, size);
-            buf[size] = '\0';
-            timeout_ms = atoi(&buf[0]);
-        } else {
-            timeout_ms = 1000;
-        }
-
-        if (timeout_ms < 100) {
-            timeout_ms = 100;
-        }
-
-        printf("Timeout is %d ms.\n", timeout_ms);
-        async_timer_start(&self_p->publish_timer, timeout_ms);
+        on_publish_start(self_p, buf_p, size);
     } else if (strcmp(topic_p, "async/stop") == 0) {
-        async_timer_stop(&self_p->publish_timer);
+        on_publish_stop(self_p);
     }
 }
 
