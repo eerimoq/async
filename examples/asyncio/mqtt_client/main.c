@@ -59,15 +59,7 @@ static void on_publish_start(struct publisher_t *self_p,
     int timeout_ms;
     char buf[16];
 
-    if (size > 0) {
-        if (size > (sizeof(buf) - 1)) {
-            size = (sizeof(buf) - 1);
-        }
-
-        memcpy(&buf[0], buf_p, size);
-    }
-
-    buf[size] = '\0';
+    hf_buffer_to_string(&buf[0], sizeof(buf), buf_p, size);
     timeout_ms = hf_string_to_long(&buf[0], 100, INT_MAX, 1000, 10);
     printf("Starting the publish timer with timeout %d ms.\n", timeout_ms);
     async_timer_start(&self_p->publish_timer, timeout_ms);
