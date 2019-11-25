@@ -330,6 +330,16 @@ static size_t pack_connect(struct writer_t *writer_p,
     return (writer_written(writer_p));
 }
 
+static size_t pack_disconnect(struct writer_t *writer_p,
+                              enum disconnect_reason_code_t reason)
+{
+    pack_fixed_header(writer_p, control_packet_type_disconnect_t, 0, 2);
+    writer_write_u8(writer_p, reason);
+    pack_variable_integer(writer_p, 0);
+
+    return (writer_written(writer_p));
+}
+
 static size_t pack_subscribe(struct writer_t *writer_p,
                              const char *topic_p,
                              uint16_t packet_identifier)
@@ -690,8 +700,18 @@ void asyncio_mqtt_client_start(struct asyncio_mqtt_client_t *self_p)
 
 void asyncio_mqtt_client_stop(struct asyncio_mqtt_client_t *self_p)
 {
-    (void)self_p;
-    /* mqtt_disconnect(); */
+    struct writer_t writer;
+    uint8_t buf[8];
+
+    writer_init(&writer, &buf[0], sizeof(buf));
+    asyncio_tcp_write(
+        &self_p->tcp,
+        &buf[0],
+        pack_disconnect(&writer,
+                        disconnect_reason_code_normal_disconnection_t));
+    asyncio_tcp_disconnect(&self_p->tcp);
+    self_p->connected = false;
+    async_timer_stop(&self_p->keep_alive_timer);
 }
 
 void asyncio_mqtt_client_subscribe(struct asyncio_mqtt_client_t *self_p,

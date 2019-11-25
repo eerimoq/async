@@ -166,9 +166,13 @@ static void io_handle_tcp_connect(struct asyncio_t *self_p,
                   sizeof(rsp));
 }
 
-static void io_handle_tcp_disconnect(struct asyncio_t *self_p)
+static void io_handle_tcp_disconnect(struct asyncio_t *self_p,
+                                     int epoll_fd)
 {
     (void)self_p;
+
+    close(tcp_p->sockfd);
+    epoll_ctl(epoll_fd, EPOLL_CTL_DEL, tcp_p->sockfd, NULL);
 }
 
 static void io_handle_tcp_data_complete(struct asyncio_t *self_p,
@@ -184,7 +188,7 @@ static void io_handle_tcp_data_complete(struct asyncio_t *self_p,
 
     if (ind.closed) {
         close(sockfd);
-        epoll_ctl(epoll_fd, EPOLL_CTL_MOD, sockfd, NULL);
+        epoll_ctl(epoll_fd, EPOLL_CTL_DEL, sockfd, NULL);
         write_message_type(self_p->io_fd, MESSAGE_TYPE_TCP_DISCONNECTED);
     } else {
         event.events = EPOLLIN;
@@ -207,7 +211,7 @@ static void io_handle_async(struct asyncio_t *self_p,
         break;
 
     case MESSAGE_TYPE_TCP_DISCONNECT:
-        io_handle_tcp_disconnect(self_p);
+        io_handle_tcp_disconnect(self_p, epoll_fd);
         break;
 
     case MESSAGE_TYPE_TCP_DATA_COMPLETE:
