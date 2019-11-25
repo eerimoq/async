@@ -379,22 +379,47 @@ static void unpack_publish(struct asyncio_mqtt_client_t *self_p,
     *size_p = (self_p->packet.size - buf_offset);
 }
 
+static void on_reconnect_timeout(struct asyncio_mqtt_client_t *self_p)
+{
+    if (!async_timer_is_stopped(&self_p->reconnect_timer)) {
+        asyncio_tcp_connect(&self_p->tcp, self_p->host_p, self_p->port);
+    }
+}
+
+static void start_reconnect_timer(struct asyncio_mqtt_client_t *self_p)
+{
+    async_timer_start(&self_p->reconnect_timer, 1000);
+}
+
+static void stop_reconnect_timer(struct asyncio_mqtt_client_t *self_p)
+{
+    async_timer_stop(&self_p->reconnect_timer);
+}
+
 static void on_tcp_connect_complete(struct asyncio_mqtt_client_t *self_p)
 {
     struct writer_t writer;
     uint8_t buf[256];
 
     if (asyncio_tcp_is_connected(&self_p->tcp)) {
-        printf("TCP connected.\n");
         writer_init(&writer, &buf[0], sizeof(buf));
         asyncio_tcp_write(&self_p->tcp,
                           &buf[0],
                           pack_connect(&writer,
                                        &self_p->client_id[0],
                                        30));
+        stop_reconnect_timer(self_p);
     } else {
-        printf("TCP connect failed.\n");
+        start_reconnect_timer(self_p);
     }
+}
+
+static void on_tcp_disconnected(struct asyncio_mqtt_client_t *self_p)
+{
+    self_p->connected = false;
+    async_timer_stop(&self_p->keep_alive_timer);
+    self_p->on_disconnected(self_p);
+    start_reconnect_timer(self_p);
 }
 
 static bool read_packet_type(struct asyncio_mqtt_client_t *self_p)
@@ -622,7 +647,7 @@ void asyncio_mqtt_client_init(struct asyncio_mqtt_client_t *self_p,
     self_p->next_packet_identifier = 1;
     asyncio_tcp_init(&self_p->tcp,
                      (async_func_t)on_tcp_connect_complete,
-                     NULL,
+                     (async_func_t)on_tcp_disconnected,
                      (async_func_t)on_tcp_data,
                      self_p,
                      asyncio_p);
@@ -631,6 +656,11 @@ void asyncio_mqtt_client_init(struct asyncio_mqtt_client_t *self_p,
                      (async_func_t)on_keep_alive_timeout,
                      self_p,
                      ASYNC_TIMER_PERIODIC,
+                     &asyncio_p->async);
+    async_timer_init(&self_p->reconnect_timer,
+                     (async_func_t)on_reconnect_timeout,
+                     self_p,
+                     0,
                      &asyncio_p->async);
 }
 

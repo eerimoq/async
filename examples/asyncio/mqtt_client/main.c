@@ -28,7 +28,10 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <errno.h>
+#include <limits.h>
 #include "asyncio.h"
+#include "hf.h"
 
 struct publisher_t {
     struct asyncio_mqtt_client_t client;
@@ -62,22 +65,17 @@ static void on_publish_start(struct publisher_t *self_p,
         }
 
         memcpy(&buf[0], buf_p, size);
-        buf[size] = '\0';
-        timeout_ms = atoi(&buf[0]);
-    } else {
-        timeout_ms = 1000;
     }
 
-    if (timeout_ms < 100) {
-        timeout_ms = 100;
-    }
-
-    printf("Timeout is %d ms.\n", timeout_ms);
+    buf[size] = '\0';
+    timeout_ms = hf_string_to_long(&buf[0], 100, INT_MAX, 1000, 10);
+    printf("Starting the publish timer with timeout %d ms.\n", timeout_ms);
     async_timer_start(&self_p->publish_timer, timeout_ms);
 }
 
 static void on_publish_stop(struct publisher_t *self_p)
 {
+    printf("Stopping the publish timer.\n");
     async_timer_stop(&self_p->publish_timer);
 }
 
@@ -86,10 +84,6 @@ static void on_publish(struct publisher_t *self_p,
                        const uint8_t *buf_p,
                        size_t size)
 {
-    printf("Got message '");
-    fwrite(buf_p, 1, size, stdout);
-    printf("' on topic '%s'.\n", topic_p);
-
     if (strcmp(topic_p, "async/start") == 0) {
         on_publish_start(self_p, buf_p, size);
     } else if (strcmp(topic_p, "async/stop") == 0) {
@@ -128,6 +122,7 @@ int main()
                      &publisher,
                      ASYNC_TIMER_PERIODIC,
                      &asyncio.async);
+    printf("Starting the MQTT client.\n");
     asyncio_mqtt_client_start(&publisher.client);
     asyncio_run_forever(&asyncio);
 

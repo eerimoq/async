@@ -1,0 +1,6 @@
+[submodule "3pp/humanfriendly"]
+	path = 3pp/humanfriendly
+	url = https://github.com/eerimoq/humanfriendly
+[submodule "3pp/bitstream"]
+	path = 3pp/bitstream
+	url = https://github.com/eerimoq/bitstream
