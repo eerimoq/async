@@ -28,7 +28,6 @@
 
 #include <stdio.h>
 #include <string.h>
-#include <errno.h>
 #include <limits.h>
 #include "asyncio.h"
 #include "hf.h"
