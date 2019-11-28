@@ -27,9 +27,40 @@
  */
 
 #include <unistd.h>
+#include <errno.h>
 #include <stdio.h>
 #include <sys/timerfd.h>
 #include "async/linux.h"
+
+static ssize_t stdin_read(struct async_channel_t *self_p,
+                          void *buf_p,
+                          size_t size)
+{
+    (void)self_p;
+
+    ssize_t res;
+    
+    res = read(fileno(stdin), buf_p, size);
+
+    if (res == -1) {
+        if (errno == EAGAIN) {
+            res = 0;
+        } else {
+            exit(1);
+        }
+    }
+
+    return (res);
+}
+
+static ssize_t stdin_write(struct async_channel_t *self_p,
+                           const void *buf_p,
+                           size_t size)
+{
+    (void)self_p;
+
+    return (write(fileno(stdout), buf_p, size));
+}
 
 int async_linux_create_periodic_timer(struct async_t *async_p)
 {
@@ -65,4 +96,20 @@ void async_linux_handle_timeout(struct async_t *async_p,
     }
 
     async_tick(async_p);
+}
+
+void async_linux_stream_stdin_init(struct async_channel_t *channel_p,
+                                   struct async_t *async_p)
+{
+    async_channel_init(channel_p,
+                       NULL,
+                       NULL,
+                       stdin_read,
+                       stdin_write,
+                       async_p);
+}
+
+void async_linux_stream_stdin_handle(struct async_channel_t *channel_p)
+{
+    async_channel_input(channel_p);
 }

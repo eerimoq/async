@@ -31,5 +31,6 @@
 
 #include "async/core.h"
 #include "async/channel.h"
+#include "async/shell.h"
 
 #endif

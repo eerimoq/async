@@ -31,19 +31,28 @@
 
 #include "async.h"
 
-typedef int (*async_shell_command_t)(int argc, const char *argv[]);
+struct async_shell_t;
+
+typedef int (*async_shell_command_t)(struct async_shell_t *self_p,
+                                     int argc,
+                                     const char *argv[]);
 
 #define ASYNC_SHELL_COMMAND_MAX                              256
+
+enum async_shell_command_reader_state_t {
+    async_shell_command_reader_state_init_t = 0,
+    async_shell_command_reader_state_read_t
+};
 
 struct async_shell_command_t {
     const char *name_p;
     const char *description_p;
-    async_shell_command_callback_t callback;
+    async_shell_command_t callback;
 };
 
 struct async_shell_history_elem_t {
-    struct history_elem_t *next_p;
-    struct history_elem_t *prev_p;
+    struct async_shell_history_elem_t *next_p;
+    struct async_shell_history_elem_t *prev_p;
     char buf[1];
 };
 
@@ -71,7 +80,9 @@ struct async_shell_t {
     } history;
     int number_of_commands;
     struct async_shell_command_t *commands_p;
-    struct async_stream_t *stream_p;
+    struct async_channel_t *channel_p;
+    enum async_shell_command_reader_state_t command_reader_state;
+    bool opened;
     struct async_t *async_p;
 };
 
@@ -80,7 +91,7 @@ struct async_shell_t {
  * function has been called.
  */
 void async_shell_init(struct async_shell_t *self_p,
-                      struct async_stream_t *stream_p,
+                      struct async_channel_t *stream_p,
                       struct async_t *async_p);
 
 /**

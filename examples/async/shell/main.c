@@ -26,16 +26,28 @@
  * This file is part of the Async project.
  */
 
+#include <termios.h>
+#include <stdio.h>
 #include <unistd.h>
+#include <fcntl.h>
+#include <string.h>
+#include <sys/epoll.h>
+#include <sys/types.h>
+#include <unistd.h>
+#include <stdio.h>
+#include <sys/epoll.h>
 #include "async.h"
 #include "async/linux.h"
-#include "timers.h"
 
 /**
  * A shell command printing "Hello <name>!".
  */
-static int command_hello(int argc, const char *argv[])
+static int command_hello(struct async_shell_t *self_p,
+                         int argc,
+                         const char *argv[])
 {
+    (void)self_p;
+
     const char *name_p;
 
     if (argc == 2) {
@@ -49,34 +61,90 @@ static int command_hello(int argc, const char *argv[])
     return (0);
 }
 
-static void handle_stdin(struct async_t *async_p,
-                         struct async_shell_t *shell_p)
+static int init_periodic_timer(struct async_t *async_p,
+                               int epoll_fd)
 {
-    async_call(async_p, (async_func_t)shell_on_data, shell_p);
+    int res;
+    int timer_fd;
+    struct epoll_event event;
+
+    timer_fd = async_linux_create_periodic_timer(async_p);
+
+    if (timer_fd == -1) {
+        exit(1);
+    }
+
+    event.events = EPOLLIN;
+    event.data.fd = timer_fd;
+    res = epoll_ctl(epoll_fd, EPOLL_CTL_ADD, timer_fd, &event);
+
+    if (res == -1) {
+        exit(1);
+    }
+
+    return (timer_fd);
+}
+
+static void make_stdin_unbuffered(void)
+{
+    struct termios ctrl;
+
+    tcgetattr(STDIN_FILENO, &ctrl);
+    ctrl.c_lflag &= ~(ICANON | ECHO);
+    tcsetattr(STDIN_FILENO, TCSANOW, &ctrl);
+}
+
+static void init_stdin(int epoll_fd)
+{
+    int res;
+    struct epoll_event event;
+
+    res = fcntl(fileno(stdin),
+                F_SETFL,
+                fcntl(fileno(stdin), F_GETFL) | O_NONBLOCK);
+
+    if (res == -1) {
+        exit(1);
+    }
+
+    event.events = EPOLLIN;
+    event.data.fd = fileno(stdin);
+    res = epoll_ctl(epoll_fd, EPOLL_CTL_ADD, fileno(stdin), &event);
+
+    if (res == -1) {
+        exit(1);
+    }
+
+    make_stdin_unbuffered();
 }
 
 int main()
 {
     struct async_t async;
-    struct timers_t timers;
     int timer_fd;
-    ssize_t res;
-    uint64_t value;
     struct async_shell_t shell;
     int epoll_fd;
     struct epoll_event event;
     int nfds;
+    struct async_channel_t channel;
 
     async_init(&async, 100);
-    async_linux_stream_stdin_init(&stream, &async);
-    async_shell_init(&shell, &stream, &async);
+    async_linux_stream_stdin_init(&channel, &async);
+    async_shell_init(&shell, &channel, &async);
     async_shell_register_command(&shell,
                                  "hello",
                                  "My command.",
                                  command_hello);
     async_shell_start(&shell);
 
+    epoll_fd = epoll_create1(0);
+
+    if (epoll_fd == -1) {
+        exit(1);
+    }
+
     timer_fd = init_periodic_timer(&async, epoll_fd);
+    init_stdin(epoll_fd);
 
     while (true) {
         nfds = epoll_wait(epoll_fd, &event, 1, -1);
@@ -85,7 +153,7 @@ int main()
             if (event.data.fd == timer_fd) {
                 async_linux_handle_timeout(&async, timer_fd);
             } else if (event.data.fd == fileno(stdin)) {
-                async_linux_stream_stdin_handle(&stream);
+                async_linux_stream_stdin_handle(&channel);
             }
         }
 
