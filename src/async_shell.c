@@ -59,53 +59,18 @@
 #define CTRL_G                                     7
 #define ALT                                       27
 
-struct command_t {
-    const char *name_p;
-    const char *description_p;
-    async_shell_command_callback_t callback;
-};
-
-struct history_elem_t {
-    struct history_elem_t *next_p;
-    struct history_elem_t *prev_p;
-    char buf[1];
-};
-
-struct line_t {
-    char buf[COMMAND_MAX];
-    int length;
-    int cursor;
-};
-
-struct module_t {
-    struct line_t line;
-    struct line_t prev_line;
-    bool carriage_return_received;
-    bool newline_received;
-    struct {
-        struct history_elem_t *head_p;
-        struct history_elem_t *tail_p;
-        int length;
-        struct history_elem_t *current_p;
-        struct line_t pattern;
-        struct line_t match;
-        /* Command line when first UP was pressed. */
-        struct line_t line;
-        bool line_valid;
-    } history;
-    int number_of_commands;
-    struct command_t *commands_p;
-    pthread_t pthread;
-};
-
-static struct module_t module;
-
 static void history_init(void);
 static void show_line(void);
 
+static void output(struct async_shell_t *self_p, const car *string_p)
+{
+    async_channel_write(self_p->channel_p, string_p, strlen(string_p));
+}
+
 static int xgetc(struct async_shell_t *self_p)
 {
-    int ch;
+    char ch;
+    size_t size;
 
     size = async_stream_read(self_p->stream_p, &ch, sizeof(ch));
 
@@ -113,13 +78,12 @@ static int xgetc(struct async_shell_t *self_p)
         return (-EAGAIN);
     }
 
-    return (ch);
+    return ((int)ch);
 }
 
-static void print_prompt(void)
+static void print_prompt(struct async_shell_t *self_p)
 {
-    printf(PROMPT);
-    fflush(stdout);
+    output(self_p, PROMPT);
 }
 
 static int compare_bsearch(const void *key_p, const void *elem_p)
@@ -265,7 +229,8 @@ static int execute_command(char *line_p)
     if (command_p != NULL) {
         res = command_p->callback(argc, &argv[0]);
     } else {
-        printf("%s: command not found\n", name_p);
+        output(self_p, name_p);
+        output(self_p, ": command not found\n");
         res = -1;
     }
 
@@ -396,8 +361,10 @@ static int command_help(struct async_shell_t *self_p,
     (void)argv;
 
     int i;
+    char buf[128];
 
-    printf("Cursor movement\n"
+    output(self_p,
+           "Cursor movement\n"
            "\n"
            "         LEFT   Go left one character.\n"
            "        RIGHT   Go right one character.\n"
@@ -427,9 +394,13 @@ static int command_help(struct async_shell_t *self_p,
            "\n");
 
     for (i = 0; i < module.number_of_commands; i++) {
-        printf("%13s   %s\n",
-               module.commands_p[i].name_p,
-               module.commands_p[i].description_p);
+        snprintf(&buf[0],
+                 sizeof(buf),
+                 "%13s   %s\n",
+                 module.commands_p[i].name_p,
+                 module.commands_p[i].description_p);
+        buf[sizeof(buf) - 1] = '\0';
+        output(self_p, &buf[0]);
     }
 
     return (0);
@@ -1180,7 +1151,7 @@ static int read_command(struct async_shell_t *self_p)
     return (res);
 }
 
-static void on_data(struct async_shell_t *self_p)
+static void on_input(struct async_shell_t *self_p)
 {
     int res;
     char *stripped_line_p;
@@ -1215,7 +1186,7 @@ void async_shell_init(struct async_shell_t *self_p,
     self_p->number_of_commands = 0;
     self_p->commands_p = malloc(1);
     self_p->opened = false;
-    async_stream_set_on(stream_p, NULL, NULL, on_data, self_p);
+    async_stream_set_on(stream_p, NULL, NULL, on_input, self_p);
     self_p->stream_p = stream_p;
     history_init(self_p);
 
