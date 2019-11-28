@@ -64,15 +64,24 @@ static bool got_response(struct bob_t *self_p)
     return (self_p->no_response_count == 0);
 }
 
-static void say(const char *text_p)
+static void say(struct bob_t *self_p, const char *text_p)
 {
-    printf("Bob: %s\n", text_p);
+    async_channel_write(self_p->channel_p, "Bob: ", 5);
+    async_channel_write(self_p->channel_p, text_p, strlen(text_p));
+    async_channel_write(self_p->channel_p, "\n", 1);
+}
+
+static void print_prompt(struct bob_t *self_p)
+{
+    async_channel_write(self_p->channel_p,
+                        &self_p->name[0],
+                        strlen(&self_p->name[0]));
+    async_channel_write(self_p->channel_p, ": ", 2);
 }
 
 static void expect_response(struct bob_t *self_p)
 {
-    printf("%s: ", &self_p->name[0]);
-    fflush(stdout);
+    print_prompt(self_p);
     async_timer_start(&self_p->response_timer, 10000);
     self_p->no_response_count = 0;
 }
@@ -80,7 +89,7 @@ static void expect_response(struct bob_t *self_p)
 static void say_hello(struct bob_t *self_p)
 {
     strcpy(&self_p->name[0], "You");
-    say("Hello!");
+    say(self_p, "Hello!");
     self_p->state = state_wait_for_greeting_t;
     expect_response(self_p);
 }
@@ -89,12 +98,11 @@ static void on_response_timeout(struct bob_t *self_p)
 {
     if (!async_timer_is_stopped(&self_p->response_timer)) {
         self_p->no_response_count++;
-        printf("\n");
+        async_channel_write(self_p->channel_p, "\n", 1);
 
         if (self_p->no_response_count <= 3) {
-            say("Do you hear me?");
-            printf("%s: ", &self_p->name[0]);
-            fflush(stdout);
+            say(self_p, "Do you hear me?");
+            print_prompt(self_p);
             async_timer_start(&self_p->response_timer, 10000);
         } else {
             say_hello(self_p);
@@ -104,7 +112,7 @@ static void on_response_timeout(struct bob_t *self_p)
 
 static void ask_for_name(struct bob_t *self_p)
 {
-    say("What is your name?");
+    say(self_p, "What is your name?");
     self_p->state = state_wait_for_name_t;
     expect_response(self_p);
 }
@@ -125,9 +133,14 @@ static int on_stdin_greeting(struct bob_t *self_p)
 
 static void ask_for_age(struct bob_t *self_p)
 {
-    say("How old are you?");
+    say(self_p, "How old are you?");
     self_p->state = state_wait_for_age_t;
     expect_response(self_p);
+}
+
+static void on_opened(struct bob_t *self_p)
+{
+    say_hello(self_p);
 }
 
 static int on_stdin_name(struct bob_t *self_p)
@@ -146,7 +159,7 @@ static int on_stdin_name(struct bob_t *self_p)
 static int on_stdin_age(struct bob_t *self_p)
 {
     if (got_response(self_p)) {
-        say("That's it, thanks!\n");
+        say(self_p, "That's it, thanks!\n");
         say_hello(self_p);
     } else {
         ask_for_age(self_p);
@@ -155,24 +168,12 @@ static int on_stdin_age(struct bob_t *self_p)
     return (0);
 }
 
-void bob_init(struct bob_t *self_p, struct async_t *async_p)
-{
-    async_timer_init(&self_p->response_timer,
-                     (async_func_t)on_response_timeout,
-                     self_p,
-                     0,
-                     async_p);
-    strcpy(&self_p->name[0], "You");
-    line_reset(self_p);
-    say_hello(self_p);
-}
-
-void bob_on_stdin(struct bob_t *self_p)
+static void on_input(struct bob_t *self_p)
 {
     char ch;
     ssize_t res;
 
-    res = read(fileno(stdin), &ch, 1);
+    res = async_channel_read(self_p->channel_p, &ch, 1);
 
     if (res == 1) {
         line_append(self_p, ch);
@@ -204,7 +205,27 @@ void bob_on_stdin(struct bob_t *self_p)
     line_reset(self_p);
 
     if (res != 0) {
-        say("I don't understand.");
+        say(self_p, "I don't understand.");
         say_hello(self_p);
     }
+}
+
+void bob_init(struct bob_t *self_p,
+              struct async_channel_t *channel_p,
+              struct async_t *async_p)
+{
+    async_timer_init(&self_p->response_timer,
+                     (async_func_t)on_response_timeout,
+                     self_p,
+                     0,
+                     async_p);
+    strcpy(&self_p->name[0], "You");
+    line_reset(self_p);
+    async_channel_set_on(channel_p,
+                         (async_func_t)on_opened,
+                         NULL,
+                         (async_func_t)on_input,
+                         self_p);
+    async_channel_open(channel_p);
+    self_p->channel_p = channel_p;
 }

@@ -43,9 +43,9 @@ static void fatal_perror(const char *message_p)
 }
 
 static void handle_stdin(struct async_t *async_p,
-                         struct bob_t *bob_p)
+                         struct async_channel_t *channel_p)
 {
-    async_call(async_p, (async_func_t)bob_on_stdin, bob_p);
+    async_call(async_p, (async_func_t)async_channel_input, channel_p);
 }
 
 static int init_periodic_timer(struct async_t *async_p,
@@ -94,6 +94,24 @@ static void init_stdin(int epoll_fd)
     }
 }
 
+static ssize_t stdin_read(struct async_channel_t *self_p,
+                          void *buf_p,
+                          size_t size)
+{
+    (void)self_p;
+
+    return (read(fileno(stdin), buf_p, size));
+}
+
+static ssize_t stdin_write(struct async_channel_t *self_p,
+                           const void *buf_p,
+                           size_t size)
+{
+    (void)self_p;
+
+    return (write(fileno(stdout), buf_p, size));
+}
+
 int main()
 {
     struct async_t async;
@@ -102,9 +120,16 @@ int main()
     struct epoll_event event;
     int nfds;
     struct bob_t bob;
+    struct async_channel_t channel;
 
     async_init(&async, 100);
-    bob_init(&bob, &async);
+    async_channel_init(&channel,
+                       NULL,
+                       NULL,
+                       stdin_read,
+                       stdin_write,
+                       &async);
+    bob_init(&bob, &channel, &async);
 
     epoll_fd = epoll_create1(0);
 
@@ -122,7 +147,7 @@ int main()
             if (event.data.fd == timer_fd) {
                 async_linux_handle_timeout(&async, timer_fd);
             } else if (event.data.fd == fileno(stdin)) {
-                handle_stdin(&async, &bob);
+                handle_stdin(&async, &channel);
             }
         }
 

@@ -548,7 +548,7 @@ static void handle_connack(struct asyncio_mqtt_client_t *self_p)
 {
     self_p->connected = true;
     async_timer_start(&self_p->keep_alive_timer, 1000 * self_p->keep_alive_s);
-    async_call(&self_p->asyncio_p->async, self_p->on_connected, self_p->obj_p);
+    self_p->on_connected(self_p->obj_p);
 }
 
 static void handle_suback(struct asyncio_mqtt_client_t *self_p)

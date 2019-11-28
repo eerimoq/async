@@ -26,19 +26,19 @@
  * This file is part of the Async project.
  */
 
-#include "async/stream.h"
+#include "async/channel.h"
 
-static void null_open(struct async_stream_t *self_p)
+static void null_open(struct async_channel_t *self_p)
 {
-    (void)self_p;
+    async_call(self_p->async_p, self_p->on.opened, self_p->on.obj_p);
 }
 
-static void null_close(struct async_stream_t *self_p)
+static void null_close(struct async_channel_t *self_p)
 {
-    (void)self_p;
+    async_call(self_p->async_p, self_p->on.closed, self_p->on.obj_p);
 }
 
-static ssize_t null_read(struct async_stream_t *self_p,
+static ssize_t null_read(struct async_channel_t *self_p,
                          void *buf_p,
                          size_t size)
 {
@@ -48,7 +48,7 @@ static ssize_t null_read(struct async_stream_t *self_p,
     return (size);
 }
 
-static ssize_t null_write(struct async_stream_t *self_p,
+static ssize_t null_write(struct async_channel_t *self_p,
                           const void *buf_p,
                           size_t size)
 {
@@ -62,12 +62,12 @@ static void null_on()
 {
 }
 
-void async_stream_init(struct async_stream_t *self_p,
-                       async_stream_open_t open_fn,
-                       async_stream_close_t close_fn,
-                       async_stream_read_t read_fn,
-                       async_stream_write_t write_fn,
-                       struct async_t *async_p)
+void async_channel_init(struct async_channel_t *self_p,
+                        async_channel_open_t open_fn,
+                        async_channel_close_t close_fn,
+                        async_channel_read_t read_fn,
+                        async_channel_write_t write_fn,
+                        struct async_t *async_p)
 {
     if (open_fn == NULL) {
         open_fn = null_open;
@@ -91,58 +91,58 @@ void async_stream_init(struct async_stream_t *self_p,
     self_p->write = write_fn;
     self_p->on.opened = null_on;
     self_p->on.closed = null_on;
-    self_p->on.data = null_on;
+    self_p->on.input = null_on;
     self_p->on.obj_p = NULL;
     self_p->async_p = async_p;
 }
 
-void async_stream_set_on(struct async_stream_t *self_p,
-                         async_func_t on_opened,
-                         async_func_t on_closed,
-                         async_func_t on_data,
-                         void *obj_p)
+void async_channel_set_on(struct async_channel_t *self_p,
+                          async_func_t on_opened,
+                          async_func_t on_closed,
+                          async_func_t on_input,
+                          void *obj_p)
 {
     self_p->on.opened = on_opened;
     self_p->on.closed = on_closed;
-    self_p->on.data = on_data;
+    self_p->on.input = on_input;
     self_p->on.obj_p = obj_p;
 }
 
-void async_stream_open(struct async_stream_t *self_p)
+void async_channel_open(struct async_channel_t *self_p)
 {
     return (self_p->open(self_p));
 }
 
-void async_stream_close(struct async_stream_t *self_p)
+void async_channel_close(struct async_channel_t *self_p)
 {
     return (self_p->close(self_p));
 }
 
-size_t async_stream_read(struct async_stream_t *self_p,
-                         void *buf_p,
-                         size_t size)
+size_t async_channel_read(struct async_channel_t *self_p,
+                          void *buf_p,
+                          size_t size)
 {
     return (self_p->read(self_p, buf_p, size));
 }
 
-ssize_t async_stream_write(struct async_stream_t *self_p,
-                           const void *buf_p,
-                           size_t size)
+ssize_t async_channel_write(struct async_channel_t *self_p,
+                            const void *buf_p,
+                            size_t size)
 {
     return (self_p->write(self_p, buf_p, size));
 }
 
-void async_stream_opened(struct async_stream_t *self_p)
+void async_channel_opened(struct async_channel_t *self_p)
 {
     async_call(self_p->async_p, self_p->on.opened, self_p->on.obj_p);
 }
 
-void async_stream_closed(struct async_stream_t *self_p)
+void async_channel_closed(struct async_channel_t *self_p)
 {
     async_call(self_p->async_p, self_p->on.closed, self_p->on.obj_p);
 }
 
-void async_stream_data(struct async_stream_t *self_p)
+void async_channel_input(struct async_channel_t *self_p)
 {
-    async_call(self_p->async_p, self_p->on.data, self_p->on.obj_p);
+    async_call(self_p->async_p, self_p->on.input, self_p->on.obj_p);
 }

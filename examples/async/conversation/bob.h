@@ -49,9 +49,12 @@ struct bob_t {
         size_t length;
         bool complete;
     } line;
+    struct async_channel_t *channel_p;
 };
 
-void bob_init(struct bob_t *self_p, struct async_t *async_p);
+void bob_init(struct bob_t *self_p,
+              struct async_channel_t *channel_p,
+              struct async_t *async_p);
 
 /**
  * Call when there is data available on stdin.
