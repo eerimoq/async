@@ -26,21 +26,11 @@
  * This file is part of the Async project.
  */
 
-/* Needed by ftw. */
-#define _XOPEN_SOURCE 700
-#define _DEFAULT_SOURCE
-
-#include <dbg.h>
 #include <errno.h>
-#include <sys/sysmacros.h>
-#include <stdint.h>
 #include <stdio.h>
 #include <string.h>
-#include <sys/types.h>
-#include <sys/stat.h>
 #include <sys/param.h>
 #include <ctype.h>
-#include <unistd.h>
 #include "async/shell.h"
 #include "hf.h"
 
@@ -60,16 +50,40 @@
 #define CTRL_D                                     4
 #define CTRL_K                                    11
 #define CTRL_T                                    20
-#define CTRL_R                                    18
 #define CTRL_G                                     7
 #define ALT                                       27
 
-/* static void history_init(struct async_shell_t *self_p); */
+static void history_init(struct async_shell_t *self_p);
 static void show_line(struct async_shell_t *self_p);
 
 static void output(struct async_shell_t *self_p, const char *string_p)
 {
     async_channel_write(self_p->channel_p, string_p, strlen(string_p));
+}
+
+static void output_int(struct async_shell_t *self_p, int value)
+{
+    char buf[32];
+
+    sprintf(&buf[0], "%d", value);
+    output(self_p, &buf[0]);
+}
+
+static void output_sds(struct async_shell_t *self_p,
+                       const char *value_1_p,
+                       int value_2,
+                       const char *value_3_p)
+{
+    output(self_p, value_1_p);
+    output_int(self_p, value_2);
+    output(self_p, value_3_p);
+}
+
+static void output_control(struct async_shell_t *self_p,
+                           int value_1,
+                           const char *value_2_p)
+{
+    output_sds(self_p, "\x1b[", value_1, value_2_p);
 }
 
 static int xgetc(struct async_shell_t *self_p)
@@ -275,48 +289,48 @@ static bool line_insert(struct async_shell_line_t *self_p,
     return (true);
 }
 
-/* static void line_insert_string(struct async_shell_line_t *self_p, */
-/*                                char *str_p) */
-/* { */
-/*     while (*str_p != '\0') { */
-/*         if (!line_insert(self_p, *str_p)) { */
-/*             break; */
-/*         } */
+static void line_insert_string(struct async_shell_line_t *self_p,
+                               char *str_p)
+{
+    while (*str_p != '\0') {
+        if (!line_insert(self_p, *str_p)) {
+            break;
+        }
 
-/*         str_p++; */
-/*     } */
-/* } */
+        str_p++;
+    }
+}
 
-/* static void line_delete(struct async_shell_line_t *self_p) */
-/* { */
-/*     /\* End of buffer? *\/ */
-/*     if (self_p->cursor == self_p->length) { */
-/*         return; */
-/*     } */
+static void line_delete(struct async_shell_line_t *self_p)
+{
+    /* End of buffer? */
+    if (self_p->cursor == self_p->length) {
+        return;
+    }
 
-/*     /\* Move the string, including the NULL termination, one step to */
-/*        the left to overwrite the deleted character. *\/ */
-/*     memmove(&self_p->buf[self_p->cursor], */
-/*             &self_p->buf[self_p->cursor + 1], */
-/*             self_p->length - self_p->cursor); */
-/*     self_p->length--; */
-/* } */
+    /* Move the string, including the NULL termination, one step to
+       the left to overwrite the deleted character. */
+    memmove(&self_p->buf[self_p->cursor],
+            &self_p->buf[self_p->cursor + 1],
+            self_p->length - self_p->cursor);
+    self_p->length--;
+}
 
-/* static int line_peek(struct async_shell_line_t *self_p) */
-/* { */
-/*     return (self_p->buf[self_p->cursor]); */
-/* } */
+static int line_peek(struct async_shell_line_t *self_p)
+{
+    return (self_p->buf[self_p->cursor]);
+}
 
-/* static void line_truncate(struct async_shell_line_t *self_p) */
-/* { */
-/*     self_p->length = self_p->cursor; */
-/*     self_p->buf[self_p->length] = '\0'; */
-/* } */
+static void line_truncate(struct async_shell_line_t *self_p)
+{
+    self_p->length = self_p->cursor;
+    self_p->buf[self_p->length] = '\0';
+}
 
-/* static bool line_is_empty(struct async_shell_line_t *self_p) */
-/* { */
-/*     return (self_p->length == 0); */
-/* } */
+static bool line_is_empty(struct async_shell_line_t *self_p)
+{
+    return (self_p->length == 0);
+}
 
 static char *line_get_buf(struct async_shell_line_t *self_p)
 {
@@ -328,37 +342,37 @@ static int line_get_length(struct async_shell_line_t *self_p)
     return (self_p->length);
 }
 
-/* static bool line_seek(struct async_shell_line_t *self_p, int pos) */
-/* { */
-/*     if (pos < 0) { */
-/*         if ((self_p->cursor + pos) < 0) { */
-/*             return (false); */
-/*         } */
-/*     } else { */
-/*         if ((self_p->cursor + pos) > self_p->length) { */
-/*             return (false); */
-/*         } */
-/*     } */
+static bool line_seek(struct async_shell_line_t *self_p, int pos)
+{
+    if (pos < 0) {
+        if ((self_p->cursor + pos) < 0) {
+            return (false);
+        }
+    } else {
+        if ((self_p->cursor + pos) > self_p->length) {
+            return (false);
+        }
+    }
 
-/*     self_p->cursor += pos; */
+    self_p->cursor += pos;
 
-/*     return (true); */
-/* } */
+    return (true);
+}
 
 static int line_get_cursor(struct async_shell_line_t *self_p)
 {
     return (self_p->cursor);
 }
 
-/* static void line_seek_begin(struct async_shell_line_t *self_p) */
-/* { */
-/*     self_p->cursor = 0; */
-/* } */
+static void line_seek_begin(struct async_shell_line_t *self_p)
+{
+    self_p->cursor = 0;
+}
 
-/* static void line_seek_end(struct async_shell_line_t *self_p) */
-/* { */
-/*     self_p->cursor = self_p->length; */
-/* } */
+static void line_seek_end(struct async_shell_line_t *self_p)
+{
+    self_p->cursor = self_p->length;
+}
 
 static int command_help(struct async_shell_t *self_p,
                         int argc,
@@ -392,10 +406,6 @@ static int command_help(struct async_shell_t *self_p,
            "\n"
            "           UP   Previous command.\n"
            "         DOWN   Next command.\n"
-           "       Ctrl+R   Recall the last command including the specified "
-           "character(s)\n"
-           "                searches the command history as you type.\n"
-           "       Ctrl+G   Escape from history searching mode.\n"
            "\n"
            "Commands\n"
            "\n");
@@ -406,14 +416,11 @@ static int command_help(struct async_shell_t *self_p,
                  "%13s   %s\n",
                  self_p->commands_p[i].name_p,
                  self_p->commands_p[i].description_p);
-        buf[sizeof(buf) - 1] = '\0';
         output(self_p, &buf[0]);
     }
 
     return (0);
 }
-
-#if 0
 
 static int command_history(struct async_shell_t *self_p,
                            int argc,
@@ -429,7 +436,10 @@ static int command_history(struct async_shell_t *self_p,
     i = 1;
 
     while (current_p != NULL) {
-        printf("%d: %s\n", i, current_p->buf);
+        output_int(self_p, i);
+        output(self_p, ": ");
+        output(self_p, current_p->buf);
+        output(self_p, "\n");
         current_p = current_p->next_p;
         i++;
     }
@@ -550,24 +560,6 @@ static void history_reset_current(struct async_shell_t *self_p)
     self_p->history.current_p = NULL;
 }
 
-static char *history_reverse_search(struct async_shell_t *self_p,
-                                    const char *pattern_p)
-{
-    struct async_shell_history_elem_t *elem_p;
-
-    elem_p = self_p->history.tail_p;
-
-    while (elem_p != NULL) {
-        if (strstr(elem_p->buf, pattern_p) != NULL) {
-            return (elem_p->buf);
-        }
-
-        elem_p = elem_p->prev_p;
-    }
-
-    return (NULL);
-}
-
 static void auto_complete_command(struct async_shell_t *self_p)
 {
     char next_char;
@@ -646,12 +638,13 @@ static void auto_complete_command(struct async_shell_t *self_p)
                && (strncmp(self_p->commands_p[i].name_p,
                            line_p,
                            size) == 0)) {
-            printf("%s\n", self_p->commands_p[i].name_p);
+            output(self_p, self_p->commands_p[i].name_p);
+            output(self_p, "\n");
             i++;
         }
 
         print_prompt(self_p);
-        printf("%s", line_get_buf(&self_p->line));
+        output(self_p, line_get_buf(&self_p->line));
     }
 }
 
@@ -659,8 +652,6 @@ static void handle_tab(struct async_shell_t *self_p)
 {
     auto_complete_command(self_p);
 }
-
-#endif
 
 static void handle_carrige_return(struct async_shell_t *self_p)
 {
@@ -671,8 +662,6 @@ static void handle_newline(struct async_shell_t *self_p)
 {
     self_p->newline_received = true;
 }
-
-#if 0
 
 /**
  * BACKSPACE Delete the character before the cursor.
@@ -750,213 +739,15 @@ static void handle_ctrl_t(struct async_shell_t *self_p)
     line_seek(&self_p->line, 1);
 }
 
-static void restore_previous_line(struct async_shell_t *self_p,
-                                  struct async_shell_line_t *pattern_p)
-{
-    int cursor;
-    int length;
-
-    printf("\x1b[%dD\x1b[K%s",
-           17 + line_get_length(pattern_p),
-           line_get_buf(&self_p->prev_line));
-    fflush(stdout);
-
-    cursor = line_get_cursor(&self_p->prev_line);
-    length = line_get_length(&self_p->prev_line);
-
-    if (cursor != length) {
-        printf("\x1b[%dD", length - cursor);
-        fflush(stdout);
-    }
-}
-
-/**
- * Ctrl+R Recall the last command including the specified character(s)
- * searches the command history as you type.
- *
- * The original line buffer is printed and cursor reset, then the
- * selected command is copied into the line buffer. The output of the
- * new command occurs in the main command loop.
- */
-static void handle_ctrl_r(struct async_shell_t *self_p)
-{
-    int ch;
-    char *buf_p;
-
-    line_init(&self_p->history.pattern);
-    line_init(&self_p->history.match);
-
-    if (!line_is_empty(&self_p->line)) {
-        printf("\x1b[%dD", line_get_length(&self_p->line));
-    }
-
-    printf("\x1b[K(history-search)`': \x1b[3D");
-
-    while (true) {
-        fflush(stdout);
-        ch = xgetc(self_p);
-
-        switch (ch) {
-
-        case DELETE:
-        case BACKSPACE:
-            if (!line_is_empty(&self_p->history.pattern)) {
-                printf("\x1b[1D\x1b[K': ");
-                line_seek(&self_p->history.pattern, -1);
-                line_delete(&self_p->history.pattern);
-                buf_p = history_reverse_search(
-                    line_get_buf(&self_p->history.pattern));
-                line_init(&self_p->history.match);
-
-                if (buf_p != NULL) {
-                    line_insert_string(&self_p->history.match, buf_p);
-                }
-
-                printf("%s\x1b[%dD",
-                       line_get_buf(&self_p->history.match),
-                       line_get_length(&self_p->history.match) + 3);
-            }
-
-            break;
-
-        case CARRIAGE_RETURN:
-            self_p->carriage_return_received = true;
-            break;
-
-        case CTRL_G:
-            restore_previous_line(&self_p->history.pattern);
-            return;
-
-        default:
-            if (isprint(ch)) {
-                if (line_insert(&self_p->history.pattern, ch)) {
-                    printf("\x1b[K%c': ", ch);
-                    buf_p = history_reverse_search(
-                        line_get_buf(&self_p->history.pattern));
-                    line_init(&self_p->history.match);
-
-                    if (buf_p != NULL) {
-                        line_insert_string(&self_p->history.match, buf_p);
-                    }
-
-                    printf("%s\x1b[%dD",
-                           line_get_buf(&self_p->history.match),
-                           line_get_length(&self_p->history.match) + 3);
-                }
-            } else {
-                restore_previous_line(&self_p->history.pattern);
-
-                /* Copy the match to current line. */
-                self_p->line = self_p->history.match;
-
-                if (ch == NEWLINE) {
-                    self_p->newline_received = true;
-                } else {
-                    if (ch == ALT) {
-                        ch = xgetc(self_p);
-
-                        if (ch != 'd') {
-                            (void)xgetc();
-                        }
-                    }
-                }
-
-                return;
-            }
-        }
-    }
-}
-
 /**
  * ALT.
  */
-static void handle_alt(struct async_shell_t *self_p)
+static int handle_alt(struct async_shell_t *self_p)
 {
-    int ch;
-    char *buf_p;
+    self_p->command_reader_state = async_shell_command_reader_state_alt_t;
 
-    ch = xgetc();
-
-    switch (ch) {
-
-    case 'd':
-        /* Alt+D Delete the word at the cursor. */
-        while (isblank((int)line_peek(&self_p->line))) {
-            line_delete(&self_p->line);
-        }
-
-        while (!isblank((int)line_peek(&self_p->line))
-               && (line_peek(&self_p->line) != '\0')) {
-            line_delete(&self_p->line);
-        }
-
-        break;
-
-    case 'O':
-        ch = xgetc();
-
-        switch (ch) {
-
-        case 'H':
-            /* HOME. */
-            line_seek_begin(&self_p->line);
-            break;
-
-        case 'F':
-            /* END. */
-            line_seek_end(&self_p->line);
-            break;
-
-        default:
-            break;
-        }
-
-        break;
-
-    case '[':
-        ch = xgetc();
-
-        switch (ch) {
-
-        case 'A':
-        case 'B':
-            if (ch == 'A') {
-                /* UP Previous command. */
-                buf_p = history_get_previous_command();
-            } else {
-                /* DOWN Next command. */
-                buf_p = history_get_next_command();
-            }
-
-            if (buf_p != NULL) {
-                line_init(&self_p->line);
-                line_insert_string(&self_p->line, buf_p);
-            }
-
-            break;
-
-        case 'C':
-            /* RIGHT Go right on character. */
-            line_seek(&self_p->line, 1);
-            break;
-
-        case 'D':
-            /* LEFT Go left one character. */
-            line_seek(&self_p->line, -1);
-            break;
-
-        default:
-            break;
-        }
-
-        break;
-
-    default:
-        break;
-    }
+    return (-1);
 }
-
-#endif
 
 static void handle_other(struct async_shell_t *self_p,
                          char ch)
@@ -994,36 +785,35 @@ static void show_line(struct async_shell_t *self_p)
             && (new_cursor == new_length)) {
             if (length < new_length) {
                 /* New character. */
-                printf("%s", &line_get_buf(&self_p->line)[cursor]);
+                output(self_p, &line_get_buf(&self_p->line)[cursor]);
             } else {
                 /* Move the cursor to the end of the old line. */
                 for (i = cursor; i < length; i++) {
-                    printf(" ");
+                    output(self_p, " ");
                 }
 
                 /* Backspace. */
                 for (i = new_length; i < length; i++) {
-                    printf("\x08 \x08");
+                    output(self_p, "\x08 \x08");
                 }
             }
         } else {
             if (cursor > 0) {
-                printf("\x1b[%dD", cursor);
+                output_control(self_p, cursor, "D");
             }
 
-            printf("\x1b[K%s", line_get_buf(&self_p->line));
+            output(self_p, "\x1b[K");
+            output(self_p, line_get_buf(&self_p->line));
 
             if (new_cursor < new_length) {
-                printf("\x1b[%dD", new_length - new_cursor);
+                output_control(self_p, new_length - new_cursor, "D");
             }
         }
     } else if (cursor < new_cursor) {
-        printf("\x1b[%dC", new_cursor - cursor);
+        output_control(self_p, new_cursor - cursor, "C");
     } else if (new_cursor < cursor) {
-        printf("\x1b[%dD", cursor - new_cursor);
+        output_control(self_p, cursor - new_cursor, "D");
     }
-
-    fflush(stdout);
 }
 
 /**
@@ -1032,25 +822,23 @@ static void show_line(struct async_shell_t *self_p)
 static int execute_line(struct async_shell_t *self_p)
 {
     if (self_p->carriage_return_received) {
-        printf("\r");
+        output(self_p, "\r");
     }
 
-    printf("\n");
-    fflush(stdout);
-    
-    /* /\* Append the command to the history. *\/ */
-    /* if (!line_is_empty(&self_p->line)) { */
-    /*     history_append(self_p, line_get_buf(&self_p->line)); */
-    /* } */
+    output(self_p, "\n");
 
-    /* history_reset_current(self_p); */
+    /* Append the command to the history. */
+    if (!line_is_empty(&self_p->line)) {
+        history_append(self_p, line_get_buf(&self_p->line));
+    }
+
+    history_reset_current(self_p);
 
     return (line_get_length(&self_p->line));
 }
 
 static int read_command_init(struct async_shell_t *self_p)
 {
-    /* dbg(""); */
     line_init(&self_p->line);
     self_p->carriage_return_received = false;
     self_p->newline_received = false;
@@ -1059,11 +847,134 @@ static int read_command_init(struct async_shell_t *self_p)
     return (-1);
 }
 
-static int read_command_any(struct async_shell_t *self_p)
+static int read_command_alt(struct async_shell_t *self_p)
 {
     int ch;
 
-    /* dbg(""); */
+    ch = xgetc(self_p);
+
+    if (ch == -EAGAIN) {
+        return (ch);
+    }
+
+    switch (ch) {
+
+    case 'd':
+        /* Alt+D Delete the word at the cursor. */
+        while (isblank((int)line_peek(&self_p->line))) {
+            line_delete(&self_p->line);
+        }
+
+        while (!isblank((int)line_peek(&self_p->line))
+               && (line_peek(&self_p->line) != '\0')) {
+            line_delete(&self_p->line);
+        }
+
+        show_line(self_p);
+        self_p->command_reader_state = async_shell_command_reader_state_read_t;
+        break;
+
+    case 'O':
+        self_p->command_reader_state = async_shell_command_reader_state_alt_o_t;
+        break;
+
+    case '[':
+        self_p->command_reader_state = async_shell_command_reader_state_alt_bracket_t;
+        break;
+
+    default:
+        self_p->command_reader_state = async_shell_command_reader_state_read_t;
+        break;
+    }
+
+    return (-1);
+}
+
+static int read_command_alt_o(struct async_shell_t *self_p)
+{
+    int ch;
+
+    ch = xgetc(self_p);
+
+    if (ch == -EAGAIN) {
+        return (ch);
+    }
+
+    switch (ch) {
+
+    case 'H':
+        /* HOME. */
+        line_seek_begin(&self_p->line);
+        break;
+
+    case 'F':
+        /* END. */
+        line_seek_end(&self_p->line);
+        break;
+
+    default:
+        break;
+    }
+
+    show_line(self_p);
+    self_p->command_reader_state = async_shell_command_reader_state_read_t;
+
+    return (-1);
+}
+
+static int read_command_alt_bracket(struct async_shell_t *self_p)
+{
+    int ch;
+    char *buf_p;
+
+    ch = xgetc(self_p);
+
+    if (ch == -EAGAIN) {
+        return (ch);
+    }
+
+    switch (ch) {
+
+    case 'A':
+    case 'B':
+        if (ch == 'A') {
+            /* UP Previous command. */
+            buf_p = history_get_previous_command(self_p);
+        } else {
+            /* DOWN Next command. */
+            buf_p = history_get_next_command(self_p);
+        }
+
+        if (buf_p != NULL) {
+            line_init(&self_p->line);
+            line_insert_string(&self_p->line, buf_p);
+        }
+
+        break;
+
+    case 'C':
+        /* RIGHT Go right on character. */
+        line_seek(&self_p->line, 1);
+        break;
+
+    case 'D':
+        /* LEFT Go left one character. */
+        line_seek(&self_p->line, -1);
+        break;
+
+    default:
+        break;
+    }
+
+    show_line(self_p);
+    self_p->command_reader_state = async_shell_command_reader_state_read_t;
+
+    return (-1);
+}
+
+static int read_command_any(struct async_shell_t *self_p)
+{
+    int ch;
 
     ch = xgetc(self_p);
 
@@ -1076,9 +987,9 @@ static int read_command_any(struct async_shell_t *self_p)
 
     switch (ch) {
 
-    /* case TAB: */
-    /*     handle_tab(); */
-    /*     break; */
+    case TAB:
+        handle_tab(self_p);
+        break;
 
     case CARRIAGE_RETURN:
         handle_carrige_return(self_p);
@@ -1088,38 +999,33 @@ static int read_command_any(struct async_shell_t *self_p)
         handle_newline(self_p);
         break;
 
-    /* case DELETE: */
-    /* case BACKSPACE: */
-    /*     handle_backspace(); */
-    /*     break; */
+    case DELETE:
+    case BACKSPACE:
+        handle_backspace(self_p);
+        break;
 
-    /* case CTRL_A: */
-    /*     handle_ctrl_a(); */
-    /*     break; */
+    case CTRL_A:
+        handle_ctrl_a(self_p);
+        break;
 
-    /* case CTRL_E: */
-    /*     handle_ctrl_e(); */
-    /*     break; */
+    case CTRL_E:
+        handle_ctrl_e(self_p);
+        break;
 
-    /* case CTRL_D: */
-    /*     handle_ctrl_d(); */
-    /*     break; */
+    case CTRL_D:
+        handle_ctrl_d(self_p);
+        break;
 
-    /* case CTRL_K: */
-    /*     handle_ctrl_k(); */
-    /*     break; */
+    case CTRL_K:
+        handle_ctrl_k(self_p);
+        break;
 
-    /* case CTRL_T: */
-    /*     handle_ctrl_t(); */
-    /*     break; */
+    case CTRL_T:
+        handle_ctrl_t(self_p);
+        break;
 
-    /* case CTRL_R: */
-    /*     handle_ctrl_r(); */
-    /*     break; */
-
-    /* case ALT: */
-    /*     handle_alt(); */
-    /*     break; */
+    case ALT:
+        return (handle_alt(self_p));
 
     default:
         handle_other(self_p, ch);
@@ -1155,13 +1061,17 @@ static int read_command(struct async_shell_t *self_p)
             res = read_command_init(self_p);
             break;
 
-        /* case async_shell_command_reader_state_ctrl_r_t: */
-        /*     res = read_command_ctrl_r(self_p); */
-        /*     break; */
+        case async_shell_command_reader_state_alt_t:
+            res = read_command_alt(self_p);
+            break;
 
-        /* case command_reader_state_alt_t: */
-        /*     res = read_command_alt(self_p); */
-        /*     break; */
+        case async_shell_command_reader_state_alt_o_t:
+            res = read_command_alt_o(self_p);
+            break;
+
+        case async_shell_command_reader_state_alt_bracket_t:
+            res = read_command_alt_bracket(self_p);
+            break;
 
         default:
             res = read_command_any(self_p);
@@ -1190,9 +1100,9 @@ static void on_input(struct async_shell_t *self_p)
             res = execute_command(self_p, stripped_line_p);
 
             if (res == 0) {
-                printf("OK\n");
+                output(self_p, "OK\n");
             } else {
-                printf("ERROR(%d)\n", res);
+                output_sds(self_p, "ERROR(", res, ")\n");
             }
         }
     }
@@ -1215,17 +1125,17 @@ void async_shell_init(struct async_shell_t *self_p,
                          (async_func_t)on_input,
                          self_p);
     self_p->channel_p = channel_p;
-    /* history_init(self_p); */
+    history_init(self_p);
     self_p->command_reader_state = async_shell_command_reader_state_init_t;
 
     async_shell_register_command(self_p,
                                  "help",
                                  "Print this help.",
                                  command_help);
-    /* async_shell_register_command(self_p, */
-    /*                              "history", */
-    /*                              "List command history.", */
-    /*                              command_history); */
+    async_shell_register_command(self_p,
+                                 "history",
+                                 "List command history.",
+                                 command_history);
 }
 
 void async_shell_start(struct async_shell_t *self_p)

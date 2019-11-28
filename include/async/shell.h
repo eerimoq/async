@@ -41,7 +41,10 @@ typedef int (*async_shell_command_t)(struct async_shell_t *self_p,
 
 enum async_shell_command_reader_state_t {
     async_shell_command_reader_state_init_t = 0,
-    async_shell_command_reader_state_read_t
+    async_shell_command_reader_state_read_t,
+    async_shell_command_reader_state_alt_t,
+    async_shell_command_reader_state_alt_o_t,
+    async_shell_command_reader_state_alt_bracket_t
 };
 
 struct async_shell_command_t {
