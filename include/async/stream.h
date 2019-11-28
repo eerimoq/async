@@ -31,6 +31,8 @@
 
 #include "async.h"
 
+struct async_stream_t;
+
 typedef void (*async_stream_open_t)(struct async_stream_t *self_p);
 typedef void (*async_stream_close_t)(struct async_stream_t *self_p);
 typedef ssize_t (*async_stream_read_t)(struct async_stream_t *self_p,
@@ -57,14 +59,14 @@ struct async_stream_t {
 /**
  * Initialize given stream.
  */
-void async_stream_init(struct async_stream_t *stream_p,
-                       async_stream_open_t open,
-                       async_stream_close_t close,
-                       async_stream_read_t read,
-                       async_stream_write_t write,
+void async_stream_init(struct async_stream_t *self_p,
+                       async_stream_open_t open_fn,
+                       async_stream_close_t close_fn,
+                       async_stream_read_t read_fn,
+                       async_stream_write_t write_fn,
                        struct async_t *async_p);
 
-void async_stream_set_on(struct async_stream_t *stream_p,
+void async_stream_set_on(struct async_stream_t *self_p,
                          async_func_t on_opened,
                          async_func_t on_closed,
                          async_func_t on_data,
@@ -81,5 +83,11 @@ size_t async_stream_read(struct async_stream_t *self_p,
 ssize_t async_stream_write(struct async_stream_t *self_p,
                            const void *buf_p,
                            size_t size);
+
+void async_stream_opened(struct async_stream_t *self_p);
+
+void async_stream_closed(struct async_stream_t *self_p);
+
+void async_stream_data(struct async_stream_t *self_p);
 
 #endif

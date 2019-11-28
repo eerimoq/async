@@ -4,6 +4,7 @@ INC += $(ASYNC_ROOT)/3pp/humanfriendly/include
 ASYNC_SRC ?= \
 	$(ASYNC_ROOT)/src/async.c \
 	$(ASYNC_ROOT)/src/async_timer.c \
+	$(ASYNC_ROOT)/src/async_stream.c \
 	$(ASYNC_ROOT)/src/async_linux.c
 ASYNCIO_SRC ?= \
 	$(ASYNC_ROOT)/src/asyncio_core.c \
