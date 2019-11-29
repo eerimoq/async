@@ -26,6 +26,25 @@
  * This file is part of the Async project.
  */
 
+/*
+ * A channel is typically used to use file descriptors in the async
+ * code.
+ *
+ * A use case:
+ *
+ * 1. Async code calls async_channel_open().
+ *
+ * 2. Main code opens a device.
+ *
+ * 3. Once opened, main code calls async_channel_opened(), which calls
+ *    on_opened() in async code.
+ *
+ * 4. Once data is available, main code calls async_channel_input(),
+ *    which calls on_input() in async code.
+ *
+ * 5. Async code calls async_channel_read() to read the data.
+ */
+
 #ifndef ASYNC_CHANNEL_H
 #define ASYNC_CHANNEL_H
 
