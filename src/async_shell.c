@@ -631,7 +631,7 @@ static void auto_complete_command(struct async_shell_t *self_p)
 
     /* Print all alternatives if no completion happened. */
     if (!completion_happend) {
-        putchar('\n');
+        output(self_p, "\n");
         i = first_match;
 
         while ((i < self_p->number_of_commands)
