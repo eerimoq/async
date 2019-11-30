@@ -26,17 +26,19 @@
  * This file is part of the Async project.
  */
 
+#ifndef PUBLISHER_H
+#define PUBLISHER_H
+
 #include "async.h"
-#include "publisher.h"
 
-int main()
-{
-    struct async_t async;
-    struct publisher_t publisher;
+struct publisher_t {
+    struct async_mqtt_client_t client;
+    struct async_timer_t publish_timer;
+    struct async_timer_t reconnect_timer;
+    int publish_timeout_ms;
+};
 
-    async_init(&async, 100);
-    publisher_init(&publisher, &async);
-    async_run_forever(&async);
+void publisher_init(struct publisher_t *self_p,
+                    struct async_t *async_p);
 
-    return (0);
-}
+#endif
