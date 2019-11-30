@@ -69,32 +69,32 @@ static void null_on()
 }
 
 void async_channel_init(struct async_channel_t *self_p,
-                        async_channel_open_t open_fn,
-                        async_channel_close_t close_fn,
-                        async_channel_read_t read_fn,
-                        async_channel_write_t write_fn,
+                        async_channel_open_t open_func,
+                        async_channel_close_t close_func,
+                        async_channel_read_t read_func,
+                        async_channel_write_t write_func,
                         struct async_t *async_p)
 {
-    if (open_fn == NULL) {
-        open_fn = null_open;
+    if (open_func == NULL) {
+        open_func = null_open;
     }
 
-    if (close_fn == NULL) {
-        close_fn = null_close;
+    if (close_func == NULL) {
+        close_func = null_close;
     }
 
-    if (read_fn == NULL) {
-        read_fn = null_read;
+    if (read_func == NULL) {
+        read_func = null_read;
     }
 
-    if (write_fn == NULL) {
-        write_fn = null_write;
+    if (write_func == NULL) {
+        write_func = null_write;
     }
 
-    self_p->open = open_fn;
-    self_p->close = close_fn;
-    self_p->read = read_fn;
-    self_p->write = write_fn;
+    self_p->open = open_func;
+    self_p->close = close_func;
+    self_p->read = read_func;
+    self_p->write = write_func;
     self_p->on.opened.func = null_on;
     self_p->on.closed = null_on;
     self_p->on.input = null_on;
@@ -108,6 +108,18 @@ void async_channel_set_on(struct async_channel_t *self_p,
                           async_func_t on_input,
                           void *obj_p)
 {
+    if (on_opened == NULL) {
+        on_opened = null_on;
+    }
+
+    if (on_closed == NULL) {
+        on_closed = null_on;
+    }
+
+    if (on_input == NULL) {
+        on_input = null_on;
+    }
+
     self_p->on.opened.func = on_opened;
     self_p->on.closed = on_closed;
     self_p->on.input = on_input;

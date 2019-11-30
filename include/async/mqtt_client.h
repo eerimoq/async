@@ -66,6 +66,9 @@ struct async_mqtt_client_t {
     struct async_timer_t reconnect_timer;
 };
 
+/**
+ * Initialize given MQTT client.
+ */
 void async_mqtt_client_init(struct async_mqtt_client_t *self_p,
                             const char *host_p,
                             int port,
@@ -75,26 +78,55 @@ void async_mqtt_client_init(struct async_mqtt_client_t *self_p,
                             void *obj_p,
                             struct async_t *async_p);
 
+/**
+ * Set the client identifier. Must be called after
+ * async_mqtt_client_init() and before async_mqtt_client_start().
+ */
 void async_mqtt_client_set_client_id(struct async_mqtt_client_t *self_p,
                                      const char *client_id_p);
 
+/**
+ * Set the response timeout. Must be called after
+ * async_mqtt_client_init() and before async_mqtt_client_start().
+ */
 void async_mqtt_client_set_response_timeout(struct async_mqtt_client_t *self_p,
                                             int response_timeout);
 
+/**
+ * Set the session expiry interval. Must be called after
+ * async_mqtt_client_init() and before async_mqtt_client_start().
+ */
 void async_mqtt_client_set_session_expiry_interval(
     struct async_mqtt_client_t *self_p,
     int session_expiry_interval);
 
+/**
+ * Start given client. A startd client will try to connect to the
+ * broker until successful.
+ */
 void async_mqtt_client_start(struct async_mqtt_client_t *self_p);
 
+/**
+ * Stop given client. Diconnect from the broker, if connected.
+ */
 void async_mqtt_client_stop(struct async_mqtt_client_t *self_p);
 
+/**
+ * Subscribe to given topic.
+ */
 void async_mqtt_client_subscribe(struct async_mqtt_client_t *self_p,
                                  const char *topic_p);
 
+/**
+ * Unsubscribe from given topic.
+ */
 void async_mqtt_client_unsubscribe(struct async_mqtt_client_t *self_p,
                                    const char *topic_p);
 
+/**
+ * Publish to given message on given topic, with quality of service
+ * zero (QoS 0).
+ */
 void async_mqtt_client_publish(struct async_mqtt_client_t *self_p,
                                const char *topic_p,
                                const void *buf_p,

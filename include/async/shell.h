@@ -109,7 +109,8 @@ void async_shell_start(struct async_shell_t *self_p);
 void async_shell_stop(struct async_shell_t *self_p);
 
 /**
- * Must be called before async_shell_start().
+ * Regiser given shell command. Must be called before
+ * async_shell_start().
  */
 void async_shell_register_command(struct async_shell_t *self_p,
                                   const char *name_p,
