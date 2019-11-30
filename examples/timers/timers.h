@@ -26,19 +26,20 @@
  * This file is part of the Async project.
  */
 
-#ifndef ASYNC_INTERNAL_H
-#define ASYNC_INTERNAL_H
+#ifndef TIMERS_H
+#define TIMERS_H
 
 #include "async.h"
 
-#define offsetof(type, member) ((size_t) &((type *)0)->member)
+struct timers_t {
+    struct async_timer_t timer_1;
+    struct async_timer_t timer_2;
+    struct async_timer_t timer_3;
+};
 
-#define container_of(ptr, type, member)                         \
-    ({                                                          \
-        const typeof( ((type *)0)->member) *__mptr = (ptr);     \
-        (type *)( (char *)__mptr - offsetof(type,member) );     \
-    })
-
-void async_timer_list_tick(struct async_timer_list_t *self_p);
+/**
+ * Initialize the timers.
+ */
+void timers_init(struct timers_t *self_p, struct async_t *async_p);
 
 #endif

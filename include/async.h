@@ -32,5 +32,7 @@
 #include "async/core.h"
 #include "async/channel.h"
 #include "async/shell.h"
+#include "async/tcp_client.h"
+#include "async/mqtt_client.h"
 
 #endif

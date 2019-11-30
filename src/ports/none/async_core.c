@@ -26,19 +26,23 @@
  * This file is part of the Async project.
  */
 
-#ifndef ASYNC_INTERNAL_H
-#define ASYNC_INTERNAL_H
-
 #include "async.h"
 
-#define offsetof(type, member) ((size_t) &((type *)0)->member)
+void async_timer_list_init(struct async_timer_list_t *self_p);
 
-#define container_of(ptr, type, member)                         \
-    ({                                                          \
-        const typeof( ((type *)0)->member) *__mptr = (ptr);     \
-        (type *)( (char *)__mptr - offsetof(type,member) );     \
-    })
+static void async_func_queue_init(struct async_func_queue_t *self_p,
+                                  int length)
+{
+    self_p->rdpos = 0;
+    self_p->wrpos = 0;
+    self_p->length = (length + 1);
+    self_p->list_p = malloc(sizeof(*self_p->list_p) * self_p->length);
+}
 
-void async_timer_list_tick(struct async_timer_list_t *self_p);
-
-#endif
+void async_init(struct async_t *self_p,
+                int tick_in_ms)
+{
+    self_p->tick_in_ms = tick_in_ms;
+    async_timer_list_init(&self_p->running_timers);
+    async_func_queue_init(&self_p->funcs, 32);
+}

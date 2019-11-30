@@ -74,17 +74,15 @@ struct async_func_queue_t {
     struct async_func_queue_elem_t *list_p;
 };
 
-struct async_t {
-    int tick_in_ms;
-    struct async_timer_list_t running_timers;
-    struct async_func_queue_t funcs;
-};
+#include "async/port.h"
 
 /**
  * Initailize given async object.
  */
 void async_init(struct async_t *self_p,
                 int tick_in_ms);
+
+void async_run_forever(struct async_t *self_p);
 
 /**
  * Destory given instance.

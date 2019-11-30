@@ -26,19 +26,19 @@
  * This file is part of the Async project.
  */
 
-#ifndef ASYNC_INTERNAL_H
-#define ASYNC_INTERNAL_H
+#ifndef ASYNC_UTILS_LINUX_H
+#define ASYNC_UTILS_LINUX_H
 
 #include "async.h"
 
-#define offsetof(type, member) ((size_t) &((type *)0)->member)
+int async_utils_linux_create_periodic_timer(struct async_t *async_p);
 
-#define container_of(ptr, type, member)                         \
-    ({                                                          \
-        const typeof( ((type *)0)->member) *__mptr = (ptr);     \
-        (type *)( (char *)__mptr - offsetof(type,member) );     \
-    })
+void async_utils_linux_handle_timeout(struct async_t *async_p,
+                                      int timer_fd);
 
-void async_timer_list_tick(struct async_timer_list_t *self_p);
+void async_utils_linux_channel_stdin_init(struct async_channel_t *channel_p,
+                                          struct async_t *async_p);
+
+void async_utils_linux_channel_stdin_handle(struct async_channel_t *channel_p);
 
 #endif

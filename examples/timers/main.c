@@ -26,19 +26,34 @@
  * This file is part of the Async project.
  */
 
-#ifndef ASYNC_INTERNAL_H
-#define ASYNC_INTERNAL_H
-
+#include <unistd.h>
 #include "async.h"
+#include "async/utils/linux.h"
+#include "timers.h"
 
-#define offsetof(type, member) ((size_t) &((type *)0)->member)
+int main()
+{
+    struct async_t async;
+    struct timers_t timers;
+    int timer_fd;
+    ssize_t res;
+    uint64_t value;
 
-#define container_of(ptr, type, member)                         \
-    ({                                                          \
-        const typeof( ((type *)0)->member) *__mptr = (ptr);     \
-        (type *)( (char *)__mptr - offsetof(type,member) );     \
-    })
+    async_init(&async, 100);
+    timers_init(&timers, &async);
 
-void async_timer_list_tick(struct async_timer_list_t *self_p);
+    timer_fd = async_utils_linux_create_periodic_timer(&async);
 
-#endif
+    while (true) {
+        res = read(timer_fd, &value, sizeof(value));
+
+        if (res != sizeof(value)) {
+            break;
+        }
+
+        async_tick(&async);
+        async_process(&async);
+    }
+
+    return (1);
+}

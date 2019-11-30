@@ -1,21 +1,18 @@
+PORT ?= linux
 INC += $(ASYNC_ROOT)/include
+INC += $(ASYNC_ROOT)/include/async/ports/$(PORT)
 INC += $(ASYNC_ROOT)/3pp/bitstream
 INC += $(ASYNC_ROOT)/3pp/humanfriendly/include
-ASYNC_SRC ?= \
-	$(ASYNC_ROOT)/src/async.c \
-	$(ASYNC_ROOT)/src/async_timer.c \
-	$(ASYNC_ROOT)/src/async_channel.c \
-	$(ASYNC_ROOT)/src/async_shell.c \
-	$(ASYNC_ROOT)/src/async_linux.c \
-	$(ASYNC_ROOT)/3pp/humanfriendly/src/hf.c
-ASYNCIO_SRC ?= \
-	$(ASYNC_ROOT)/src/asyncio_core.c \
-	$(ASYNC_ROOT)/src/asyncio_tcp_client.c \
-	$(ASYNC_ROOT)/src/asyncio_mqtt_client.c \
-	$(ASYNC_ROOT)/3pp/bitstream/bitstream.c
+SRC += $(ASYNC_ROOT)/src/async.c
+SRC += $(ASYNC_ROOT)/src/async_timer.c
+SRC += $(ASYNC_ROOT)/src/async_channel.c
+SRC += $(ASYNC_ROOT)/src/async_shell.c
+SRC += $(ASYNC_ROOT)/src/async_mqtt_client.c
+SRC += $(ASYNC_ROOT)/src/ports/$(PORT)/async_core.c
+SRC += $(ASYNC_ROOT)/src/ports/$(PORT)/async_tcp_client.c
+SRC += $(ASYNC_ROOT)/3pp/bitstream/bitstream.c
+SRC += $(ASYNC_ROOT)/3pp/humanfriendly/src/hf.c
 SRC += main.c
-SRC += $(ASYNC_SRC)
-SRC += $(ASYNCIO_SRC)
 OBJ = $(patsubst %,$(BUILD)%,$(abspath $(SRC:%.c=%.o)))
 CFLAGS += $(INC:%=-I%)
 CFLAGS += -ffunction-sections -fdata-sections

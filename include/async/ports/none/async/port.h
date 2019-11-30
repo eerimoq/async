@@ -26,19 +26,19 @@
  * This file is part of the Async project.
  */
 
-#ifndef ASYNC_INTERNAL_H
-#define ASYNC_INTERNAL_H
+#ifndef ASYNC_PORT_H
+#define ASYNC_PORT_H
 
 #include "async.h"
 
-#define offsetof(type, member) ((size_t) &((type *)0)->member)
+struct async_t {
+    int tick_in_ms;
+    struct async_timer_list_t running_timers;
+    struct async_func_queue_t funcs;
+};
 
-#define container_of(ptr, type, member)                         \
-    ({                                                          \
-        const typeof( ((type *)0)->member) *__mptr = (ptr);     \
-        (type *)( (char *)__mptr - offsetof(type,member) );     \
-    })
-
-void async_timer_list_tick(struct async_timer_list_t *self_p);
+struct async_tcp_client_t {
+    int dummy;
+};
 
 #endif

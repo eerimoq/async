@@ -14,6 +14,19 @@ Features
 
 - Timers.
 
+Ports
+=====
+
+Features that requires a port:
+
+- TCP.
+
+Available ports:
+
+- None. Port features listed above can't be used.
+
+- Linux.
+
 Examples
 ========
 
