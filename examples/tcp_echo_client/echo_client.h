@@ -26,17 +26,17 @@
  * This file is part of the Async project.
  */
 
+#ifndef ECHO_CLIENT_H
+#define ECHO_CLIENT_H
+
 #include "async.h"
-#include "echo_client.h"
 
-int main()
-{
-    struct async_t async;
-    struct echo_client_t echo_client;
+struct echo_client_t {
+    struct async_tcp_client_t tcp;
+    struct async_timer_t transmit_timer;
+    struct async_timer_t reconnect_timer;
+};
 
-    async_init(&async, 100);
-    echo_client_init(&echo_client, &async);
-    async_run_forever(&async);
+void echo_client_init(struct echo_client_t *self_p, struct async_t *async_p);
 
-    return (0);
-}
+#endif
