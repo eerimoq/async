@@ -1,6 +1,6 @@
 PORT ?= linux
+
 INC += $(ASYNC_ROOT)/include
-INC += $(ASYNC_ROOT)/include/async/ports/$(PORT)
 INC += $(ASYNC_ROOT)/3pp/bitstream
 INC += $(ASYNC_ROOT)/3pp/humanfriendly/include
 SRC += $(ASYNC_ROOT)/src/async.c
@@ -8,8 +8,13 @@ SRC += $(ASYNC_ROOT)/src/async_timer.c
 SRC += $(ASYNC_ROOT)/src/async_channel.c
 SRC += $(ASYNC_ROOT)/src/async_shell.c
 SRC += $(ASYNC_ROOT)/src/async_mqtt_client.c
+
+ifneq ($(filter $(PORT), none linux), )
+INC += $(ASYNC_ROOT)/include/async/ports/$(PORT)
 SRC += $(ASYNC_ROOT)/src/ports/$(PORT)/async_core.c
 SRC += $(ASYNC_ROOT)/src/ports/$(PORT)/async_tcp_client.c
+endif
+
 SRC += $(ASYNC_ROOT)/3pp/bitstream/bitstream.c
 SRC += $(ASYNC_ROOT)/3pp/humanfriendly/src/hf.c
 SRC += main.c
