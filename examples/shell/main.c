@@ -58,19 +58,6 @@ static int command_hello(struct async_shell_t *self_p,
     return (0);
 }
 
-static int command_exit(struct async_shell_t *self_p,
-                        int argc,
-                        const char *argv[])
-{
-    (void)self_p;
-    (void)argc;
-    (void)argv;
-
-    exit(0);
-
-    return (0);
-}
-
 static int init_periodic_timer(struct async_t *async_p,
                                int epoll_fd)
 {
@@ -145,10 +132,6 @@ int main()
                                  "hello",
                                  "My command.",
                                  command_hello);
-    async_shell_register_command(&shell,
-                                 "exit",
-                                 "Exit the program.",
-                                 command_exit);
     async_shell_start(&shell);
 
     epoll_fd = epoll_create1(0);
