@@ -59,7 +59,7 @@ struct asyncio_mqtt_client_t {
     int session_expiry_interval;
     bool connected;
     uint16_t next_packet_identifier;
-    struct asyncio_tcp_t tcp;
+    struct asyncio_tcp_client_t tcp;
     struct asyncio_mqtt_client_packet_t packet;
     struct async_timer_t keep_alive_timer;
     struct async_timer_t reconnect_timer;

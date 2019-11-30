@@ -32,19 +32,19 @@
 
 struct echo_client_t {
     struct async_timer_t transmit_timer;
-    struct asyncio_tcp_t tcp;
+    struct asyncio_tcp_client_t tcp;
     struct async_timer_t reconnect_timer;
 };
 
 static void on_start(struct echo_client_t *self_p)
 {
     printf("Connecting to 'localhost:33000'...\n");
-    asyncio_tcp_connect(&self_p->tcp, "localhost", 33000);
+    asyncio_tcp_client_connect(&self_p->tcp, "localhost", 33000);
 }
 
 static void on_connect_complete(struct echo_client_t *self_p)
 {
-    if (asyncio_tcp_is_connected(&self_p->tcp)) {
+    if (asyncio_tcp_client_is_connected(&self_p->tcp)) {
         printf("Connected.\n");
         async_timer_start(&self_p->transmit_timer, 1000);
     } else {
@@ -65,7 +65,7 @@ static void on_data(struct echo_client_t *self_p)
     char buf[8];
     ssize_t size;
 
-    size = asyncio_tcp_read(&self_p->tcp, &buf[0], sizeof(buf));
+    size = asyncio_tcp_client_read(&self_p->tcp, &buf[0], sizeof(buf));
 
     printf("RX: '");
     fwrite(&buf[0], 1, size, stdout);
@@ -75,7 +75,7 @@ static void on_data(struct echo_client_t *self_p)
 static void on_timeout(struct echo_client_t *self_p)
 {
     printf("TX: 'Hello!'\n");
-    asyncio_tcp_write(&self_p->tcp, "Hello!", 6);
+    asyncio_tcp_client_write(&self_p->tcp, "Hello!", 6);
 }
 
 int main()
@@ -84,12 +84,12 @@ int main()
     struct echo_client_t echo_client;
 
     asyncio_init(&asyncio);
-    asyncio_tcp_init(&echo_client.tcp,
-                     (async_func_t)on_connect_complete,
-                     (async_func_t)on_disconnected,
-                     (async_func_t)on_data,
-                     &echo_client,
-                     &asyncio);
+    asyncio_tcp_client_init(&echo_client.tcp,
+                            (async_func_t)on_connect_complete,
+                            (async_func_t)on_disconnected,
+                            (async_func_t)on_data,
+                            &echo_client,
+                            &asyncio);
     async_timer_init(&echo_client.transmit_timer,
                      (async_func_t)on_timeout,
                      &echo_client,

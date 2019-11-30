@@ -392,7 +392,7 @@ static void unpack_publish(struct asyncio_mqtt_client_t *self_p,
 static void on_reconnect_timeout(struct asyncio_mqtt_client_t *self_p)
 {
     if (!async_timer_is_stopped(&self_p->reconnect_timer)) {
-        asyncio_tcp_connect(&self_p->tcp, self_p->host_p, self_p->port);
+        asyncio_tcp_client_connect(&self_p->tcp, self_p->host_p, self_p->port);
     }
 }
 
@@ -411,13 +411,13 @@ static void on_tcp_connect_complete(struct asyncio_mqtt_client_t *self_p)
     struct writer_t writer;
     uint8_t buf[256];
 
-    if (asyncio_tcp_is_connected(&self_p->tcp)) {
+    if (asyncio_tcp_client_is_connected(&self_p->tcp)) {
         writer_init(&writer, &buf[0], sizeof(buf));
-        asyncio_tcp_write(&self_p->tcp,
-                          &buf[0],
-                          pack_connect(&writer,
-                                       &self_p->client_id[0],
-                                       30));
+        asyncio_tcp_client_write(&self_p->tcp,
+                                 &buf[0],
+                                 pack_connect(&writer,
+                                              &self_p->client_id[0],
+                                              30));
         stop_reconnect_timer(self_p);
     } else {
         start_reconnect_timer(self_p);
@@ -437,7 +437,7 @@ static bool read_packet_type(struct asyncio_mqtt_client_t *self_p)
     uint8_t ch;
     size_t size;
 
-    size = asyncio_tcp_read(&self_p->tcp, &ch, 1);
+    size = asyncio_tcp_client_read(&self_p->tcp, &ch, 1);
 
     if (size == 1) {
         self_p->packet.type = (ch >> 4);
@@ -454,9 +454,9 @@ static bool read_packet_size(struct asyncio_mqtt_client_t *self_p)
     size_t size;
     bool complete;
 
-    size = asyncio_tcp_read(&self_p->tcp,
-                            &self_p->packet.buf[self_p->packet.offset],
-                            1);
+    size = asyncio_tcp_client_read(&self_p->tcp,
+                                   &self_p->packet.buf[self_p->packet.offset],
+                                   1);
 
     if (size == 0) {
         return (false);
@@ -504,9 +504,9 @@ static bool read_packet_data(struct asyncio_mqtt_client_t *self_p)
         return (false);
     }
 
-    size = asyncio_tcp_read(&self_p->tcp,
-                            &self_p->packet.buf[self_p->packet.offset],
-                            self_p->packet.size - self_p->packet.offset);
+    size = asyncio_tcp_client_read(&self_p->tcp,
+                                   &self_p->packet.buf[self_p->packet.offset],
+                                   self_p->packet.size - self_p->packet.offset);
     self_p->packet.offset += size;
 
     if (self_p->packet.offset != self_p->packet.size) {
@@ -630,7 +630,7 @@ static void on_keep_alive_timeout(struct asyncio_mqtt_client_t *self_p)
     uint8_t buf[8];
 
     writer_init(&writer, &buf[0], sizeof(buf));
-    asyncio_tcp_write(&self_p->tcp, &buf[0], pack_pingreq(&writer));
+    asyncio_tcp_client_write(&self_p->tcp, &buf[0], pack_pingreq(&writer));
 }
 
 void asyncio_mqtt_client_init(struct asyncio_mqtt_client_t *self_p,
@@ -655,12 +655,12 @@ void asyncio_mqtt_client_init(struct asyncio_mqtt_client_t *self_p,
     self_p->session_expiry_interval = 0;
     self_p->connected = false;
     self_p->next_packet_identifier = 1;
-    asyncio_tcp_init(&self_p->tcp,
-                     (async_func_t)on_tcp_connect_complete,
-                     (async_func_t)on_tcp_disconnected,
-                     (async_func_t)on_tcp_data,
-                     self_p,
-                     asyncio_p);
+    asyncio_tcp_client_init(&self_p->tcp,
+                            (async_func_t)on_tcp_connect_complete,
+                            (async_func_t)on_tcp_disconnected,
+                            (async_func_t)on_tcp_data,
+                            self_p,
+                            asyncio_p);
     self_p->packet.state = packet_state_read_type_t;
     async_timer_init(&self_p->keep_alive_timer,
                      (async_func_t)on_keep_alive_timeout,
@@ -695,7 +695,7 @@ void asyncio_mqtt_client_set_session_expiry_interval(
 
 void asyncio_mqtt_client_start(struct asyncio_mqtt_client_t *self_p)
 {
-    asyncio_tcp_connect(&self_p->tcp, self_p->host_p, self_p->port);
+    asyncio_tcp_client_connect(&self_p->tcp, self_p->host_p, self_p->port);
 }
 
 void asyncio_mqtt_client_stop(struct asyncio_mqtt_client_t *self_p)
@@ -704,12 +704,12 @@ void asyncio_mqtt_client_stop(struct asyncio_mqtt_client_t *self_p)
     uint8_t buf[8];
 
     writer_init(&writer, &buf[0], sizeof(buf));
-    asyncio_tcp_write(
+    asyncio_tcp_client_write(
         &self_p->tcp,
         &buf[0],
         pack_disconnect(&writer,
                         disconnect_reason_code_normal_disconnection_t));
-    asyncio_tcp_disconnect(&self_p->tcp);
+    asyncio_tcp_client_disconnect(&self_p->tcp);
     self_p->connected = false;
     async_timer_stop(&self_p->keep_alive_timer);
 }
@@ -721,11 +721,11 @@ void asyncio_mqtt_client_subscribe(struct asyncio_mqtt_client_t *self_p,
     uint8_t buf[512];
 
     writer_init(&writer, &buf[0], sizeof(buf));
-    asyncio_tcp_write(&self_p->tcp,
-                      &buf[0],
-                      pack_subscribe(&writer,
-                                     topic_p,
-                                     next_packet_identifier(self_p)));
+    asyncio_tcp_client_write(&self_p->tcp,
+                             &buf[0],
+                             pack_subscribe(&writer,
+                                            topic_p,
+                                            next_packet_identifier(self_p)));
 }
 
 void asyncio_mqtt_client_unsubscribe(struct asyncio_mqtt_client_t *self_p,
@@ -744,7 +744,7 @@ void asyncio_mqtt_client_publish(struct asyncio_mqtt_client_t *self_p,
     uint8_t buf[512];
 
     writer_init(&writer, &buf[0], sizeof(buf));
-    asyncio_tcp_write(&self_p->tcp,
-                      &buf[0],
-                      pack_publish(&writer, topic_p, buf_p, size));
+    asyncio_tcp_client_write(&self_p->tcp,
+                             &buf[0],
+                             pack_publish(&writer, topic_p, buf_p, size));
 }

@@ -26,12 +26,12 @@
  * This file is part of the Async project.
  */
 
-#ifndef ASYNCIO_TCP_H
-#define ASYNCIO_TCP_H
+#ifndef ASYNCIO_TCP_CLIENT_H
+#define ASYNCIO_TCP_CLIENT_H
 
 #include "asyncio.h"
 
-struct asyncio_tcp_t {
+struct asyncio_tcp_client_t {
     async_func_t on_connect_complete;
     async_func_t on_disconnected;
     async_func_t on_data;
@@ -41,45 +41,45 @@ struct asyncio_tcp_t {
 };
 
 /**
- * Initialize given TCP object.
+ * Initialize given TCP client object.
  */
-void asyncio_tcp_init(struct asyncio_tcp_t *self_p,
-                      async_func_t on_connect_complete,
-                      async_func_t on_disconnected,
-                      async_func_t on_data,
-                      void *obj_p,
-                      struct asyncio_t *asyncio_p);
+void asyncio_tcp_client_init(struct asyncio_tcp_client_t *self_p,
+                             async_func_t on_connect_complete,
+                             async_func_t on_disconnected,
+                             async_func_t on_data,
+                             void *obj_p,
+                             struct asyncio_t *asyncio_p);
 
 /**
  * Opens a TCP connection to a remote host. on_connect_complete is
  * called once completed.
  */
-void asyncio_tcp_connect(struct asyncio_tcp_t *self_p,
-                         const char *host_p,
-                         int port);
+void asyncio_tcp_client_connect(struct asyncio_tcp_client_t *self_p,
+                                const char *host_p,
+                                int port);
 
 /**
  * Disconnect from the remote host.
  */
-void asyncio_tcp_disconnect(struct asyncio_tcp_t *self_p);
+void asyncio_tcp_client_disconnect(struct asyncio_tcp_client_t *self_p);
 
 /**
  *
  */
-bool asyncio_tcp_is_connected(struct asyncio_tcp_t *self_p);
+bool asyncio_tcp_client_is_connected(struct asyncio_tcp_client_t *self_p);
 
 /**
  * Write up to size bytes to the remote host.
  */
-ssize_t asyncio_tcp_write(struct asyncio_tcp_t *self_p,
-                          const void *buf_p,
-                          size_t size);
+ssize_t asyncio_tcp_client_write(struct asyncio_tcp_client_t *self_p,
+                                 const void *buf_p,
+                                 size_t size);
 
 /**
  * Read up to size bytes from the remote host.
  */
-size_t asyncio_tcp_read(struct asyncio_tcp_t *self_p,
-                        void *buf_p,
-                        size_t size);
+size_t asyncio_tcp_client_read(struct asyncio_tcp_client_t *self_p,
+                               void *buf_p,
+                               size_t size);
 
 #endif

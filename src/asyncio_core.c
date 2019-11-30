@@ -51,27 +51,27 @@
 #define MESSAGE_TYPE_TCP_DISCONNECTED                    7
 
 struct message_connect_t {
-    struct asyncio_tcp_t *tcp_p;
+    struct asyncio_tcp_client_t *tcp_p;
     char *host_p;
     int port;
 };
 
 struct message_connect_complete_t {
-    struct asyncio_tcp_t *tcp_p;
+    struct asyncio_tcp_client_t *tcp_p;
     int sockfd;
 };
 
 struct message_disconnect_t {
-    struct asyncio_tcp_t *tcp_p;
+    struct asyncio_tcp_client_t *tcp_p;
     int sockfd;
 };
 
 struct message_data_complete_t {
-    struct asyncio_tcp_t *tcp_p;
+    struct asyncio_tcp_client_t *tcp_p;
     bool closed;
 };
 
-static struct asyncio_tcp_t *tcp_p;
+static struct asyncio_tcp_client_t *tcp_p;
 
 static void read_buf(int fd, void *buf_p, size_t size)
 {
@@ -117,8 +117,8 @@ static void io_handle_timeout(struct asyncio_t *self_p,
     write_buf(self_p->io_fd, &type, sizeof(type));
 }
 
-static void io_handle_tcp_connect(struct asyncio_t *self_p,
-                                  int epoll_fd)
+static void io_handle_tcp_client_connect(struct asyncio_t *self_p,
+                                         int epoll_fd)
 {
     struct sockaddr_in addr;
     int sockfd;
@@ -166,8 +166,8 @@ static void io_handle_tcp_connect(struct asyncio_t *self_p,
                   sizeof(rsp));
 }
 
-static void io_handle_tcp_disconnect(struct asyncio_t *self_p,
-                                     int epoll_fd)
+static void io_handle_tcp_client_disconnect(struct asyncio_t *self_p,
+                                            int epoll_fd)
 {
     (void)self_p;
 
@@ -175,8 +175,8 @@ static void io_handle_tcp_disconnect(struct asyncio_t *self_p,
     epoll_ctl(epoll_fd, EPOLL_CTL_DEL, tcp_p->sockfd, NULL);
 }
 
-static void io_handle_tcp_data_complete(struct asyncio_t *self_p,
-                                        int epoll_fd)
+static void io_handle_tcp_client_data_complete(struct asyncio_t *self_p,
+                                               int epoll_fd)
 {
     int sockfd;
     struct epoll_event event;
@@ -207,15 +207,15 @@ static void io_handle_async(struct asyncio_t *self_p,
     switch (type) {
 
     case MESSAGE_TYPE_TCP_CONNECT:
-        io_handle_tcp_connect(self_p, epoll_fd);
+        io_handle_tcp_client_connect(self_p, epoll_fd);
         break;
 
     case MESSAGE_TYPE_TCP_DISCONNECT:
-        io_handle_tcp_disconnect(self_p, epoll_fd);
+        io_handle_tcp_client_disconnect(self_p, epoll_fd);
         break;
 
     case MESSAGE_TYPE_TCP_DATA_COMPLETE:
-        io_handle_tcp_data_complete(self_p, epoll_fd);
+        io_handle_tcp_client_data_complete(self_p, epoll_fd);
         break;
 
     default:
@@ -290,25 +290,25 @@ static void async_handle_timeout(struct asyncio_t *self_p)
     async_tick(&self_p->async);
 }
 
-static void async_handle_tcp_connect_complete(struct asyncio_t *self_p)
+static void async_handle_tcp_client_connect_complete(struct asyncio_t *self_p)
 {
     struct message_connect_complete_t ind;
 
     read_buf(self_p->async_fd, &ind, sizeof(ind));
-    asyncio_tcp_set_sockfd(ind.tcp_p, ind.sockfd);
+    asyncio_tcp_client_set_sockfd(ind.tcp_p, ind.sockfd);
     async_call(&self_p->async,
                ind.tcp_p->on_connect_complete,
                ind.tcp_p->obj_p);
 }
 
-static void async_handle_tcp_data(struct asyncio_t *self_p)
+static void async_handle_tcp_client_data(struct asyncio_t *self_p)
 {
     async_call(&self_p->async, tcp_p->on_data, tcp_p->obj_p);
 }
 
-static void async_handle_tcp_disconnected(struct asyncio_t *self_p)
+static void async_handle_tcp_client_disconnected(struct asyncio_t *self_p)
 {
-    asyncio_tcp_set_sockfd(tcp_p, -1);
+    asyncio_tcp_client_set_sockfd(tcp_p, -1);
     async_call(&self_p->async, tcp_p->on_disconnected, tcp_p->obj_p);
 }
 
@@ -326,15 +326,15 @@ static void *async_main(struct asyncio_t *self_p)
             break;
 
         case MESSAGE_TYPE_TCP_CONNECT_COMPLETE:
-            async_handle_tcp_connect_complete(self_p);
+            async_handle_tcp_client_connect_complete(self_p);
             break;
 
         case MESSAGE_TYPE_TCP_DATA:
-            async_handle_tcp_data(self_p);
+            async_handle_tcp_client_data(self_p);
             break;
 
         case MESSAGE_TYPE_TCP_DISCONNECTED:
-            async_handle_tcp_disconnected(self_p);
+            async_handle_tcp_client_disconnected(self_p);
             break;
 
         default:
@@ -378,9 +378,9 @@ void asyncio_run_forever(struct asyncio_t *self_p)
     pthread_join(self_p->async_pthread, NULL);
 }
 
-void asyncio_tcp_connect_write(struct asyncio_tcp_t *self_p,
-                               const char *host_p,
-                               int port)
+void asyncio_tcp_client_connect_write(struct asyncio_tcp_client_t *self_p,
+                                      const char *host_p,
+                                      int port)
 {
     struct message_connect_t data;
 
@@ -393,7 +393,7 @@ void asyncio_tcp_connect_write(struct asyncio_tcp_t *self_p,
                   sizeof(data));
 }
 
-void asyncio_tcp_disconnect_write(struct asyncio_tcp_t *self_p)
+void asyncio_tcp_client_disconnect_write(struct asyncio_tcp_client_t *self_p)
 {
     struct message_disconnect_t data;
 
@@ -404,8 +404,8 @@ void asyncio_tcp_disconnect_write(struct asyncio_tcp_t *self_p)
                   sizeof(data));
 }
 
-void asyncio_tcp_data_complete_write(struct asyncio_tcp_t *self_p,
-                                     bool closed)
+void asyncio_tcp_client_data_complete_write(struct asyncio_tcp_client_t *self_p,
+                                            bool closed)
 {
     struct message_data_complete_t ind;
 

@@ -31,7 +31,7 @@
 
 #include "async.h"
 #include "asyncio/core.h"
-#include "asyncio/tcp.h"
+#include "asyncio/tcp_client.h"
 #include "asyncio/mqtt_client.h"
 
 #endif

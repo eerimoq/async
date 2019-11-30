@@ -33,12 +33,12 @@
 #include "asyncio.h"
 #include "internalio.h"
 
-void asyncio_tcp_init(struct asyncio_tcp_t *self_p,
-                      async_func_t on_connect_complete,
-                      async_func_t on_disconnected,
-                      async_func_t on_data,
-                      void *obj_p,
-                      struct asyncio_t *asyncio_p)
+void asyncio_tcp_client_init(struct asyncio_tcp_client_t *self_p,
+                             async_func_t on_connect_complete,
+                             async_func_t on_disconnected,
+                             async_func_t on_data,
+                             void *obj_p,
+                             struct asyncio_t *asyncio_p)
 {
     self_p->on_connect_complete = on_connect_complete;
     self_p->on_disconnected = on_disconnected;
@@ -48,42 +48,42 @@ void asyncio_tcp_init(struct asyncio_tcp_t *self_p,
     self_p->sockfd = -1;
 }
 
-void asyncio_tcp_connect(struct asyncio_tcp_t *self_p,
-                         const char *host_p,
-                         int port)
+void asyncio_tcp_client_connect(struct asyncio_tcp_client_t *self_p,
+                                const char *host_p,
+                                int port)
 {
-    asyncio_tcp_connect_write(self_p, host_p, port);
+    asyncio_tcp_client_connect_write(self_p, host_p, port);
 }
 
-void asyncio_tcp_disconnect(struct asyncio_tcp_t *self_p)
+void asyncio_tcp_client_disconnect(struct asyncio_tcp_client_t *self_p)
 {
-    asyncio_tcp_disconnect_write(self_p);
+    asyncio_tcp_client_disconnect_write(self_p);
 }
 
-bool asyncio_tcp_is_connected(struct asyncio_tcp_t *self_p)
+bool asyncio_tcp_client_is_connected(struct asyncio_tcp_client_t *self_p)
 {
     return (self_p->sockfd != -1);
 }
 
-ssize_t asyncio_tcp_write(struct asyncio_tcp_t *self_p,
-                          const void *buf_p,
-                          size_t size)
+ssize_t asyncio_tcp_client_write(struct asyncio_tcp_client_t *self_p,
+                                 const void *buf_p,
+                                 size_t size)
 {
     return (write(self_p->sockfd, buf_p, size));
 }
 
-size_t asyncio_tcp_read(struct asyncio_tcp_t *self_p,
-                        void *buf_p,
-                        size_t size)
+size_t asyncio_tcp_client_read(struct asyncio_tcp_client_t *self_p,
+                               void *buf_p,
+                               size_t size)
 {
     ssize_t res;
 
     res = read(self_p->sockfd, buf_p, size);
 
     if (res == 0) {
-        asyncio_tcp_data_complete_write(self_p, true);
+        asyncio_tcp_client_data_complete_write(self_p, true);
     } else if (res == -1) {
-        asyncio_tcp_data_complete_write(self_p, false);
+        asyncio_tcp_client_data_complete_write(self_p, false);
         res = 0;
     } else {
         async_call(&self_p->asyncio_p->async,
@@ -94,8 +94,8 @@ size_t asyncio_tcp_read(struct asyncio_tcp_t *self_p,
     return (res);
 }
 
-void asyncio_tcp_set_sockfd(struct asyncio_tcp_t *self_p,
-                            int sockfd)
+void asyncio_tcp_client_set_sockfd(struct asyncio_tcp_client_t *self_p,
+                                   int sockfd)
 {
     self_p->sockfd = sockfd;
 }

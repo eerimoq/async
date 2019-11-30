@@ -10,7 +10,7 @@ ASYNC_SRC ?= \
 	$(ASYNC_ROOT)/3pp/humanfriendly/src/hf.c
 ASYNCIO_SRC ?= \
 	$(ASYNC_ROOT)/src/asyncio_core.c \
-	$(ASYNC_ROOT)/src/asyncio_tcp.c \
+	$(ASYNC_ROOT)/src/asyncio_tcp_client.c \
 	$(ASYNC_ROOT)/src/asyncio_mqtt_client.c \
 	$(ASYNC_ROOT)/3pp/bitstream/bitstream.c
 SRC += main.c
