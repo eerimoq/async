@@ -27,66 +27,10 @@
  */
 
 #include <stdio.h>
-#include <unistd.h>
-#include <fcntl.h>
-#include <string.h>
 #include <sys/epoll.h>
-#include <sys/types.h>
 #include "async.h"
 #include "async/utils/linux.h"
 #include "bob.h"
-
-static void fatal_perror(const char *message_p)
-{
-    perror(message_p);
-    exit(1);
-}
-
-static int init_periodic_timer(struct async_t *async_p,
-                               int epoll_fd)
-{
-    int res;
-    int timer_fd;
-    struct epoll_event event;
-
-    timer_fd = async_utils_linux_create_periodic_timer(async_p);
-
-    if (timer_fd == -1) {
-        fatal_perror("async_utils_linux_create_periodic_timer");
-    }
-
-    event.events = EPOLLIN;
-    event.data.fd = timer_fd;
-    res = epoll_ctl(epoll_fd, EPOLL_CTL_ADD, timer_fd, &event);
-
-    if (res == -1) {
-        fatal_perror("epoll_ctl timer");
-    }
-
-    return (timer_fd);
-}
-
-static void init_stdin(int epoll_fd)
-{
-    int res;
-    struct epoll_event event;
-
-    res = fcntl(fileno(stdin),
-                F_SETFL,
-                fcntl(fileno(stdin), F_GETFL) | O_NONBLOCK);
-
-    if (res == -1) {
-        fatal_perror("fcntl");
-    }
-
-    event.events = EPOLLIN;
-    event.data.fd = fileno(stdin);
-    res = epoll_ctl(epoll_fd, EPOLL_CTL_ADD, fileno(stdin), &event);
-
-    if (res == -1) {
-        fatal_perror("epoll_ctl stdin");
-    }
-}
 
 int main()
 {
@@ -105,11 +49,11 @@ int main()
     epoll_fd = epoll_create1(0);
 
     if (epoll_fd == -1) {
-        fatal_perror("epoll_create1");
+        async_utils_linux_fatal_perror("epoll_create1");
     }
 
-    timer_fd = init_periodic_timer(&async, epoll_fd);
-    init_stdin(epoll_fd);
+    timer_fd = async_utils_linux_init_periodic_timer(&async, epoll_fd);
+    async_utils_linux_init_stdin(epoll_fd);
 
     while (true) {
         nfds = epoll_wait(epoll_fd, &event, 1, -1);

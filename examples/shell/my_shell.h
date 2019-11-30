@@ -26,26 +26,17 @@
  * This file is part of the Async project.
  */
 
-#ifndef ASYNC_UTILS_LINUX_H
-#define ASYNC_UTILS_LINUX_H
+#ifndef MY_SHELL_H
+#define MY_SHELL_H
 
 #include "async.h"
 
-int async_utils_linux_create_periodic_timer(struct async_t *async_p);
+struct my_shell_t {
+    struct async_shell_t shell;
+};
 
-void async_utils_linux_handle_timeout(struct async_t *async_p,
-                                      int timer_fd);
-
-void async_utils_linux_channel_stdin_init(struct async_channel_t *channel_p,
-                                          struct async_t *async_p);
-
-void async_utils_linux_channel_stdin_handle(struct async_channel_t *channel_p);
-
-int async_utils_linux_init_periodic_timer(struct async_t *async_p,
-                                          int epoll_fd);
-
-void async_utils_linux_fatal_perror(const char *message_p);
-
-void async_utils_linux_init_stdin(int epoll_fd);
+void my_shell_init(struct my_shell_t *self_p,
+                   struct async_channel_t *channel_p,
+                   struct async_t *async_p);
 
 #endif

@@ -85,7 +85,7 @@ static void read_buf(int fd, void *buf_p, size_t size)
     res = read(fd, buf_p, size);
 
     if (res != (ssize_t)size) {
-        exit(1);
+        async_utils_linux_fatal_perror("read");
     }
 }
 
@@ -96,7 +96,7 @@ static void write_buf(int fd, const void *buf_p, size_t size)
     res = write(fd, buf_p, size);
 
     if (res != (ssize_t)size) {
-        exit(1);
+        async_utils_linux_fatal_perror("write");
     }
 }
 

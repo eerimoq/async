@@ -26,6 +26,8 @@
  * This file is part of the Async project.
  */
 
+#include <fcntl.h>
+#include <sys/epoll.h>
 #include <unistd.h>
 #include <errno.h>
 #include <stdio.h>
@@ -39,14 +41,14 @@ static ssize_t stdin_read(struct async_channel_t *self_p,
     (void)self_p;
 
     ssize_t res;
-    
+
     res = read(fileno(stdin), buf_p, size);
 
     if (res == -1) {
         if (errno == EAGAIN) {
             res = 0;
         } else {
-            exit(1);
+            async_utils_linux_fatal_perror("read");
         }
     }
 
@@ -91,8 +93,7 @@ void async_utils_linux_handle_timeout(struct async_t *async_p,
     res = read(timer_fd, &value, sizeof(value));
 
     if (res != sizeof(value)) {
-        perror("read timer");
-        exit(1);
+        async_utils_linux_fatal_perror("read timer");
     }
 
     async_tick(async_p);
@@ -112,4 +113,56 @@ void async_utils_linux_channel_stdin_init(struct async_channel_t *channel_p,
 void async_utils_linux_channel_stdin_handle(struct async_channel_t *channel_p)
 {
     async_channel_input(channel_p);
+}
+
+int async_utils_linux_init_periodic_timer(struct async_t *async_p,
+                                          int epoll_fd)
+{
+    int res;
+    int timer_fd;
+    struct epoll_event event;
+
+    timer_fd = async_utils_linux_create_periodic_timer(async_p);
+
+    if (timer_fd == -1) {
+        async_utils_linux_fatal_perror("timer");
+    }
+
+    event.events = EPOLLIN;
+    event.data.fd = timer_fd;
+    res = epoll_ctl(epoll_fd, EPOLL_CTL_ADD, timer_fd, &event);
+
+    if (res == -1) {
+        async_utils_linux_fatal_perror("epoll_ctl");
+    }
+
+    return (timer_fd);
+}
+
+void async_utils_linux_fatal_perror(const char *message_p)
+{
+    perror(message_p);
+    exit(1);
+}
+
+void async_utils_linux_init_stdin(int epoll_fd)
+{
+    int res;
+    struct epoll_event event;
+
+    res = fcntl(fileno(stdin),
+                F_SETFL,
+                fcntl(fileno(stdin), F_GETFL) | O_NONBLOCK);
+
+    if (res == -1) {
+        async_utils_linux_fatal_perror("fcntl");
+    }
+
+    event.events = EPOLLIN;
+    event.data.fd = fileno(stdin);
+    res = epoll_ctl(epoll_fd, EPOLL_CTL_ADD, fileno(stdin), &event);
+
+    if (res == -1) {
+        async_utils_linux_fatal_perror("epoll_ctl stdin");
+    }
 }

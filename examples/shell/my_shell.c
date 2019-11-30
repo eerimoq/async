@@ -26,26 +26,45 @@
  * This file is part of the Async project.
  */
 
-#ifndef ASYNC_UTILS_LINUX_H
-#define ASYNC_UTILS_LINUX_H
+#include <termios.h>
+#include <stdio.h>
+#include <unistd.h>
+#include <fcntl.h>
+#include <string.h>
+#include <sys/epoll.h>
+#include <sys/types.h>
+#include <unistd.h>
+#include <stdio.h>
+#include <sys/epoll.h>
+#include "my_shell.h"
 
-#include "async.h"
+static int command_hello(struct async_shell_t *self_p,
+                         int argc,
+                         const char *argv[])
+{
+    (void)self_p;
 
-int async_utils_linux_create_periodic_timer(struct async_t *async_p);
+    const char *name_p;
 
-void async_utils_linux_handle_timeout(struct async_t *async_p,
-                                      int timer_fd);
+    if (argc == 2) {
+        name_p = argv[1];
+    } else {
+        name_p = "stranger";
+    }
 
-void async_utils_linux_channel_stdin_init(struct async_channel_t *channel_p,
-                                          struct async_t *async_p);
+    printf("Hello %s!\n", name_p);
 
-void async_utils_linux_channel_stdin_handle(struct async_channel_t *channel_p);
+    return (0);
+}
 
-int async_utils_linux_init_periodic_timer(struct async_t *async_p,
-                                          int epoll_fd);
-
-void async_utils_linux_fatal_perror(const char *message_p);
-
-void async_utils_linux_init_stdin(int epoll_fd);
-
-#endif
+void my_shell_init(struct my_shell_t *self_p,
+                   struct async_channel_t *channel_p,
+                   struct async_t *async_p)
+{
+    async_shell_init(&self_p->shell, channel_p, async_p);
+    async_shell_register_command(&self_p->shell,
+                                 "hello",
+                                 "My command.",
+                                 command_hello);
+    async_shell_start(&self_p->shell);
+}
