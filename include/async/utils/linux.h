@@ -48,4 +48,6 @@ void async_utils_linux_fatal_perror(const char *message_p);
 
 void async_utils_linux_init_stdin(int epoll_fd);
 
+int async_utils_linux_epoll_create(void);
+
 #endif

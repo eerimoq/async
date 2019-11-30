@@ -45,13 +45,7 @@ int main()
     async_init(&async, 100);
     async_utils_linux_channel_stdin_init(&channel, &async);
     bob_init(&bob, &channel, &async);
-
-    epoll_fd = epoll_create1(0);
-
-    if (epoll_fd == -1) {
-        async_utils_linux_fatal_perror("epoll_create1");
-    }
-
+    epoll_fd = async_utils_linux_epoll_create();
     timer_fd = async_utils_linux_init_periodic_timer(&async, epoll_fd);
     async_utils_linux_init_stdin(epoll_fd);
 

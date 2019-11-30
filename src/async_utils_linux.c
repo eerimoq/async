@@ -166,3 +166,16 @@ void async_utils_linux_init_stdin(int epoll_fd)
         async_utils_linux_fatal_perror("epoll_ctl stdin");
     }
 }
+
+int async_utils_linux_epoll_create(void)
+{
+    int epoll_fd;
+
+    epoll_fd = epoll_create1(0);
+
+    if (epoll_fd == -1) {
+        async_utils_linux_fatal_perror("epoll_create1");
+    }
+
+    return (epoll_fd);
+}
