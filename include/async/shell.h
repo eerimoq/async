@@ -94,7 +94,7 @@ struct async_shell_t {
  * function has been called.
  */
 void async_shell_init(struct async_shell_t *self_p,
-                      struct async_channel_t *stream_p,
+                      struct async_channel_t *channel_p,
                       struct async_t *async_p);
 
 /**

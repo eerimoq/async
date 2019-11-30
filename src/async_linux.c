@@ -98,8 +98,8 @@ void async_linux_handle_timeout(struct async_t *async_p,
     async_tick(async_p);
 }
 
-void async_linux_stream_stdin_init(struct async_channel_t *channel_p,
-                                   struct async_t *async_p)
+void async_linux_channel_stdin_init(struct async_channel_t *channel_p,
+                                    struct async_t *async_p)
 {
     async_channel_init(channel_p,
                        NULL,
@@ -109,7 +109,7 @@ void async_linux_stream_stdin_init(struct async_channel_t *channel_p,
                        async_p);
 }
 
-void async_linux_stream_stdin_handle(struct async_channel_t *channel_p)
+void async_linux_channel_stdin_handle(struct async_channel_t *channel_p)
 {
     async_channel_input(channel_p);
 }

@@ -36,9 +36,9 @@ int async_linux_create_periodic_timer(struct async_t *async_p);
 void async_linux_handle_timeout(struct async_t *async_p,
                                 int timer_fd);
 
-void async_linux_stream_stdin_init(struct async_channel_t *channel_p,
-                                   struct async_t *async_p);
+void async_linux_channel_stdin_init(struct async_channel_t *channel_p,
+                                    struct async_t *async_p);
 
-void async_linux_stream_stdin_handle(struct async_channel_t *channel_p);
+void async_linux_channel_stdin_handle(struct async_channel_t *channel_p);
 
 #endif

@@ -61,13 +61,18 @@ typedef ssize_t (*async_channel_write_t)(struct async_channel_t *self_p,
                                          const void *buf_p,
                                          size_t size);
 
+typedef void (*async_channel_opened_t)(void *obj_p, int res);
+
 struct async_channel_t {
     async_channel_open_t open;
     async_channel_close_t close;
     async_channel_read_t read;
     async_channel_write_t write;
     struct {
-        async_func_t opened;
+        struct {
+            async_channel_opened_t func;
+            int res;
+        } opened;
         async_func_t closed;
         async_func_t input;
         void *obj_p;
@@ -79,10 +84,10 @@ struct async_channel_t {
  * Initialize given channel.
  */
 void async_channel_init(struct async_channel_t *self_p,
-                        async_channel_open_t open_fn,
-                        async_channel_close_t close_fn,
-                        async_channel_read_t read_fn,
-                        async_channel_write_t write_fn,
+                        async_channel_open_t open_func,
+                        async_channel_close_t close_func,
+                        async_channel_read_t read_func,
+                        async_channel_write_t write_func,
                         struct async_t *async_p);
 
 /**
@@ -91,7 +96,7 @@ void async_channel_init(struct async_channel_t *self_p,
  * to the channel.
  */
 void async_channel_set_on(struct async_channel_t *self_p,
-                          async_func_t on_opened,
+                          async_channel_opened_t on_opened,
                           async_func_t on_closed,
                           async_func_t on_input,
                           void *obj_p);
@@ -121,9 +126,11 @@ ssize_t async_channel_write(struct async_channel_t *self_p,
                             size_t size);
 
 /**
- * Call when opened.
+ * Call when opened, or when open failed. res should be 0 if
+ * successful.
  */
-void async_channel_opened(struct async_channel_t *self_p);
+void async_channel_opened(struct async_channel_t *self_p,
+                          int res);
 
 /**
  * Call when closed be the peer.

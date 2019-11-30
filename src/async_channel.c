@@ -28,9 +28,15 @@
 
 #include "async/channel.h"
 
+static void on_opened(struct async_channel_t *self_p)
+{
+    self_p->on.opened.func(self_p->on.obj_p, self_p->on.opened.res);
+}
+
 static void null_open(struct async_channel_t *self_p)
 {
-    async_call(self_p->async_p, self_p->on.opened, self_p->on.obj_p);
+    self_p->on.opened.res = 0;
+    async_call(self_p->async_p, (async_func_t)on_opened, self_p);
 }
 
 static void null_close(struct async_channel_t *self_p)
@@ -89,7 +95,7 @@ void async_channel_init(struct async_channel_t *self_p,
     self_p->close = close_fn;
     self_p->read = read_fn;
     self_p->write = write_fn;
-    self_p->on.opened = null_on;
+    self_p->on.opened.func = null_on;
     self_p->on.closed = null_on;
     self_p->on.input = null_on;
     self_p->on.obj_p = NULL;
@@ -97,12 +103,12 @@ void async_channel_init(struct async_channel_t *self_p,
 }
 
 void async_channel_set_on(struct async_channel_t *self_p,
-                          async_func_t on_opened,
+                          async_channel_opened_t on_opened,
                           async_func_t on_closed,
                           async_func_t on_input,
                           void *obj_p)
 {
-    self_p->on.opened = on_opened;
+    self_p->on.opened.func = on_opened;
     self_p->on.closed = on_closed;
     self_p->on.input = on_input;
     self_p->on.obj_p = obj_p;
@@ -132,9 +138,10 @@ ssize_t async_channel_write(struct async_channel_t *self_p,
     return (self_p->write(self_p, buf_p, size));
 }
 
-void async_channel_opened(struct async_channel_t *self_p)
+void async_channel_opened(struct async_channel_t *self_p, int res)
 {
-    async_call(self_p->async_p, self_p->on.opened, self_p->on.obj_p);
+    self_p->on.opened.res = res;
+    async_call(self_p->async_p, (async_func_t)on_opened, self_p);
 }
 
 void async_channel_closed(struct async_channel_t *self_p)

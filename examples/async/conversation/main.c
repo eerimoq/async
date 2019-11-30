@@ -99,7 +99,7 @@ int main()
     struct async_channel_t channel;
 
     async_init(&async, 100);
-    async_linux_stream_stdin_init(&channel, &async);
+    async_linux_channel_stdin_init(&channel, &async);
     bob_init(&bob, &channel, &async);
 
     epoll_fd = epoll_create1(0);
@@ -118,7 +118,7 @@ int main()
             if (event.data.fd == timer_fd) {
                 async_linux_handle_timeout(&async, timer_fd);
             } else if (event.data.fd == fileno(stdin)) {
-                async_linux_stream_stdin_handle(&channel);
+                async_linux_channel_stdin_handle(&channel);
             }
         }
 
