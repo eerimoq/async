@@ -117,7 +117,7 @@ void async_timer_start(struct async_timer_t *self_p,
 {
     async_timer_stop(self_p);
 
-    self_p->timeout = (timeout_ms / self_p->async_p->tick_in_ms);
+    self_p->timeout = (timeout_ms / self_p->async_p->core.tick_in_ms);
 
     if (self_p->timeout == 0) {
         self_p->timeout = 1;
@@ -131,13 +131,13 @@ void async_timer_start(struct async_timer_t *self_p,
        occurs. */
     self_p->delta++;
 
-    timer_list_insert(&self_p->async_p->running_timers, self_p);
+    timer_list_insert(&self_p->async_p->core.running_timers, self_p);
 }
 
 void async_timer_stop(struct async_timer_t *self_p)
 {
     self_p->stopped = true;
-    timer_list_remove(&self_p->async_p->running_timers, self_p);
+    timer_list_remove(&self_p->async_p->core.running_timers, self_p);
 }
 
 bool async_timer_is_stopped(struct async_timer_t *self_p)

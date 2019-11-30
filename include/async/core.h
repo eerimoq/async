@@ -74,6 +74,12 @@ struct async_func_queue_t {
     struct async_func_queue_elem_t *list_p;
 };
 
+struct async_core_t {
+    int tick_in_ms;
+    struct async_timer_list_t running_timers;
+    struct async_func_queue_t funcs;
+};
+
 #include "async/port.h"
 
 /**

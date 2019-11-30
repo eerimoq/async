@@ -32,9 +32,7 @@
 #include <pthread.h>
 
 struct async_t {
-    int tick_in_ms;
-    struct async_timer_list_t running_timers;
-    struct async_func_queue_t funcs;
+    struct async_core_t core;
     int io_fd;
     int async_fd;
     pthread_t io_pthread;

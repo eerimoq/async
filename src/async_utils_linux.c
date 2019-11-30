@@ -74,9 +74,9 @@ int async_utils_linux_create_periodic_timer(struct async_t *async_p)
     }
 
     timeout.it_value.tv_sec = 0;
-    timeout.it_value.tv_nsec = async_p->tick_in_ms * 1000000;
+    timeout.it_value.tv_nsec = async_p->core.tick_in_ms * 1000000;
     timeout.it_interval.tv_sec= 0;
-    timeout.it_interval.tv_nsec = async_p->tick_in_ms * 1000000;
+    timeout.it_interval.tv_nsec = async_p->core.tick_in_ms * 1000000;
     timerfd_settime(timer_fd, 0, &timeout, NULL);
 
     return (timer_fd);

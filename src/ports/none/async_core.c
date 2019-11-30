@@ -27,22 +27,10 @@
  */
 
 #include "async.h"
-
-void async_timer_list_init(struct async_timer_list_t *self_p);
-
-static void async_func_queue_init(struct async_func_queue_t *self_p,
-                                  int length)
-{
-    self_p->rdpos = 0;
-    self_p->wrpos = 0;
-    self_p->length = (length + 1);
-    self_p->list_p = malloc(sizeof(*self_p->list_p) * self_p->length);
-}
+#include "../../internal.h"
 
 void async_init(struct async_t *self_p,
                 int tick_in_ms)
 {
-    self_p->tick_in_ms = tick_in_ms;
-    async_timer_list_init(&self_p->running_timers);
-    async_func_queue_init(&self_p->funcs, 32);
+    async_core_init(&self_p->core, tick_in_ms);
 }

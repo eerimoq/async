@@ -40,6 +40,7 @@
 #include <stdio.h>
 #include "async/utils/linux.h"
 #include "async.h"
+#include "../../internal.h"
 
 #define MESSAGE_TYPE_TIMEOUT                             1
 #define MESSAGE_TYPE_TCP_CONNECT                         2
@@ -71,17 +72,6 @@ struct message_data_complete_t {
 };
 
 static struct async_tcp_client_t *tcp_p;
-
-void async_timer_list_init(struct async_timer_list_t *self_p);
-
-static void async_func_queue_init(struct async_func_queue_t *self_p,
-                                  int length)
-{
-    self_p->rdpos = 0;
-    self_p->wrpos = 0;
-    self_p->length = (length + 1);
-    self_p->list_p = malloc(sizeof(*self_p->list_p) * self_p->length);
-}
 
 static void async_tcp_client_set_sockfd(struct async_tcp_client_t *self_p, int sockfd)
 {
@@ -368,16 +358,13 @@ void async_init(struct async_t *self_p,
     int sockets[2];
     int res;
 
-    self_p->tick_in_ms = tick_in_ms;
-    async_timer_list_init(&self_p->running_timers);
-    async_func_queue_init(&self_p->funcs, 32);
-
     res = socketpair(AF_UNIX, SOCK_STREAM, 0, &sockets[0]);
 
     if (res != 0) {
         return;
     }
 
+    async_core_init(&self_p->core, tick_in_ms);
     self_p->io_fd = sockets[0];
     self_p->async_fd = sockets[1];
 

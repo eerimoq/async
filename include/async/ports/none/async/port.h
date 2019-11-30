@@ -32,9 +32,7 @@
 #include "async.h"
 
 struct async_t {
-    int tick_in_ms;
-    struct async_timer_list_t running_timers;
-    struct async_func_queue_t funcs;
+    struct async_core_t core;
 };
 
 struct async_tcp_client_t {

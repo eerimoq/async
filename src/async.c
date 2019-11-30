@@ -39,6 +39,15 @@ static bool is_full(struct async_func_queue_t *self_p)
     return (((self_p->wrpos + 1) % self_p->length) == self_p->rdpos);
 }
 
+static void async_func_queue_init(struct async_func_queue_t *self_p,
+                                  int length)
+{
+    self_p->rdpos = 0;
+    self_p->wrpos = 0;
+    self_p->length = (length + 1);
+    self_p->list_p = malloc(sizeof(*self_p->list_p) * self_p->length);
+}
+
 static void async_func_queue_destroy(struct async_func_queue_t *self_p)
 {
     free(self_p->list_p);
@@ -79,7 +88,7 @@ static int async_func_queue_put(struct async_func_queue_t *self_p,
 
 void async_destroy(struct async_t *self_p)
 {
-    async_func_queue_destroy(&self_p->funcs);
+    async_func_queue_destroy(&self_p->core.funcs);
 }
 
 void async_process(struct async_t *self_p)
@@ -88,7 +97,7 @@ void async_process(struct async_t *self_p)
     void *obj_p;
 
     while (true) {
-        func = async_func_queue_get(&self_p->funcs, &obj_p);
+        func = async_func_queue_get(&self_p->core.funcs, &obj_p);
 
         if (func == NULL) {
             break;
@@ -100,10 +109,18 @@ void async_process(struct async_t *self_p)
 
 void async_tick(struct async_t *self_p)
 {
-    async_timer_list_tick(&self_p->running_timers);
+    async_timer_list_tick(&self_p->core.running_timers);
 }
 
 int async_call(struct async_t *self_p, async_func_t func, void *obj_p)
 {
-    return (async_func_queue_put(&self_p->funcs, func, obj_p));
+    return (async_func_queue_put(&self_p->core.funcs, func, obj_p));
+}
+
+void async_core_init(struct async_core_t *self_p,
+                     int tick_in_ms)
+{
+    self_p->tick_in_ms = tick_in_ms;
+    async_timer_list_init(&self_p->running_timers);
+    async_func_queue_init(&self_p->funcs, 32);
 }
