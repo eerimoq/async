@@ -88,6 +88,9 @@ struct async_core_t {
 void async_init(struct async_t *self_p,
                 int tick_in_ms);
 
+/**
+ * Run given async object forever. This function never returns.
+ */
 void async_run_forever(struct async_t *self_p);
 
 /**
