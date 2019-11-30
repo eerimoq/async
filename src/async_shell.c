@@ -1085,7 +1085,7 @@ static int read_command(struct async_shell_t *self_p)
 static void on_opened(struct async_shell_t *self_p, int res)
 {
     if (res == 0) {
-        output(self_p, "\nWelcome the the async shell!\n\n");
+        output(self_p, "\nWelcome to the async shell!\n\n");
         print_prompt(self_p);
     } else {
         printf("Failed to open the shell channel.\n");
