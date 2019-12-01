@@ -22,7 +22,6 @@ OBJ = $(patsubst %,$(BUILD)%,$(abspath $(SRC:%.c=%.o)))
 CFLAGS += $(INC:%=-I%)
 CFLAGS += -ffunction-sections -fdata-sections
 CFLAGS += -D_GNU_SOURCE=1
-CFLAGS += -fsanitize=address
 LDFLAGS += -Wl,--gc-sections
 DEPSDIR = $(BUILD)/deps
 

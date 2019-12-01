@@ -5,6 +5,7 @@ test:
 	$(MAKE) -C examples/mqtt_client build
 	$(MAKE) -C examples/tcp_echo_client build
 	$(MAKE) -C tst/async run
+	$(MAKE) -C tst/shell run
 
 clean:
 	$(MAKE) -C examples/timers clean
@@ -13,3 +14,4 @@ clean:
 	$(MAKE) -C examples/mqtt_client clean
 	$(MAKE) -C examples/tcp_echo_client clean
 	$(MAKE) -C tst/async clean
+	$(MAKE) -C tst/shell clean
