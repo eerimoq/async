@@ -39,7 +39,9 @@
         (type *)( (char *)__mptr - offsetof(type,member) );     \
     })
 
-void async_core_init(struct async_core_t *self_p, int tick_in_ms);
+void async_core_init(struct async_core_t *self_p);
+
+void async_core_set_tick_in_ms(struct async_core_t *self_p, int tick_in_ms);
 
 void async_timer_list_init(struct async_timer_list_t *self_p);
 

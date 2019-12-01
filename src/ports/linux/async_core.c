@@ -352,8 +352,7 @@ static void *async_main(struct async_t *self_p)
     return (NULL);
 }
 
-void async_init(struct async_t *self_p,
-                int tick_in_ms)
+void async_init(struct async_t *self_p)
 {
     int sockets[2];
     int res;
@@ -364,7 +363,7 @@ void async_init(struct async_t *self_p,
         return;
     }
 
-    async_core_init(&self_p->core, tick_in_ms);
+    async_core_init(&self_p->core);
     self_p->io_fd = sockets[0];
     self_p->async_fd = sockets[1];
 
@@ -376,6 +375,11 @@ void async_init(struct async_t *self_p,
                    NULL,
                    (void *(*)(void *))async_main,
                    self_p);
+}
+
+void async_set_tick_in_ms(struct async_t *self_p, int tick_in_ms)
+{
+    async_core_set_tick_in_ms(&self_p->core, tick_in_ms);
 }
 
 void async_run_forever(struct async_t *self_p)

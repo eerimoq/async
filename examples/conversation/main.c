@@ -42,7 +42,7 @@ int main()
     struct bob_t bob;
     struct async_channel_t channel;
 
-    async_init(&async, 100);
+    async_init(&async);
     async_utils_linux_channel_stdin_init(&channel, &async);
     bob_init(&bob, &channel, &async);
     epoll_fd = async_utils_linux_epoll_create();

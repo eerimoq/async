@@ -39,7 +39,7 @@ int main()
     ssize_t res;
     uint64_t value;
 
-    async_init(&async, 100);
+    async_init(&async);
     timers_init(&timers, &async);
 
     timer_fd = async_utils_linux_create_periodic_timer(&async);

@@ -35,7 +35,7 @@ TEST(test_basic)
     async_tcp_client_init_mock_ignore_in_once();
     async_tcp_client_init_mock_set_callback(save_tcp_callbacks);
 
-    async_init(&async, 100);
+    async_init(&async);
     async_mqtt_client_init(&client,
                            "foo",
                            1883,

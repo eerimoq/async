@@ -34,7 +34,7 @@ int main()
     struct async_t async;
     struct echo_client_t echo_client;
 
-    async_init(&async, 100);
+    async_init(&async);
     echo_client_init(&echo_client, &async);
     async_run_forever(&async);
 

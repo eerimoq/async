@@ -30,9 +30,14 @@
 #include "async.h"
 #include "../../internal.h"
 
-void async_init(struct async_t *self_p, int tick_in_ms)
+void async_init(struct async_t *self_p)
 {
-    async_core_init(&self_p->core, tick_in_ms);
+    async_core_init(&self_p->core);
+}
+
+void async_set_tick_in_ms(struct async_t *self_p, int tick_in_ms)
+{
+    async_core_set_tick_in_ms(&self_p->core, tick_in_ms);
 }
 
 void async_run_forever(struct async_t *self_p)

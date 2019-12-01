@@ -53,7 +53,7 @@ int main()
     struct epoll_event event;
     struct async_channel_t channel;
 
-    async_init(&async, 100);
+    async_init(&async);
     async_utils_linux_channel_stdin_init(&channel, &async);
     my_shell_init(&my_shell, &channel, &async);
     epoll_fd = async_utils_linux_epoll_create();

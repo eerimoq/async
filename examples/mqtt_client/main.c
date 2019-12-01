@@ -34,7 +34,7 @@ int main()
     struct async_t async;
     struct publisher_t publisher;
 
-    async_init(&async, 100);
+    async_init(&async);
     publisher_init(&publisher, &async);
     async_run_forever(&async);
 

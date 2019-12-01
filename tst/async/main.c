@@ -6,7 +6,7 @@ TEST(test_process_empty)
 {
     struct async_t async;
 
-    async_init(&async, 100);
+    async_init(&async);
     async_run_until_complete(&async);
     async_destroy(&async);
 }
@@ -21,7 +21,7 @@ TEST(test_call_once)
     struct async_t async;
     int arg;
 
-    async_init(&async, 100);
+    async_init(&async);
     arg = 0;
     ASSERT_EQ(async_call(&async, (async_func_t)increment, &arg), 0);
     async_run_until_complete(&async);
@@ -34,7 +34,7 @@ TEST(test_call_twice)
     struct async_t async;
     int arg;
 
-    async_init(&async, 100);
+    async_init(&async);
     arg = 0;
     ASSERT_EQ(async_call(&async, (async_func_t)increment, &arg), 0);
     ASSERT_EQ(async_call(&async, (async_func_t)increment, &arg), 0);
@@ -49,7 +49,7 @@ TEST(test_call_queue_full)
     int arg;
     int i;
 
-    async_init(&async, 100);
+    async_init(&async);
     arg = 0;
 
     for (i = 0; i < 32; i++) {
@@ -69,7 +69,7 @@ TEST(test_single_shot_timer)
     struct async_timer_t timer;
     int arg;
 
-    async_init(&async, 100);
+    async_init(&async);
     async_timer_init(&timer,
                      (async_func_t)increment,
                      &arg,
@@ -93,7 +93,7 @@ TEST(test_single_shot_timer_stop_running)
     struct async_timer_t timer;
     int arg;
 
-    async_init(&async, 100);
+    async_init(&async);
     async_timer_init(&timer,
                      (async_func_t)increment,
                      &arg,
@@ -113,7 +113,7 @@ TEST(test_single_shot_timer_stop_expired)
     struct async_timer_t timer;
     int arg;
 
-    async_init(&async, 100);
+    async_init(&async);
     async_timer_init(&timer,
                      (async_func_t)increment,
                      &arg,

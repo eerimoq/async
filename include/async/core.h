@@ -85,8 +85,12 @@ struct async_core_t {
 /**
  * Initailize given async object.
  */
-void async_init(struct async_t *self_p,
-                int tick_in_ms);
+void async_init(struct async_t *self_p);
+
+/**
+ * Initailize given async object.
+ */
+void async_set_tick_in_ms(struct async_t *self_p, int tick_in_ms);
 
 /**
  * Destory given instance.

@@ -117,10 +117,15 @@ int async_call(struct async_t *self_p, async_func_t func, void *obj_p)
     return (async_func_queue_put(&self_p->core.funcs, func, obj_p));
 }
 
-void async_core_init(struct async_core_t *self_p,
-                     int tick_in_ms)
+void async_core_init(struct async_core_t *self_p)
 {
-    self_p->tick_in_ms = tick_in_ms;
+    self_p->tick_in_ms = 100;
     async_timer_list_init(&self_p->running_timers);
     async_func_queue_init(&self_p->funcs, 32);
+}
+
+void async_core_set_tick_in_ms(struct async_core_t *self_p,
+                               int tick_in_ms)
+{
+    self_p->tick_in_ms = tick_in_ms;
 }

@@ -43,7 +43,7 @@ static struct async_channel_t channel;
 
 int setup(void)
 {
-    async_init(&async, 100);
+    async_init(&async);
     async_channel_init(&channel,
                        channel_open,
                        channel_close,
