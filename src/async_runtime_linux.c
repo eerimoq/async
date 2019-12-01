@@ -28,20 +28,13 @@
 
 #include <pthread.h>
 #include <fcntl.h>
-#include <errno.h>
-#include <netinet/in.h>
-#include <stdbool.h>
 #include <arpa/inet.h>
 #include <string.h>
-#include <stdint.h>
 #include <unistd.h>
 #include <sys/epoll.h>
-#include <sys/types.h>
-#include <sys/socket.h>
 #include <stdio.h>
-#include "async/utils/linux.h"
 #include "async.h"
-//#include "../../internal.h"
+#include "async/utils/linux.h"
 
 #define MESSAGE_TYPE_TIMEOUT                             1
 #define MESSAGE_TYPE_TCP_CONNECT                         2

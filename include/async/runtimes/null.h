@@ -29,7 +29,7 @@
 #ifndef ASYNC_RUNTIME_NULL_H
 #define ASYNC_RUNTIME_NULL_H
 
-#include "async/core.h"
+#include "async/runtime.h"
 
 struct async_runtime_t *async_runtime_null_create(void);
 
