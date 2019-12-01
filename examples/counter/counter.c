@@ -27,43 +27,32 @@
  */
 
 #include <stdio.h>
-#include <unistd.h>
-#include <sys/epoll.h>
 #include "async.h"
-#include "async/utils/linux.h"
-#include "my_shell.h"
+#include "counter.h"
 
-int main()
+static void on_print_timeout(struct counter_t *self_p)
 {
-    int epoll_fd;
-    int timer_fd;
-    int nfds;
-    struct async_t async;
-    struct my_shell_t my_shell;
-    struct epoll_event event;
-    struct async_channel_t channel;
+    printf("Count: %d\n", self_p->count);
+}
 
-    async_init(&async);
-    async_utils_linux_channel_stdin_init(&channel, &async);
-    my_shell_init(&my_shell, &channel, &async);
-    epoll_fd = async_utils_linux_epoll_create();
-    timer_fd = async_utils_linux_init_periodic_timer(&async, epoll_fd);
-    async_utils_linux_init_stdin(epoll_fd);
-    async_utils_linux_make_stdin_unbuffered();
+void counter_init(struct counter_t *self_p, struct async_t *async_p)
+{
+    self_p->count = 0;
+    async_timer_init(&self_p->print_timer,
+                     (async_func_t)on_print_timeout,
+                     self_p,
+                     ASYNC_TIMER_PERIODIC,
+                     async_p);
+    async_timer_start(&self_p->print_timer, 300);
+    self_p->async_p = async_p;
+}
 
-    while (true) {
-        nfds = epoll_wait(epoll_fd, &event, 1, -1);
+void counter_incremect(struct counter_t *self_p)
+{
+    self_p->count++;
+}
 
-        if (nfds == 1) {
-            if (event.data.fd == timer_fd) {
-                async_utils_linux_handle_timeout(&async, timer_fd);
-            } else if (event.data.fd == fileno(stdin)) {
-                async_utils_linux_channel_stdin_handle(&channel);
-            }
-        }
-
-        async_run_until_complete(&async);
-    }
-
-    return (1);
+void counter_decrement(struct counter_t *self_p)
+{
+    self_p->count--;
 }

@@ -26,6 +26,7 @@
  * This file is part of the Async project.
  */
 
+#include <termios.h>
 #include <fcntl.h>
 #include <sys/epoll.h>
 #include <unistd.h>
@@ -118,9 +119,7 @@ void async_utils_linux_channel_stdin_handle(struct async_channel_t *channel_p)
 int async_utils_linux_init_periodic_timer(struct async_t *async_p,
                                           int epoll_fd)
 {
-    int res;
     int timer_fd;
-    struct epoll_event event;
 
     timer_fd = async_utils_linux_create_periodic_timer(async_p);
 
@@ -128,13 +127,7 @@ int async_utils_linux_init_periodic_timer(struct async_t *async_p,
         async_utils_linux_fatal_perror("timer");
     }
 
-    event.events = EPOLLIN;
-    event.data.fd = timer_fd;
-    res = epoll_ctl(epoll_fd, EPOLL_CTL_ADD, timer_fd, &event);
-
-    if (res == -1) {
-        async_utils_linux_fatal_perror("epoll_ctl");
-    }
+    async_utils_linux_epoll_add_in(epoll_fd, timer_fd);
 
     return (timer_fd);
 }
@@ -148,7 +141,6 @@ void async_utils_linux_fatal_perror(const char *message_p)
 void async_utils_linux_init_stdin(int epoll_fd)
 {
     int res;
-    struct epoll_event event;
 
     res = fcntl(fileno(stdin),
                 F_SETFL,
@@ -158,13 +150,7 @@ void async_utils_linux_init_stdin(int epoll_fd)
         async_utils_linux_fatal_perror("fcntl");
     }
 
-    event.events = EPOLLIN;
-    event.data.fd = fileno(stdin);
-    res = epoll_ctl(epoll_fd, EPOLL_CTL_ADD, fileno(stdin), &event);
-
-    if (res == -1) {
-        async_utils_linux_fatal_perror("epoll_ctl stdin");
-    }
+    async_utils_linux_epoll_add_in(epoll_fd, fileno(stdin));
 }
 
 int async_utils_linux_epoll_create(void)
@@ -178,4 +164,27 @@ int async_utils_linux_epoll_create(void)
     }
 
     return (epoll_fd);
+}
+
+void async_utils_linux_epoll_add_in(int epoll_fd, int fd)
+{
+    int res;
+    struct epoll_event event;
+
+    event.events = EPOLLIN;
+    event.data.fd = fd;
+    res = epoll_ctl(epoll_fd, EPOLL_CTL_ADD, fd, &event);
+
+    if (res == -1) {
+        async_utils_linux_fatal_perror("epoll_ctl");
+    }
+}
+
+void async_utils_linux_make_stdin_unbuffered()
+{
+    struct termios ctrl;
+
+    tcgetattr(fileno(stdin), &ctrl);
+    ctrl.c_lflag &= ~(ICANON | ECHO);
+    tcsetattr(fileno(stdin), TCSANOW, &ctrl);
 }

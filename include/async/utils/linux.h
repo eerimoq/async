@@ -50,4 +50,8 @@ void async_utils_linux_init_stdin(int epoll_fd);
 
 int async_utils_linux_epoll_create(void);
 
+void async_utils_linux_epoll_add_in(int epoll_fd, int fd);
+
+void async_utils_linux_make_stdin_unbuffered(void);
+
 #endif

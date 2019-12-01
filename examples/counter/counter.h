@@ -26,44 +26,24 @@
  * This file is part of the Async project.
  */
 
-#include <stdio.h>
-#include <unistd.h>
-#include <sys/epoll.h>
+#ifndef COUNTER_H
+#define COUNTER_H
+
 #include "async.h"
-#include "async/utils/linux.h"
-#include "my_shell.h"
 
-int main()
-{
-    int epoll_fd;
-    int timer_fd;
-    int nfds;
-    struct async_t async;
-    struct my_shell_t my_shell;
-    struct epoll_event event;
-    struct async_channel_t channel;
+struct counter_t {
+    int count;
+    struct async_timer_t print_timer;
+    struct async_t *async_p;
+};
 
-    async_init(&async);
-    async_utils_linux_channel_stdin_init(&channel, &async);
-    my_shell_init(&my_shell, &channel, &async);
-    epoll_fd = async_utils_linux_epoll_create();
-    timer_fd = async_utils_linux_init_periodic_timer(&async, epoll_fd);
-    async_utils_linux_init_stdin(epoll_fd);
-    async_utils_linux_make_stdin_unbuffered();
+/**
+ * Initialize the counter.
+ */
+void counter_init(struct counter_t *self_p, struct async_t *async_p);
 
-    while (true) {
-        nfds = epoll_wait(epoll_fd, &event, 1, -1);
+void counter_incremect(struct counter_t *self_p);
 
-        if (nfds == 1) {
-            if (event.data.fd == timer_fd) {
-                async_utils_linux_handle_timeout(&async, timer_fd);
-            } else if (event.data.fd == fileno(stdin)) {
-                async_utils_linux_channel_stdin_handle(&channel);
-            }
-        }
+void counter_decrement(struct counter_t *self_p);
 
-        async_run_until_complete(&async);
-    }
-
-    return (1);
-}
+#endif

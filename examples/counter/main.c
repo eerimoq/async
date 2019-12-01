@@ -26,30 +26,57 @@
  * This file is part of the Async project.
  */
 
-#include <stdio.h>
 #include <unistd.h>
+#include <stdio.h>
 #include <sys/epoll.h>
 #include "async.h"
 #include "async/utils/linux.h"
-#include "my_shell.h"
+#include "counter.h"
+
+static void handle_stdin(struct counter_t *counter_p)
+{
+    char ch;
+    ssize_t res;
+
+    res = read(fileno(stdin), &ch, sizeof(ch));
+
+    if (res != sizeof(ch)) {
+        exit(1);
+    }
+
+    switch (ch) {
+
+    case '+':
+        counter_incremect(counter_p);
+        break;
+
+    case '-':
+        counter_decrement(counter_p);
+        break;
+
+    default:
+        printf("Press + or -, not %c.\n", ch);
+        break;
+    }
+}
 
 int main()
 {
-    int epoll_fd;
     int timer_fd;
+    int epoll_fd;
     int nfds;
     struct async_t async;
-    struct my_shell_t my_shell;
+    struct counter_t counter;
     struct epoll_event event;
-    struct async_channel_t channel;
 
     async_init(&async);
-    async_utils_linux_channel_stdin_init(&channel, &async);
-    my_shell_init(&my_shell, &channel, &async);
+    counter_init(&counter, &async);
     epoll_fd = async_utils_linux_epoll_create();
     timer_fd = async_utils_linux_init_periodic_timer(&async, epoll_fd);
-    async_utils_linux_init_stdin(epoll_fd);
+    async_utils_linux_epoll_add_in(epoll_fd, fileno(stdin));
     async_utils_linux_make_stdin_unbuffered();
+
+    printf("Press + and - to increment and decrement the counter.\n");
 
     while (true) {
         nfds = epoll_wait(epoll_fd, &event, 1, -1);
@@ -58,7 +85,7 @@ int main()
             if (event.data.fd == timer_fd) {
                 async_utils_linux_handle_timeout(&async, timer_fd);
             } else if (event.data.fd == fileno(stdin)) {
-                async_utils_linux_channel_stdin_handle(&channel);
+                handle_stdin(&counter);
             }
         }
 
