@@ -6,6 +6,7 @@ test:
 	$(MAKE) -C examples/tcp_echo_client build
 	$(MAKE) -C tst/async run
 	$(MAKE) -C tst/shell run
+	$(MAKE) -C tst/channel run
 
 clean:
 	$(MAKE) -C examples/timers clean
@@ -15,3 +16,4 @@ clean:
 	$(MAKE) -C examples/tcp_echo_client clean
 	$(MAKE) -C tst/async clean
 	$(MAKE) -C tst/shell clean
+	$(MAKE) -C tst/channel clean
