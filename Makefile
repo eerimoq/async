@@ -1,4 +1,4 @@
-test:
+all: test
 	$(MAKE) -C examples/timers build
 	$(MAKE) -C examples/conversation build
 	$(MAKE) -C examples/shell build
@@ -6,6 +6,8 @@ test:
 	$(MAKE) -C examples/tcp_echo_client build
 	$(MAKE) -C examples/hello_world build
 	$(MAKE) -C examples/counter build
+
+test:
 	$(MAKE) -C tst/async run
 	$(MAKE) -C tst/shell run
 	$(MAKE) -C tst/channel run

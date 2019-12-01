@@ -118,7 +118,7 @@ struct async_runtime_t runtime = {
     }
 };
 
-struct async_runtime_t *async_runtime_null()
+struct async_runtime_t *async_runtime_null_create()
 {
     return (&runtime);
 }

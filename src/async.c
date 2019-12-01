@@ -92,7 +92,7 @@ void async_init(struct async_t *self_p)
     self_p->tick_in_ms = 100;
     async_timer_list_init(&self_p->running_timers);
     async_func_queue_init(&self_p->funcs, 32);
-    self_p->runtime_p = async_runtime_null();
+    self_p->runtime_p = async_runtime_null_create();
 }
 
 void async_set_tick_in_ms(struct async_t *self_p,
@@ -105,7 +105,7 @@ void async_set_runtime(struct async_t *self_p,
                        struct async_runtime_t *runtime_p)
 {
     if (runtime_p == NULL) {
-        runtime_p = async_runtime_null();
+        runtime_p = async_runtime_null_create();
     }
 
     self_p->runtime_p = runtime_p;

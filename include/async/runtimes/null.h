@@ -31,6 +31,6 @@
 
 #include "async/core.h"
 
-struct async_runtime_t *async_runtime_null(void);
+struct async_runtime_t *async_runtime_null_create(void);
 
 #endif
