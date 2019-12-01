@@ -44,7 +44,6 @@ void counter_init(struct counter_t *self_p, struct async_t *async_p)
                      ASYNC_TIMER_PERIODIC,
                      async_p);
     async_timer_start(&self_p->print_timer, 300);
-    self_p->async_p = async_p;
 }
 
 void counter_incremect(struct counter_t *self_p)

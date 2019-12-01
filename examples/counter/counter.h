@@ -34,7 +34,6 @@
 struct counter_t {
     int count;
     struct async_timer_t print_timer;
-    struct async_t *async_p;
 };
 
 /**
