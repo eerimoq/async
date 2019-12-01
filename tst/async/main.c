@@ -2,7 +2,7 @@
 #include "nala_mocks.h"
 #include "async.h"
 
-TEST(process_empty)
+TEST(test_process_empty)
 {
     struct async_t async;
 
@@ -16,7 +16,7 @@ static void increment(int *arg_p)
     (*arg_p)++;
 }
 
-TEST(call_once)
+TEST(test_call_once)
 {
     struct async_t async;
     int arg;
@@ -29,7 +29,7 @@ TEST(call_once)
     async_destroy(&async);
 }
 
-TEST(call_twice)
+TEST(test_call_twice)
 {
     struct async_t async;
     int arg;
@@ -43,7 +43,7 @@ TEST(call_twice)
     async_destroy(&async);
 }
 
-TEST(call_queue_full)
+TEST(test_call_queue_full)
 {
     struct async_t async;
     int arg;
@@ -63,7 +63,7 @@ TEST(call_queue_full)
     async_destroy(&async);
 }
 
-TEST(single_shot_timer)
+TEST(test_single_shot_timer)
 {
     struct async_t async;
     struct async_timer_t timer;
@@ -87,7 +87,7 @@ TEST(single_shot_timer)
     async_destroy(&async);
 }
 
-TEST(single_shot_timer_stop_running)
+TEST(test_single_shot_timer_stop_running)
 {
     struct async_t async;
     struct async_timer_t timer;
@@ -107,7 +107,7 @@ TEST(single_shot_timer_stop_running)
     async_destroy(&async);
 }
 
-TEST(single_shot_timer_stop_expired)
+TEST(test_single_shot_timer_stop_expired)
 {
     struct async_t async;
     struct async_timer_t timer;

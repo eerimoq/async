@@ -574,7 +574,7 @@ static void handle_pingresp(struct async_mqtt_client_t *self_p)
     (void)self_p;
 }
 
-static void on_tcp_data(struct async_mqtt_client_t *self_p)
+static void on_tcp_input(struct async_mqtt_client_t *self_p)
 {
     if (!read_packet(self_p)) {
         return;
@@ -658,7 +658,7 @@ void async_mqtt_client_init(struct async_mqtt_client_t *self_p,
     async_tcp_client_init(&self_p->tcp,
                           (async_func_t)on_tcp_connect_complete,
                           (async_func_t)on_tcp_disconnected,
-                          (async_func_t)on_tcp_data,
+                          (async_func_t)on_tcp_input,
                           self_p,
                           async_p);
     self_p->packet.state = packet_state_read_type_t;

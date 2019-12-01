@@ -7,6 +7,7 @@ test:
 	$(MAKE) -C tst/async run
 	$(MAKE) -C tst/shell run
 	$(MAKE) -C tst/channel run
+	$(MAKE) -C tst/mqtt_client run
 
 clean:
 	$(MAKE) -C examples/timers clean
@@ -17,3 +18,4 @@ clean:
 	$(MAKE) -C tst/async clean
 	$(MAKE) -C tst/shell clean
 	$(MAKE) -C tst/channel clean
+	$(MAKE) -C tst/mqtt_client clean

@@ -44,7 +44,7 @@ void async_tcp_client_init(struct async_tcp_client_t *self_p,
     (void)obj_p;
     (void)async_p;
 
-    fprintf(stderr, "async_tcp_client_init not implemented.\n");
+    fprintf(stderr, "async_tcp_client_init() not implemented.\n");
     exit(1);
 }
 
@@ -56,7 +56,7 @@ void async_tcp_client_connect(struct async_tcp_client_t *self_p,
     (void)host_p;
     (void)port;
 
-    fprintf(stderr, "async_tcp_client_init not implemented.\n");
+    fprintf(stderr, "async_tcp_client_connect() not implemented.\n");
     exit(1);
 }
 
@@ -64,7 +64,7 @@ void async_tcp_client_disconnect(struct async_tcp_client_t *self_p)
 {
     (void)self_p;
 
-    fprintf(stderr, "async_tcp_client_init not implemented.\n");
+    fprintf(stderr, "async_tcp_client_disconnect() not implemented.\n");
     exit(1);
 }
 
@@ -72,7 +72,7 @@ bool async_tcp_client_is_connected(struct async_tcp_client_t *self_p)
 {
     (void)self_p;
 
-    fprintf(stderr, "async_tcp_client_init not implemented.\n");
+    fprintf(stderr, "async_tcp_client_is_connected() not implemented.\n");
     exit(1);
 
     return (false);
@@ -86,7 +86,7 @@ ssize_t async_tcp_client_write(struct async_tcp_client_t *self_p,
     (void)buf_p;
     (void)size;
 
-    fprintf(stderr, "async_tcp_client_init not implemented.\n");
+    fprintf(stderr, "async_tcp_client_write() not implemented.\n");
     exit(1);
 
     return (-1);
@@ -100,7 +100,7 @@ size_t async_tcp_client_read(struct async_tcp_client_t *self_p,
     (void)buf_p;
     (void)size;
 
-    fprintf(stderr, "async_tcp_client_init not implemented.\n");
+    fprintf(stderr, "async_tcp_client_read() not implemented.\n");
     exit(1);
 
     return (0);

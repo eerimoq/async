@@ -37,7 +37,7 @@
 void async_tcp_client_init(struct async_tcp_client_t *self_p,
                            async_func_t on_connect_complete,
                            async_func_t on_disconnected,
-                           async_func_t on_data,
+                           async_func_t on_input,
                            void *obj_p,
                            struct async_t *async_p);
 
