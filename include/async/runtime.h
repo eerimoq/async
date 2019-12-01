@@ -29,7 +29,8 @@
 #ifndef ASYNC_RUNTIME_H
 #define ASYNC_RUNTIME_H
 
-#include "async.h"
+#include "async/core.h"
+#include "async/tcp_client.h"
 
 /**
  * Runtime callbacks.

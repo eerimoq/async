@@ -29,7 +29,7 @@
 #ifndef ASYNC_SHELL_H
 #define ASYNC_SHELL_H
 
-#include "async.h"
+#include "async/channel.h"
 
 struct async_shell_t;
 

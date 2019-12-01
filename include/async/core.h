@@ -39,6 +39,8 @@
 #define ASYNC_ERROR_NOT_IMPLMENETED              1
 #define ASYNC_ERROR_QUEUE_FULL                   2
 
+struct async_runtime_t;
+
 /**
  * Async function.
  */
@@ -74,8 +76,6 @@ struct async_func_queue_t {
     struct async_func_queue_elem_t *list_p;
 };
 
-struct async_runtime_t;
-
 struct async_t {
     int tick_in_ms;
     struct async_timer_list_t running_timers;
@@ -84,7 +84,8 @@ struct async_t {
 };
 
 /**
- * Initailize given async object.
+ * Initailize given async object with a null runtime. Set a runtime
+ * with async_set_runtime() if needed.
  */
 void async_init(struct async_t *self_p);
 

@@ -30,7 +30,6 @@
 #define ASYNC_MQTT_CLIENT_H
 
 #include "async/core.h"
-#include "async/tcp_client.h"
 
 typedef void (*async_mqtt_client_on_publish_t)(void *obj_p,
                                                const char *topic_p,
