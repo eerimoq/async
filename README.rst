@@ -10,7 +10,7 @@ important.
 Features
 ========
 
-- Delayed function calls.
+- Delayed (asynchronous) function calls.
 
 - Timers.
 
