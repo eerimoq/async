@@ -60,7 +60,7 @@ int main()
             }
         }
 
-        async_process(&async);
+        async_run_until_complete(&async);
     }
 
     return (1);

@@ -346,7 +346,7 @@ static void *async_main(struct async_t *self_p)
             break;
         }
 
-        async_process(self_p);
+        async_run_until_complete(self_p);
     }
 
     return (NULL);

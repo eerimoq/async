@@ -91,7 +91,7 @@ void async_destroy(struct async_t *self_p)
     async_func_queue_destroy(&self_p->core.funcs);
 }
 
-void async_process(struct async_t *self_p)
+void async_run_until_complete(struct async_t *self_p)
 {
     async_func_t func;
     void *obj_p;
