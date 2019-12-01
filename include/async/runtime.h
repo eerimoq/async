@@ -37,15 +37,16 @@
  */
 struct async_tcp_client_t;
 
-typedef void (*async_runtime_run_forever_t)(struct async_t *self_p);
+typedef void (*async_runtime_set_async_t)(void *self_p, struct async_t *async_p);
+
+typedef void (*async_runtime_run_forever_t)(void *self_p);
 
 typedef void (*async_runtime_tcp_client_init_t)(
     struct async_tcp_client_t *self_p,
     async_func_t on_connect_complete,
     async_func_t on_disconnected,
     async_func_t on_data,
-    void *obj_p,
-    struct async_t *async_p);
+    void *obj_p);
 
 typedef void (*async_runtime_tcp_client_connect_t)(
     struct async_tcp_client_t *self_p,
@@ -69,7 +70,7 @@ typedef size_t (*async_runtime_tcp_client_read_t)(
     size_t size);
 
 struct async_runtime_t {
-    struct async_t *async_p;
+    async_runtime_set_async_t set_async;
     async_runtime_run_forever_t run_forever;
     struct {
         async_runtime_tcp_client_init_t init;
@@ -79,6 +80,7 @@ struct async_runtime_t {
         async_runtime_tcp_client_write_t write;
         async_runtime_tcp_client_read_t read;
     } tcp_client;
+    void *obj_p;
 };
 
 /**

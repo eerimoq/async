@@ -108,6 +108,7 @@ void async_set_runtime(struct async_t *self_p,
         runtime_p = async_runtime_null_create();
     }
 
+    runtime_p->set_async(runtime_p->obj_p, self_p);
     self_p->runtime_p = runtime_p;
 }
 
@@ -118,7 +119,7 @@ void async_destroy(struct async_t *self_p)
 
 void async_run_forever(struct async_t *self_p)
 {
-    self_p->runtime_p->run_forever(self_p);
+    self_p->runtime_p->run_forever(self_p->runtime_p->obj_p);
 }
 
 void async_run_until_complete(struct async_t *self_p)

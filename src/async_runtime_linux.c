@@ -73,19 +73,24 @@ struct message_data_complete_t {
     bool closed;
 };
 
-struct async_tcp_client_linux_t {
+struct tcp_client_t {
     async_func_t on_connect_complete;
     async_func_t on_disconnected;
-    async_func_t on_data;
+    async_func_t on_input;
     void *obj_p;
     int sockfd;
 };
 
 static struct async_tcp_client_t *tcp_p;
 
-static struct async_tcp_client_linux_t *tcp_client(struct async_tcp_client_t *self_p)
+static struct tcp_client_t *tcp_client(struct async_tcp_client_t *self_p)
 {
-    return ((struct async_tcp_client_linux_t *)(self_p->obj_p));
+    return ((struct tcp_client_t *)(self_p->obj_p));
+}
+
+static struct async_runtime_linux_t *tcp_runtime(struct async_tcp_client_t *self_p)
+{
+    return ((struct async_runtime_linux_t *)(self_p->async_p->runtime_p->obj_p));
 }
 
 static void async_tcp_client_set_sockfd(struct async_tcp_client_t *self_p, int sockfd)
@@ -325,7 +330,7 @@ static void async_handle_tcp_client_connect_complete(struct async_runtime_linux_
 static void async_handle_tcp_client_data(struct async_runtime_linux_t *self_p)
 {
     async_call(self_p->async_p,
-               tcp_client(tcp_p)->on_data,
+               tcp_client(tcp_p)->on_input,
                tcp_client(tcp_p)->obj_p);
 }
 
@@ -372,20 +377,14 @@ static void *async_main(struct async_runtime_linux_t *self_p)
     return (NULL);
 }
 
-void async_runtime_linux_init(struct async_runtime_linux_t *self_p)
+static void set_async(struct async_runtime_linux_t *self_p,
+                      struct async_t *async_p)
 {
-    int sockets[2];
-    int res;
+    self_p->async_p = async_p;
+}
 
-    res = socketpair(AF_UNIX, SOCK_STREAM, 0, &sockets[0]);
-
-    if (res != 0) {
-        return;
-    }
-
-    self_p->io_fd = sockets[0];
-    self_p->async_fd = sockets[1];
-
+static void run_forever(struct async_runtime_linux_t *self_p)
+{
     pthread_create(&self_p->io_pthread,
                    NULL,
                    (void *(*)(void *))io_main,
@@ -394,17 +393,8 @@ void async_runtime_linux_init(struct async_runtime_linux_t *self_p)
                    NULL,
                    (void *(*)(void *))async_main,
                    self_p);
-}
-
-void run_forever(struct async_runtime_linux_t *self_p)
-{
     pthread_join(self_p->io_pthread, NULL);
     pthread_join(self_p->async_pthread, NULL);
-}
-
-static struct async_runtime_linux_t *tcp_runtime(struct async_tcp_client_t *self_p)
-{
-    return ((struct async_runtime_linux_t *)(self_p->async_p->runtime_p));
 }
 
 void async_tcp_client_connect_write(struct async_tcp_client_t *self_p,
@@ -446,53 +436,55 @@ void async_tcp_client_data_complete_write(struct async_tcp_client_t *self_p,
                   sizeof(ind));
 }
 
-void async_tcp_client_linux_init(struct async_tcp_client_t *self_p,
-                                 async_func_t on_connect_complete,
-                                 async_func_t on_disconnected,
-                                 async_func_t on_data,
-                                 void *obj_p,
-                                 struct async_t *async_p)
+static void tcp_client_init(struct async_tcp_client_t *self_p,
+                            async_func_t on_connect_complete,
+                            async_func_t on_disconnected,
+                            async_func_t on_input,
+                            void *obj_p)
 {
-    (void)async_p;
+    struct tcp_client_t *rself_p;
 
-    struct async_tcp_client_linux_t *runtime_self_p;
+    rself_p = malloc(sizeof(*rself_p));
 
-    runtime_self_p = malloc(sizeof(*runtime_self_p));
-    runtime_self_p->on_connect_complete = on_connect_complete;
-    runtime_self_p->on_disconnected = on_disconnected;
-    runtime_self_p->on_data = on_data;
-    runtime_self_p->obj_p = obj_p;
-    runtime_self_p->sockfd = -1;
-    self_p->obj_p = runtime_self_p;
+    if (rself_p == NULL) {
+        return;
+    }
+
+    rself_p->on_connect_complete = on_connect_complete;
+    rself_p->on_disconnected = on_disconnected;
+    rself_p->on_input = on_input;
+    rself_p->obj_p = obj_p;
+    rself_p->sockfd = -1;
+    self_p->obj_p = rself_p;
 }
 
-void async_tcp_client_linux_connect(struct async_tcp_client_t *self_p,
-                                    const char *host_p,
-                                    int port)
+static void tcp_client_connect(struct async_tcp_client_t *self_p,
+                               const char *host_p,
+                               int port)
 {
     async_tcp_client_connect_write(self_p, host_p, port);
 }
 
-void async_tcp_client_linux_disconnect(struct async_tcp_client_t *self_p)
+static void tcp_client_disconnect(struct async_tcp_client_t *self_p)
 {
     async_tcp_client_disconnect_write(self_p);
 }
 
-bool async_tcp_client_linux_is_connected(struct async_tcp_client_t *self_p)
+static bool tcp_client_is_connected(struct async_tcp_client_t *self_p)
 {
     return (tcp_client(self_p)->sockfd != -1);
 }
 
-ssize_t async_tcp_client_linux_write(struct async_tcp_client_t *self_p,
-                                     const void *buf_p,
-                                     size_t size)
+static ssize_t tcp_client_write(struct async_tcp_client_t *self_p,
+                                const void *buf_p,
+                                size_t size)
 {
     return (write(tcp_client(self_p)->sockfd, buf_p, size));
 }
 
-size_t async_tcp_client_linux_read(struct async_tcp_client_t *self_p,
-                                   void *buf_p,
-                                   size_t size)
+static size_t tcp_client_read(struct async_tcp_client_t *self_p,
+                              void *buf_p,
+                              size_t size)
 {
     ssize_t res;
 
@@ -505,17 +497,49 @@ size_t async_tcp_client_linux_read(struct async_tcp_client_t *self_p,
         res = 0;
     } else {
         async_call(self_p->async_p,
-                   tcp_client(self_p)->on_data,
-                   self_p->obj_p);
+                   tcp_client(self_p)->on_input,
+                   tcp_client(self_p)->obj_p);
     }
 
     return (res);
 }
 
-struct async_runtime_linux_t *async_runtime_linux_create()
+struct async_runtime_t *async_runtime_linux_create()
 {
-    fprintf(stderr, "error: async_runtime_linux_create\n");
-    exit(1);
+    int sockets[2];
+    int res;
+    struct async_runtime_t *runtime_p;
+    struct async_runtime_linux_t *self_p;
 
-    return (NULL);
+    runtime_p = malloc(sizeof(*runtime_p));
+
+    if (runtime_p == NULL) {
+        return (NULL);
+    }
+
+    runtime_p->set_async = (async_runtime_set_async_t)set_async;
+    runtime_p->run_forever = (async_runtime_run_forever_t)run_forever;
+    runtime_p->tcp_client.init = tcp_client_init;
+    runtime_p->tcp_client.connect = tcp_client_connect;
+    runtime_p->tcp_client.disconnect = tcp_client_disconnect;
+    runtime_p->tcp_client.is_connected = tcp_client_is_connected;
+    runtime_p->tcp_client.write = tcp_client_write;
+    runtime_p->tcp_client.read = tcp_client_read;
+    self_p = malloc(sizeof(*self_p));
+
+    if (self_p == NULL) {
+        return (NULL);
+    }
+
+    res = socketpair(AF_UNIX, SOCK_STREAM, 0, &sockets[0]);
+
+    if (res != 0) {
+        return (NULL);
+    }
+
+    self_p->io_fd = sockets[0];
+    self_p->async_fd = sockets[1];
+    runtime_p->obj_p = self_p;
+
+    return (runtime_p);
 }

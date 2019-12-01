@@ -38,13 +38,12 @@ void async_tcp_client_init(struct async_tcp_client_t *self_p,
                            void *obj_p,
                            struct async_t *async_p)
 {
+    self_p->async_p = async_p;
     async_p->runtime_p->tcp_client.init(self_p,
                                         on_connect_complete,
                                         on_disconnected,
                                         on_input,
-                                        obj_p,
-                                        async_p);
-    self_p->async_p = async_p;
+                                        obj_p);
 }
 
 void async_tcp_client_connect(struct async_tcp_client_t *self_p,
