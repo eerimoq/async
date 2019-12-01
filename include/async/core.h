@@ -74,13 +74,14 @@ struct async_func_queue_t {
     struct async_func_queue_elem_t *list_p;
 };
 
-struct async_core_t {
+struct async_runtime_t;
+
+struct async_t {
     int tick_in_ms;
     struct async_timer_list_t running_timers;
     struct async_func_queue_t funcs;
+    struct async_runtime_t *runtime_p;
 };
-
-#include "async/port.h"
 
 /**
  * Initailize given async object.
@@ -88,9 +89,16 @@ struct async_core_t {
 void async_init(struct async_t *self_p);
 
 /**
- * Initailize given async object.
+ * Set the tick duration in milliseconds for given async object.
  */
 void async_set_tick_in_ms(struct async_t *self_p, int tick_in_ms);
+
+/**
+ * Set the runtime for given async object. The default runtime exits
+ * the program if used.
+ */
+void async_set_runtime(struct async_t *self_p,
+                       struct async_runtime_t *runtime_p);
 
 /**
  * Destory given instance.

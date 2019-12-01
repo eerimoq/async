@@ -26,24 +26,11 @@
  * This file is part of the Async project.
  */
 
-#include <stdio.h>
-#include "async.h"
-#include "../../internal.h"
+#ifndef ASYNC_RUNTIME_NULL_H
+#define ASYNC_RUNTIME_NULL_H
 
-void async_init(struct async_t *self_p)
-{
-    async_core_init(&self_p->core);
-}
+#include "async/core.h"
 
-void async_set_tick_in_ms(struct async_t *self_p, int tick_in_ms)
-{
-    async_core_set_tick_in_ms(&self_p->core, tick_in_ms);
-}
+struct async_runtime_t *async_runtime_null(void);
 
-void async_run_forever(struct async_t *self_p)
-{
-    (void)self_p;
-
-    fprintf(stderr, "async_run_forever is not implemented in this port.\n");
-    exit(1);
-}
+#endif

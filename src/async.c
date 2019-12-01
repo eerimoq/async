@@ -27,6 +27,7 @@
  */
 
 #include "async.h"
+#include "async/runtimes/null.h"
 #include "internal.h"
 
 static bool is_empty(struct async_func_queue_t *self_p)
@@ -86,9 +87,38 @@ static int async_func_queue_put(struct async_func_queue_t *self_p,
     return (0);
 }
 
+void async_init(struct async_t *self_p)
+{
+    self_p->tick_in_ms = 100;
+    async_timer_list_init(&self_p->running_timers);
+    async_func_queue_init(&self_p->funcs, 32);
+    self_p->runtime_p = async_runtime_null();
+}
+
+void async_set_tick_in_ms(struct async_t *self_p,
+                          int tick_in_ms)
+{
+    self_p->tick_in_ms = tick_in_ms;
+}
+
+void async_set_runtime(struct async_t *self_p,
+                       struct async_runtime_t *runtime_p)
+{
+    if (runtime_p == NULL) {
+        runtime_p = async_runtime_null();
+    }
+
+    self_p->runtime_p = runtime_p;
+}
+
 void async_destroy(struct async_t *self_p)
 {
-    async_func_queue_destroy(&self_p->core.funcs);
+    async_func_queue_destroy(&self_p->funcs);
+}
+
+void async_run_forever(struct async_t *self_p)
+{
+    self_p->runtime_p->run_forever(self_p);
 }
 
 void async_run_until_complete(struct async_t *self_p)
@@ -97,7 +127,7 @@ void async_run_until_complete(struct async_t *self_p)
     void *obj_p;
 
     while (true) {
-        func = async_func_queue_get(&self_p->core.funcs, &obj_p);
+        func = async_func_queue_get(&self_p->funcs, &obj_p);
 
         if (func == NULL) {
             break;
@@ -109,23 +139,10 @@ void async_run_until_complete(struct async_t *self_p)
 
 void async_tick(struct async_t *self_p)
 {
-    async_timer_list_tick(&self_p->core.running_timers);
+    async_timer_list_tick(&self_p->running_timers);
 }
 
 int async_call(struct async_t *self_p, async_func_t func, void *obj_p)
 {
-    return (async_func_queue_put(&self_p->core.funcs, func, obj_p));
-}
-
-void async_core_init(struct async_core_t *self_p)
-{
-    self_p->tick_in_ms = 100;
-    async_timer_list_init(&self_p->running_timers);
-    async_func_queue_init(&self_p->funcs, 32);
-}
-
-void async_core_set_tick_in_ms(struct async_core_t *self_p,
-                               int tick_in_ms)
-{
-    self_p->tick_in_ms = tick_in_ms;
+    return (async_func_queue_put(&self_p->funcs, func, obj_p));
 }

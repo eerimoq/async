@@ -34,5 +34,6 @@
 #include "async/shell.h"
 #include "async/tcp_client.h"
 #include "async/mqtt_client.h"
+#include "async/runtime.h"
 
 #endif

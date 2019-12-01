@@ -26,17 +26,11 @@
  * This file is part of the Async project.
  */
 
-#ifndef ASYNC_PORT_H
-#define ASYNC_PORT_H
+#ifndef ASYNC_RUNTIME_LINUX_H
+#define ASYNC_RUNTIME_LINUX_H
 
-#include "async.h"
+#include "async/core.h"
 
-struct async_t {
-    struct async_core_t core;
-};
-
-struct async_tcp_client_t {
-    int dummy;
-};
+struct async_runtime_t *async_runtime_linux_create(void);
 
 #endif

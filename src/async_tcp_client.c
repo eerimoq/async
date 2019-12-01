@@ -27,75 +27,53 @@
  */
 
 #include <stdio.h>
-#include <errno.h>
-#include <string.h>
-#include <unistd.h>
+#include <stdlib.h>
 #include "async.h"
-#include "internal.h"
+#include "async/runtime.h"
 
 void async_tcp_client_init(struct async_tcp_client_t *self_p,
                            async_func_t on_connect_complete,
                            async_func_t on_disconnected,
-                           async_func_t on_data,
+                           async_func_t on_input,
                            void *obj_p,
                            struct async_t *async_p)
 {
-    self_p->on_connect_complete = on_connect_complete;
-    self_p->on_disconnected = on_disconnected;
-    self_p->on_data = on_data;
-    self_p->obj_p = obj_p;
+    async_p->runtime_p->tcp_client.init(self_p,
+                                        on_connect_complete,
+                                        on_disconnected,
+                                        on_input,
+                                        obj_p,
+                                        async_p);
     self_p->async_p = async_p;
-    self_p->sockfd = -1;
 }
 
 void async_tcp_client_connect(struct async_tcp_client_t *self_p,
                               const char *host_p,
                               int port)
 {
-    async_tcp_client_connect_write(self_p, host_p, port);
+    self_p->async_p->runtime_p->tcp_client.connect(self_p, host_p, port);
 }
 
 void async_tcp_client_disconnect(struct async_tcp_client_t *self_p)
 {
-    async_tcp_client_disconnect_write(self_p);
+    self_p->async_p->runtime_p->tcp_client.disconnect(self_p);
 }
 
 bool async_tcp_client_is_connected(struct async_tcp_client_t *self_p)
 {
-    return (self_p->sockfd != -1);
+    return (self_p->async_p->runtime_p->tcp_client.is_connected(self_p));
 }
 
 ssize_t async_tcp_client_write(struct async_tcp_client_t *self_p,
                                const void *buf_p,
                                size_t size)
 {
-    return (write(self_p->sockfd, buf_p, size));
+    return (self_p->async_p->runtime_p->tcp_client.write(self_p, buf_p, size));
 }
 
 size_t async_tcp_client_read(struct async_tcp_client_t *self_p,
                              void *buf_p,
                              size_t size)
 {
-    ssize_t res;
-
-    res = read(self_p->sockfd, buf_p, size);
-
-    if (res == 0) {
-        async_tcp_client_data_complete_write(self_p, true);
-    } else if (res == -1) {
-        async_tcp_client_data_complete_write(self_p, false);
-        res = 0;
-    } else {
-        async_call(self_p->async_p,
-                   self_p->on_data,
-                   self_p->obj_p);
-    }
-
-    return (res);
-}
-
-void async_tcp_client_set_sockfd(struct async_tcp_client_t *self_p,
-                                 int sockfd)
-{
-    self_p->sockfd = sockfd;
+    return (self_p->async_p->runtime_p->tcp_client.read(self_p, buf_p, size));
 }

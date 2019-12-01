@@ -27,15 +27,16 @@
  */
 
 #include <stdio.h>
-#include <stdlib.h>
-#include "async.h"
+#include "async/runtimes/null.h"
+#include "async/runtime.h"
+#include "async/tcp_client.h"
 
-void async_tcp_client_init(struct async_tcp_client_t *self_p,
-                           async_func_t on_connect_complete,
-                           async_func_t on_disconnected,
-                           async_func_t on_data,
-                           void *obj_p,
-                           struct async_t *async_p)
+static void null_tcp_client_init(struct async_tcp_client_t *self_p,
+                                 async_func_t on_connect_complete,
+                                 async_func_t on_disconnected,
+                                 async_func_t on_data,
+                                 void *obj_p,
+                                 struct async_t *async_p)
 {
     (void)self_p;
     (void)on_connect_complete;
@@ -48,9 +49,9 @@ void async_tcp_client_init(struct async_tcp_client_t *self_p,
     exit(1);
 }
 
-void async_tcp_client_connect(struct async_tcp_client_t *self_p,
-                              const char *host_p,
-                              int port)
+static void null_tcp_client_connect(struct async_tcp_client_t *self_p,
+                                    const char *host_p,
+                                    int port)
 {
     (void)self_p;
     (void)host_p;
@@ -60,7 +61,7 @@ void async_tcp_client_connect(struct async_tcp_client_t *self_p,
     exit(1);
 }
 
-void async_tcp_client_disconnect(struct async_tcp_client_t *self_p)
+static void null_tcp_client_disconnect(struct async_tcp_client_t *self_p)
 {
     (void)self_p;
 
@@ -68,7 +69,7 @@ void async_tcp_client_disconnect(struct async_tcp_client_t *self_p)
     exit(1);
 }
 
-bool async_tcp_client_is_connected(struct async_tcp_client_t *self_p)
+static bool null_tcp_client_is_connected(struct async_tcp_client_t *self_p)
 {
     (void)self_p;
 
@@ -78,9 +79,9 @@ bool async_tcp_client_is_connected(struct async_tcp_client_t *self_p)
     return (false);
 }
 
-ssize_t async_tcp_client_write(struct async_tcp_client_t *self_p,
-                               const void *buf_p,
-                               size_t size)
+static ssize_t null_tcp_client_write(struct async_tcp_client_t *self_p,
+                                     const void *buf_p,
+                                     size_t size)
 {
     (void)self_p;
     (void)buf_p;
@@ -92,9 +93,9 @@ ssize_t async_tcp_client_write(struct async_tcp_client_t *self_p,
     return (-1);
 }
 
-size_t async_tcp_client_read(struct async_tcp_client_t *self_p,
-                             void *buf_p,
-                             size_t size)
+static size_t null_tcp_client_read(struct async_tcp_client_t *self_p,
+                                   void *buf_p,
+                                   size_t size)
 {
     (void)self_p;
     (void)buf_p;
@@ -104,4 +105,20 @@ size_t async_tcp_client_read(struct async_tcp_client_t *self_p,
     exit(1);
 
     return (0);
+}
+
+struct async_runtime_t runtime = {
+    .tcp_client = {
+        .init = null_tcp_client_init,
+        .connect = null_tcp_client_connect,
+        .disconnect = null_tcp_client_disconnect,
+        .is_connected = null_tcp_client_is_connected,
+        .write = null_tcp_client_write,
+        .read = null_tcp_client_read
+    }
+};
+
+struct async_runtime_t *async_runtime_null()
+{
+    return (&runtime);
 }

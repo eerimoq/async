@@ -26,26 +26,10 @@
  * This file is part of the Async project.
  */
 
-#ifndef ASYNC_PORT_H
-#define ASYNC_PORT_H
+#include "async/runtime.h"
+#include "async/runtimes/linux.h"
 
-#include <pthread.h>
-
-struct async_t {
-    struct async_core_t core;
-    int io_fd;
-    int async_fd;
-    pthread_t io_pthread;
-    pthread_t async_pthread;
-};
-
-struct async_tcp_client_t {
-    async_func_t on_connect_complete;
-    async_func_t on_disconnected;
-    async_func_t on_data;
-    void *obj_p;
-    struct async_t *async_p;
-    int sockfd;
-};
-
-#endif
+struct async_runtime_t *async_create_runtime(void)
+{
+    return (async_runtime_linux_create());
+}

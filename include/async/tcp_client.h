@@ -31,6 +31,11 @@
 
 #include "async/core.h"
 
+struct async_tcp_client_t {
+    struct async_t *async_p;
+    void *obj_p;
+};
+
 /**
  * Initialize given TCP client object.
  */
