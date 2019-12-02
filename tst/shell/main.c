@@ -52,11 +52,11 @@ int setup(void)
                        &async);
 
     async_shell_init(&shell, &channel, &async);
-    async_run_until_complete(&async);
+    async_process(&async);
 
     channel_open_mock_once();
     async_shell_start(&shell);
-    async_run_until_complete(&async);
+    async_process(&async);
 
     return (0);
 }
@@ -65,7 +65,7 @@ int teardown(void)
 {
     channel_close_mock_once();
     async_shell_stop(&shell);
-    async_run_until_complete(&async);
+    async_process(&async);
 
     return (0);
 }
@@ -103,7 +103,7 @@ TEST(test_command_help)
     mock_prepare_output("OK\n");
     mock_prepare_output("$ ");
     async_channel_input(&channel);
-    async_run_until_complete(&async);
+    async_process(&async);
 }
 
 TEST(test_command_history)
@@ -116,7 +116,7 @@ TEST(test_command_history)
     mock_prepare_output("OK\n");
     mock_prepare_output("$ ");
     async_channel_input(&channel);
-    async_run_until_complete(&async);
+    async_process(&async);
 }
 
 TEST(test_autocomplete_no_input)
@@ -125,7 +125,7 @@ TEST(test_autocomplete_no_input)
     mock_prepare_input_zero();
     mock_prepare_output("h");
     async_channel_input(&channel);
-    async_run_until_complete(&async);
+    async_process(&async);
 
     mock_prepare_input("e");
     mock_prepare_input("\t");
@@ -133,5 +133,5 @@ TEST(test_autocomplete_no_input)
     mock_prepare_output("e");
     mock_prepare_output("lp ");
     async_channel_input(&channel);
-    async_run_until_complete(&async);
+    async_process(&async);
 }

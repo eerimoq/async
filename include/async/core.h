@@ -109,7 +109,7 @@ void async_destroy(struct async_t *self_p);
 /**
  * Returns once all async functions have been called.
  */
-void async_run_until_complete(struct async_t *self_p);
+void async_process(struct async_t *self_p);
 
 /**
  * Run given async object forever. This function never returns.

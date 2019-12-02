@@ -371,7 +371,7 @@ static void *async_main(struct async_runtime_linux_t *self_p)
             break;
         }
 
-        async_run_until_complete(self_p->async_p);
+        async_process(self_p->async_p);
     }
 
     return (NULL);

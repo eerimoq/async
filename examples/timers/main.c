@@ -52,7 +52,7 @@ int main()
         }
 
         async_tick(&async);
-        async_run_until_complete(&async);
+        async_process(&async);
     }
 
     return (1);

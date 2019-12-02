@@ -17,7 +17,7 @@ TEST(test_init_all_null)
     async_channel_opened(&channel, 0);
     async_channel_closed(&channel);
     async_channel_input(&channel);
-    async_run_until_complete(&async);
+    async_process(&async);
 }
 
 TEST(test_set_on_null)
@@ -37,5 +37,5 @@ TEST(test_set_on_null)
     async_channel_opened(&channel, 0);
     async_channel_closed(&channel);
     async_channel_input(&channel);
-    async_run_until_complete(&async);
+    async_process(&async);
 }
