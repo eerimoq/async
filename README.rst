@@ -35,6 +35,7 @@ The hello world example, printing 'Hello world!' periodically.
        struct async_timer_t timer;
 
        async_init(&async);
+       async_set_runtime(&async, async_create_runtime());
        async_timer_init(&timer, on_timeout, NULL, ASYNC_TIMER_PERIODIC, &async);
        async_timer_start(&timer, 1000);
        async_run_forever(&async);
@@ -44,18 +45,48 @@ The hello world example, printing 'Hello world!' periodically.
 
 There are more examples in the `examples folder`_.
 
-Ports
-=====
+Runtimes
+========
 
-Features that requires a port:
+A runtime implements zero or more of the following features:
 
-- TCP.
+- Tick timers.
 
-Available ports:
+- Networking (TCP).
 
-- None. Port features listed above can't be used.
+Default
+-------
 
-- Linux.
+The default runtime does not implement any runtime features. It's
+designed for minimal dependencies and easy integration in any
+application.
+
+Typical usage:
+
+.. code-block:: c
+
+   async_init(&async);
+   ...
+   while (true) {
+       select(...);
+       ...
+       async_tick(&async);
+       async_process(&async);
+   }
+
+Native
+------
+
+The native runtime implements all runtime features.
+
+Typical usage:
+
+.. code-block:: c
+
+   async_init(&async);
+   async_set_runtime(&async, async_create_runtime());
+   ...
+   async_run_forever(&async);
 
 .. |buildstatus| image:: https://travis-ci.org/eerimoq/async.svg?branch=master
 .. _buildstatus: https://travis-ci.org/eerimoq/async
