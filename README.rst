@@ -70,7 +70,9 @@ Typical usage:
    while (true) {
        select(...);
        ...
-       async_tick(&async);
+       if (timeout) {
+           async_tick(&async);
+       }
        async_process(&async);
    }
 
