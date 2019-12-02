@@ -32,11 +32,6 @@
 #include "async/core.h"
 #include "async/tcp_client.h"
 
-/**
- * Runtime callbacks.
- */
-struct async_tcp_client_t;
-
 typedef void (*async_runtime_set_async_t)(void *self_p, struct async_t *async_p);
 
 typedef void (*async_runtime_run_forever_t)(void *self_p);
@@ -84,7 +79,7 @@ struct async_runtime_t {
 };
 
 /**
- * Create a runtime.
+ * Create a native runtime.
  */
 struct async_runtime_t *async_create_runtime(void);
 
