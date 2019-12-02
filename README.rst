@@ -7,6 +7,8 @@
 Asynchronous framework in C for systems where low memory usage is
 important.
 
+See `libuv`_ for a mature library with similar functionality.
+
 Features
 ========
 
@@ -79,6 +81,8 @@ Typical usage:
 Native
 ------
 
+NOTE: This runtime is only partly implemented and should not be used!
+
 The native runtime implements all runtime features.
 
 Typical usage:
@@ -95,5 +99,7 @@ Typical usage:
 
 .. |codecov| image:: https://codecov.io/gh/eerimoq/async/branch/master/graph/badge.svg
 .. _codecov: https://codecov.io/gh/eerimoq/async
+
+.. _libuv: https://github.com/libuv/libuv
 
 .. _examples folder: https://github.com/eerimoq/async/tree/master/examples
