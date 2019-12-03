@@ -41,17 +41,18 @@ static bool is_full(struct async_func_queue_t *self_p)
 }
 
 static void async_func_queue_init(struct async_func_queue_t *self_p,
+                                  struct async_func_queue_elem_t *elems_p,
                                   int length)
 {
     self_p->rdpos = 0;
     self_p->wrpos = 0;
-    self_p->length = (length + 1);
-    self_p->list_p = malloc(sizeof(*self_p->list_p) * self_p->length);
+    self_p->length = length;
+    self_p->list_p = elems_p;
 }
 
 static void async_func_queue_destroy(struct async_func_queue_t *self_p)
 {
-    free(self_p->list_p);
+    (void)self_p;
 }
 
 static async_func_t async_func_queue_get(struct async_func_queue_t *self_p,
@@ -91,7 +92,9 @@ void async_init(struct async_t *self_p)
 {
     self_p->tick_in_ms = 100;
     async_timer_list_init(&self_p->running_timers);
-    async_func_queue_init(&self_p->funcs, 32);
+    async_func_queue_init(&self_p->funcs,
+                          &self_p->elems[0],
+                          ASYNC_FUNC_QUEUE_MAX);
     self_p->runtime_p = async_runtime_null_create();
 }
 

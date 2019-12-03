@@ -39,6 +39,8 @@
 #define ASYNC_ERROR_NOT_IMPLMENETED              1
 #define ASYNC_ERROR_QUEUE_FULL                   2
 
+#define ASYNC_FUNC_QUEUE_MAX                     (32 + 1)
+
 struct async_runtime_t;
 
 /**
@@ -80,6 +82,7 @@ struct async_t {
     int tick_in_ms;
     struct async_timer_list_t running_timers;
     struct async_func_queue_t funcs;
+    struct async_func_queue_elem_t elems[ASYNC_FUNC_QUEUE_MAX];
     struct async_runtime_t *runtime_p;
 };
 
