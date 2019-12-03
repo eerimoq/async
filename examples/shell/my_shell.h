@@ -33,6 +33,7 @@
 
 struct my_shell_t {
     struct async_shell_t shell;
+    struct async_shell_command_t hello;
 };
 
 void my_shell_init(struct my_shell_t *self_p,

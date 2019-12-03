@@ -79,8 +79,9 @@ struct async_runtime_t {
 };
 
 /**
- * Create a native runtime.
+ * Create a native runtime. A runtime can only have one async object
+ * associated with it.
  */
-struct async_runtime_t *async_create_runtime(void);
+struct async_runtime_t *async_runtime_create(void);
 
 #endif

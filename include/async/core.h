@@ -107,19 +107,14 @@ void async_set_runtime(struct async_t *self_p,
 void async_destroy(struct async_t *self_p);
 
 /**
- * Returns once all async functions have been called.
- */
-void async_process(struct async_t *self_p);
-
-/**
- * Run given async object forever. This function never returns.
- */
-void async_run_forever(struct async_t *self_p);
-
-/**
  * Advance the async time one tick. Should be called periodically.
  */
 void async_tick(struct async_t *self_p);
+
+/**
+ * Returns once all async functions have been called.
+ */
+void async_process(struct async_t *self_p);
 
 /**
  * Call given function with given argument later.
@@ -127,6 +122,11 @@ void async_tick(struct async_t *self_p);
 int async_call(struct async_t *self_p,
                async_func_t func,
                void *obj_p);
+
+/**
+ * Run given async object forever. This function never returns.
+ */
+void async_run_forever(struct async_t *self_p);
 
 /**
  * Initialize given timer. Calls given function with given argument on

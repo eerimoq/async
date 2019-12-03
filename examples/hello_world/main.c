@@ -40,7 +40,7 @@ int main()
     struct async_timer_t timer;
 
     async_init(&async);
-    async_set_runtime(&async, async_create_runtime());
+    async_set_runtime(&async, async_runtime_create());
     async_timer_init(&timer, on_timeout, NULL, ASYNC_TIMER_PERIODIC, &async);
     async_timer_start(&timer, 1000);
     async_run_forever(&async);

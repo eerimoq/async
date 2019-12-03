@@ -105,44 +105,22 @@ static void print_prompt(struct async_shell_t *self_p)
     output(self_p, PROMPT);
 }
 
-static int compare_bsearch(const void *key_p, const void *elem_p)
-{
-    const char *name_p;
-    const char *elem_name_p;
-
-    name_p = (const char *)key_p;
-    elem_name_p = ((struct async_shell_command_t *)elem_p)->name_p;
-
-    return (strcmp(name_p, elem_name_p));
-}
-
-static int compare_qsort(const void *lelem_p, const void *relem_p)
-{
-    const char *lname_p;
-    const char *rname_p;
-    int res;
-
-    lname_p = ((struct async_shell_command_t *)lelem_p)->name_p;
-    rname_p = ((struct async_shell_command_t *)relem_p)->name_p;
-
-    res = strcmp(lname_p, rname_p);
-
-    if (res == 0) {
-        printf("%s: shell commands must be unique", lname_p);
-        exit(1);
-    }
-
-    return (res);
-}
-
 static struct async_shell_command_t *find_command(struct async_shell_t *self_p,
                                                   const char *name_p)
 {
-    return (bsearch(name_p,
-                    self_p->commands_p,
-                    self_p->number_of_commands,
-                    sizeof(*self_p->commands_p),
-                    compare_bsearch));
+    struct async_shell_command_t *command_p;
+
+    command_p = self_p->commands_p;
+
+    while (command_p != NULL) {
+        if (strcmp(name_p, command_p->name_p) == 0) {
+            return (command_p);
+        }
+
+        command_p = command_p->next_p;
+    }
+
+    return (NULL);
 }
 
 /**
@@ -381,8 +359,8 @@ static int command_help(struct async_shell_t *self_p,
     (void)argc;
     (void)argv;
 
-    int i;
     char buf[128];
+    struct async_shell_command_t *command_p;
 
     output(self_p,
            "Cursor movement\n"
@@ -410,13 +388,16 @@ static int command_help(struct async_shell_t *self_p,
            "Commands\n"
            "\n");
 
-    for (i = 0; i < self_p->number_of_commands; i++) {
+    command_p = self_p->commands_p;
+
+    while (command_p != NULL) {
         snprintf(&buf[0],
                  sizeof(buf),
                  "%13s   %s\n",
-                 self_p->commands_p[i].name_p,
-                 self_p->commands_p[i].description_p);
+                 command_p->name_p,
+                 command_p->description_p);
         output(self_p, &buf[0]);
+        command_p = command_p->next_p;
     }
 
     return (0);
@@ -565,26 +546,29 @@ static void auto_complete_command(struct async_shell_t *self_p)
     char next_char;
     bool mismatch;
     int size;
-    int i;
-    int first_match;
+    struct async_shell_command_t *first_match_p;
     bool completion_happend;
     char *line_p;
+    struct async_shell_command_t *command_p;
 
     line_p = line_get_buf(&self_p->line);
     size = line_get_length(&self_p->line);
 
     /* Find the first command matching given line. */
-    first_match = -1;
+    first_match_p = NULL;
+    command_p = self_p->commands_p;
 
-    for (i = 0; i < self_p->number_of_commands; i++) {
-        if (strncmp(self_p->commands_p[i].name_p, line_p, size) == 0) {
-            first_match = i;
+    while (command_p != NULL) {
+        if (strncmp(command_p->name_p, line_p, size) == 0) {
+            first_match_p = command_p;
             break;
         }
+
+        command_p = command_p->next_p;
     }
 
     /* No command matching the line. */
-    if (first_match == -1) {
+    if (first_match_p == NULL) {
         return;
     }
 
@@ -594,22 +578,20 @@ static void auto_complete_command(struct async_shell_t *self_p)
 
     while (true) {
         mismatch = false;
-        next_char = self_p->commands_p[first_match].name_p[size];
+        next_char = first_match_p->name_p[size];
 
         /* It's a match if all commands matching line has the same
            next character. */
-        i = first_match;
+        command_p = first_match_p;
 
-        while ((i < self_p->number_of_commands)
-               && (strncmp(&self_p->commands_p[i].name_p[0],
-                           line_p,
-                           size) == 0)) {
-            if (self_p->commands_p[i].name_p[size] != next_char) {
+        while ((command_p != NULL)
+               && (strncmp(&command_p->name_p[0], line_p, size) == 0)) {
+            if (command_p->name_p[size] != next_char) {
                 mismatch = true;
                 break;
             }
 
-            i++;
+            command_p = command_p->next_p;
         }
 
         /* This character mismatch? */
@@ -632,15 +614,13 @@ static void auto_complete_command(struct async_shell_t *self_p)
     /* Print all alternatives if no completion happened. */
     if (!completion_happend) {
         output(self_p, "\n");
-        i = first_match;
+        command_p = first_match_p;
 
-        while ((i < self_p->number_of_commands)
-               && (strncmp(self_p->commands_p[i].name_p,
-                           line_p,
-                           size) == 0)) {
-            output(self_p, self_p->commands_p[i].name_p);
+        while ((command_p != NULL)
+               && (strncmp(command_p->name_p, line_p, size) == 0)) {
+            output(self_p, command_p->name_p);
             output(self_p, "\n");
-            i++;
+            command_p = command_p->next_p;
         }
 
         print_prompt(self_p);
@@ -1132,9 +1112,7 @@ void async_shell_init(struct async_shell_t *self_p,
                       struct async_channel_t *channel_p,
                       struct async_t *async_p)
 {
-    self_p->number_of_commands = 0;
-    self_p->commands_p = malloc(1);
-    self_p->opened = false;
+    self_p->commands_p = NULL;
     self_p->async_p = async_p;
     async_channel_set_on(channel_p,
                          (async_channel_opened_t)on_opened,
@@ -1145,22 +1123,20 @@ void async_shell_init(struct async_shell_t *self_p,
     history_init(self_p);
     self_p->command_reader_state = async_shell_command_reader_state_init_t;
 
-    async_shell_register_command(self_p,
-                                 "help",
-                                 "Print this help.",
-                                 command_help);
-    async_shell_register_command(self_p,
-                                 "history",
-                                 "List command history.",
-                                 command_history);
+    async_shell_command_init(&self_p->commands.help,
+                             "help",
+                             "Print this help.",
+                             command_help);
+    async_shell_register_command(self_p, &self_p->commands.help);
+    async_shell_command_init(&self_p->commands.history,
+                             "history",
+                             "List command history.",
+                             command_history);
+    async_shell_register_command(self_p, &self_p->commands.history);
 }
 
 void async_shell_start(struct async_shell_t *self_p)
 {
-    qsort(self_p->commands_p,
-          self_p->number_of_commands,
-          sizeof(*self_p->commands_p),
-          compare_qsort);
     async_channel_open(self_p->channel_p);
 }
 
@@ -1169,19 +1145,41 @@ void async_shell_stop(struct async_shell_t *self_p)
     async_channel_close(self_p->channel_p);
 }
 
-void async_shell_register_command(struct async_shell_t *self_p,
-                                  const char *name_p,
-                                  const char *description_p,
-                                  async_shell_command_t callback)
+void async_shell_command_init(struct async_shell_command_t *self_p,
+                              const char *name_p,
+                              const char *description_p,
+                              async_shell_command_t callback)
 {
-    struct async_shell_command_t *command_p;
+    self_p->name_p = name_p;
+    self_p->description_p = description_p;
+    self_p->callback = callback;
+}
 
-    self_p->number_of_commands++;
-    self_p->commands_p = realloc(
-        self_p->commands_p,
-        sizeof(*self_p->commands_p) * self_p->number_of_commands);
-    command_p = &self_p->commands_p[self_p->number_of_commands - 1];
-    command_p->name_p = name_p;
-    command_p->description_p = description_p;
-    command_p->callback = callback;
+void async_shell_register_command(struct async_shell_t *self_p,
+                                  struct async_shell_command_t *command_p)
+{
+    struct async_shell_command_t *curr_p;
+    struct async_shell_command_t *prev_p;
+
+    /* Insert in alphabetical order. */
+    prev_p = NULL;
+    curr_p = self_p->commands_p;
+
+    while (curr_p != NULL) {
+        if (strcmp(command_p->name_p, curr_p->name_p) < 0) {
+            break;
+        }
+
+        prev_p = curr_p;
+        curr_p = curr_p->next_p;
+    }
+
+    /* Insert into the list. */
+    command_p->next_p = curr_p;
+
+    if (prev_p == NULL) {
+        self_p->commands_p = command_p;
+    } else {
+        prev_p->next_p = command_p;
+    }
 }

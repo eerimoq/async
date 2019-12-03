@@ -29,7 +29,7 @@
 #include "async/runtime.h"
 #include "async/runtimes/linux.h"
 
-struct async_runtime_t *async_create_runtime(void)
+struct async_runtime_t *async_runtime_create(void)
 {
     return (async_runtime_linux_create());
 }

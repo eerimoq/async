@@ -51,6 +51,7 @@ struct async_shell_command_t {
     const char *name_p;
     const char *description_p;
     async_shell_command_t callback;
+    struct async_shell_command_t *next_p;
 };
 
 struct async_shell_history_elem_t {
@@ -81,11 +82,13 @@ struct async_shell_t {
         struct async_shell_line_t line;
         bool line_valid;
     } history;
-    int number_of_commands;
     struct async_shell_command_t *commands_p;
     struct async_channel_t *channel_p;
     enum async_shell_command_reader_state_t command_reader_state;
-    bool opened;
+    struct {
+        struct async_shell_command_t help;
+        struct async_shell_command_t history;
+    } commands;
     struct async_t *async_p;
 };
 
@@ -98,8 +101,7 @@ void async_shell_init(struct async_shell_t *self_p,
                       struct async_t *async_p);
 
 /**
- * Start given shell. No commands may be registered after this
- * function has been called.
+ * Start given shell.
  */
 void async_shell_start(struct async_shell_t *self_p);
 
@@ -109,12 +111,18 @@ void async_shell_start(struct async_shell_t *self_p);
 void async_shell_stop(struct async_shell_t *self_p);
 
 /**
- * Regiser given shell command. Must be called before
- * async_shell_start().
+ * Initialize given shell command.
+ */
+void async_shell_command_init(struct async_shell_command_t *self_p,
+                              const char *name_p,
+                              const char *description_p,
+                              async_shell_command_t callback);
+
+/**
+ * Register given shell command in given shell. A shell command
+ * instance may only be registered in a single shell.
  */
 void async_shell_register_command(struct async_shell_t *self_p,
-                                  const char *name_p,
-                                  const char *description_p,
-                                  async_shell_command_t callback);
+                                  struct async_shell_command_t *command_p);
 
 #endif

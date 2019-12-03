@@ -62,9 +62,10 @@ void my_shell_init(struct my_shell_t *self_p,
                    struct async_t *async_p)
 {
     async_shell_init(&self_p->shell, channel_p, async_p);
-    async_shell_register_command(&self_p->shell,
-                                 "hello",
-                                 "My command.",
-                                 command_hello);
+    async_shell_command_init(&self_p->hello,
+                             "hello",
+                             "My command.",
+                             command_hello);
+    async_shell_register_command(self_p, &self_p->hello);
     async_shell_start(&self_p->shell);
 }
