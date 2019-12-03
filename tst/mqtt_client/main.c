@@ -1,6 +1,7 @@
 #include "nala.h"
 #include "nala_mocks.h"
 #include "async.h"
+#include "async/modules/mqtt_client.h"
 
 static async_func_t tcp_on_connect_complete;
 static async_func_t tcp_on_disconnected;

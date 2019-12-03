@@ -26,7 +26,7 @@
  * This file is part of the Async project.
  */
 
-#include "async/runtime.h"
+#include "async/runtimes/runtime.h"
 #include "async/runtimes/linux.h"
 
 struct async_runtime_t *async_runtime_create(void)

@@ -30,6 +30,7 @@
 #define MY_SHELL_H
 
 #include "async.h"
+#include "async/modules/shell.h"
 
 struct my_shell_t {
     struct async_shell_t shell;

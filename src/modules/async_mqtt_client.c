@@ -29,6 +29,7 @@
 #include <stdio.h>
 #include <string.h>
 #include "async.h"
+#include "async/modules/mqtt_client.h"
 #include "bitstream.h"
 
 /* Connection flags. */

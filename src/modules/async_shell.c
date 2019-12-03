@@ -31,7 +31,7 @@
 #include <string.h>
 #include <sys/param.h>
 #include <ctype.h>
-#include "async/shell.h"
+#include "async/modules/shell.h"
 #include "hf.h"
 
 #define PROMPT                                  "$ "

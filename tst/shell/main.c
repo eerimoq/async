@@ -2,6 +2,7 @@
 #include "nala.h"
 #include "nala_mocks.h"
 #include "async.h"
+#include "async/modules/shell.h"
 #include "utils.h"
 
 static void mock_prepare_output(const char *output_p)
