@@ -26,7 +26,7 @@
  * This file is part of the Async project.
  */
 
-#include "async/channel.h"
+#include "async/core/channel.h"
 
 static void on_opened(struct async_channel_t *self_p)
 {

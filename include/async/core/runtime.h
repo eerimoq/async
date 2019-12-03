@@ -29,8 +29,8 @@
 #ifndef ASYNC_RUNTIME_H
 #define ASYNC_RUNTIME_H
 
-#include "async/core.h"
-#include "async/tcp_client.h"
+#include "async/core/core.h"
+#include "async/core/tcp_client.h"
 
 typedef void (*async_runtime_set_async_t)(void *self_p, struct async_t *async_p);
 
@@ -83,5 +83,10 @@ struct async_runtime_t {
  * associated with it.
  */
 struct async_runtime_t *async_runtime_create(void);
+
+/**
+ * Create a null runtime. Normally never called by the user.
+ */
+struct async_runtime_t *async_runtime_null_create(void);
 
 #endif

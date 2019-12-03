@@ -29,7 +29,7 @@
 #ifndef ASYNC_RUNTIME_LINUX_H
 #define ASYNC_RUNTIME_LINUX_H
 
-#include "async/runtimes/runtime.h"
+#include "async/core/runtime.h"
 
 struct async_runtime_t *async_runtime_linux_create(void);
 

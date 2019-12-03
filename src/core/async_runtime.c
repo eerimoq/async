@@ -27,8 +27,8 @@
  */
 
 #include <stdio.h>
-#include "async/runtime.h"
-#include "async/tcp_client.h"
+#include "async/core/runtime.h"
+#include "async/runtimes/linux.h"
 
 static void set_async(void *self_p, struct async_t *async_p)
 {
@@ -133,6 +133,11 @@ struct async_runtime_t runtime = {
         .read = tcp_client_read
     }
 };
+
+struct async_runtime_t *async_runtime_create(void)
+{
+    return (async_runtime_linux_create());
+}
 
 struct async_runtime_t *async_runtime_null_create()
 {

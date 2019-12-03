@@ -29,9 +29,9 @@
 #ifndef ASYNC_H
 #define ASYNC_H
 
-#include "async/core.h"
-#include "async/channel.h"
-#include "async/tcp_client.h"
-#include "async/runtimes/runtime.h"
+#include "async/core/core.h"
+#include "async/core/channel.h"
+#include "async/core/tcp_client.h"
+#include "async/core/runtime.h"
 
 #endif

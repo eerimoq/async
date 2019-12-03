@@ -2,15 +2,13 @@ INC += $(ASYNC_ROOT)/include
 INC += $(ASYNC_ROOT)/3pp/bitstream
 INC += $(ASYNC_ROOT)/3pp/humanfriendly/include
 
-SRC += $(ASYNC_ROOT)/src/async.c
-SRC += $(ASYNC_ROOT)/src/async_timer.c
-SRC += $(ASYNC_ROOT)/src/async_channel.c
-SRC += $(ASYNC_ROOT)/src/async_tcp_client.c
-
+SRC += $(ASYNC_ROOT)/src/core/async.c
+SRC += $(ASYNC_ROOT)/src/core/async_timer.c
+SRC += $(ASYNC_ROOT)/src/core/async_channel.c
+SRC += $(ASYNC_ROOT)/src/core/async_tcp_client.c
+SRC += $(ASYNC_ROOT)/src/core/async_runtime.c
 SRC += $(ASYNC_ROOT)/src/modules/async_shell.c
 SRC += $(ASYNC_ROOT)/src/modules/async_mqtt_client.c
-SRC += $(ASYNC_ROOT)/src/runtimes/async_runtime.c
-SRC += $(ASYNC_ROOT)/src/runtimes/async_runtime_null.c
 SRC += $(ASYNC_ROOT)/src/runtimes/async_runtime_linux.c
 SRC += $(ASYNC_ROOT)/src/utils/async_utils_linux.c
 SRC += $(ASYNC_ROOT)/3pp/bitstream/bitstream.c

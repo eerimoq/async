@@ -29,7 +29,7 @@
 #ifndef ASYNC_TCP_CLIENT_H
 #define ASYNC_TCP_CLIENT_H
 
-#include "async/core.h"
+#include "async/core/core.h"
 
 struct async_tcp_client_t {
     struct async_t *async_p;
