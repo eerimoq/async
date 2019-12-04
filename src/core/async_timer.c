@@ -32,10 +32,13 @@
 
 static void on_timeout(struct async_timer_t *self_p)
 {
-    if (self_p->is_stopped) {
+    if (self_p->number_of_timeouts_to_ignore > 0) {
+        self_p->number_of_timeouts_to_ignore--;
+
         return;
     }
 
+    self_p->number_of_outstanding_timeouts--;
     self_p->on_timeout(self_p);
 }
 
@@ -118,7 +121,8 @@ void async_timer_init(struct async_timer_t *self_p,
     self_p->on_timeout = on_timeout;
     async_timer_set_initial(self_p, initial);
     async_timer_set_repeat(self_p, repeat);
-    self_p->is_stopped = false;
+    self_p->number_of_outstanding_timeouts = 0;
+    self_p->number_of_timeouts_to_ignore = 0;
 }
 
 void async_timer_set_initial(struct async_timer_t *self_p,
@@ -148,18 +152,14 @@ unsigned int async_timer_get_repeat(struct async_timer_t *self_p)
 
 void async_timer_start(struct async_timer_t *self_p)
 {
-    if (!self_p->is_stopped) {
-        async_timer_stop(self_p);
-    }
-
+    async_timer_stop(self_p);
     self_p->delta = self_p->initial_ticks;
-    self_p->is_stopped = false;
     timer_list_insert(&self_p->async_p->running_timers, self_p);
 }
 
 void async_timer_stop(struct async_timer_t *self_p)
 {
-    self_p->is_stopped = true;
+    self_p->number_of_timeouts_to_ignore = self_p->number_of_outstanding_timeouts;
     timer_list_remove(&self_p->async_p->running_timers, self_p);
 }
 
@@ -185,9 +185,8 @@ void async_timer_list_tick(struct async_timer_list_t *self_p)
     while (self_p->head_p->delta == 0) {
         timer_p = self_p->head_p;
         self_p->head_p = timer_p->next_p;
-        async_call(timer_p->async_p,
-                   (async_func_t)on_timeout,
-                   timer_p);
+        timer_p->number_of_outstanding_timeouts++;
+        async_call(timer_p->async_p, (async_func_t)on_timeout, timer_p);
 
         /* Re-set periodic timers. */
         if (timer_p->repeat_ticks > 0) {

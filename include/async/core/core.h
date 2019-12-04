@@ -66,7 +66,8 @@ struct async_timer_t {
     unsigned int repeat_ticks;
     unsigned int delta;
     async_timer_timeout_t on_timeout;
-    bool is_stopped;
+    int number_of_outstanding_timeouts;
+    int number_of_timeouts_to_ignore;
     struct async_timer_t *next_p;
 };
 

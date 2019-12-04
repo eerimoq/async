@@ -29,7 +29,6 @@ TEST(test_single_shot_timer)
     counter.value = 0;
     async_timer_start(&counter.timer);
     async_tick(&async);
-    async_tick(&async);
     async_process(&async);
     ASSERT_EQ(counter.value, 1);
     async_destroy(&async);
@@ -65,7 +64,6 @@ TEST(test_single_shot_timer_stop_expired_before_handled)
                      &async);
     counter.value = 0;
     async_timer_start(&counter.timer);
-    async_tick(&async);
     async_tick(&async);
     async_timer_stop(&counter.timer);
     async_process(&async);
@@ -170,5 +168,26 @@ TEST(test_initial_and_repeat)
     async_process(&async);
     ASSERT_EQ(counter.value, 10);
 
+    async_destroy(&async);
+}
+
+TEST(test_restart_with_outstanding_timeout)
+{
+    struct async_t async;
+    struct counter_t counter;
+
+    async_init(&async);
+    async_timer_init(&counter.timer,
+                     on_timeout,
+                     0,
+                     0,
+                     &async);
+    counter.value = 0;
+    async_timer_start(&counter.timer);
+    async_tick(&async);
+    async_timer_stop(&counter.timer);
+    async_timer_start(&counter.timer);
+    async_process(&async);
+    ASSERT_EQ(counter.value, 0);
     async_destroy(&async);
 }
