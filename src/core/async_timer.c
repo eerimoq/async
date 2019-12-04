@@ -32,13 +32,14 @@
 
 static void on_timeout(struct async_timer_t *self_p)
 {
+    self_p->number_of_outstanding_timeouts--;
+
     if (self_p->number_of_timeouts_to_ignore > 0) {
         self_p->number_of_timeouts_to_ignore--;
 
         return;
     }
 
-    self_p->number_of_outstanding_timeouts--;
     self_p->on_timeout(self_p);
 }
 
