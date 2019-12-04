@@ -30,6 +30,17 @@
 #include "async.h"
 #include "internal.h"
 
+static bool is_any_timer_running(struct async_timer_list_t *self_p)
+{
+    return (self_p->head_p != &self_p->tail);
+}
+
+static bool is_tail_timer(struct async_timer_list_t *self_p,
+                          struct async_timer_t *timer_p)
+{
+    return (timer_p == &self_p->tail);
+}
+
 static void on_timeout(struct async_timer_t *self_p)
 {
     self_p->number_of_outstanding_timeouts--;
@@ -63,7 +74,7 @@ static void timer_list_insert(struct async_timer_list_t *self_p,
 
     /* Adjust the next timer for this timers delta. Do not adjust the
        tail timer. */
-    if (elem_p != &self_p->tail) {
+    if (!is_tail_timer(self_p, elem_p)) {
         elem_p->delta -= timer_p->delta;
     }
 
@@ -100,7 +111,7 @@ static void timer_list_remove(struct async_timer_list_t *self_p,
             }
 
             /* Add the delta timeout to the next timer. */
-            if (elem_p->next_p != &self_p->tail) {
+            if (!is_tail_timer(self_p, elem_p->next_p)) {
                 elem_p->next_p->delta += elem_p->delta;
             }
 
@@ -175,8 +186,7 @@ void async_timer_list_tick(struct async_timer_list_t *self_p)
 {
     struct async_timer_t *timer_p;
 
-    /* Return if no timers are active.*/
-    if (self_p->head_p == &self_p->tail) {
+    if (!is_any_timer_running(self_p)) {
         return;
     }
 
