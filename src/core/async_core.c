@@ -27,7 +27,6 @@
  */
 
 #include "async.h"
-#include "async/core/runtime.h"
 #include "internal.h"
 
 static bool is_empty(struct async_func_queue_t *self_p)

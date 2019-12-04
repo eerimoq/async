@@ -2,7 +2,7 @@ INC += $(ASYNC_ROOT)/include
 INC += $(ASYNC_ROOT)/3pp/bitstream
 INC += $(ASYNC_ROOT)/3pp/humanfriendly/include
 
-SRC += $(ASYNC_ROOT)/src/core/async.c
+SRC += $(ASYNC_ROOT)/src/core/async_core.c
 SRC += $(ASYNC_ROOT)/src/core/async_timer.c
 SRC += $(ASYNC_ROOT)/src/core/async_channel.c
 SRC += $(ASYNC_ROOT)/src/core/async_tcp_client.c

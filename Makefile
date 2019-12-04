@@ -8,7 +8,7 @@ all: test
 	$(MAKE) -C examples/counter build
 
 test:
-	$(MAKE) -C tst/core/async run
+	$(MAKE) -C tst/core/core run
 	$(MAKE) -C tst/core/timer run
 	$(MAKE) -C tst/core/channel run
 	$(MAKE) -C tst/core/tcp_client run
@@ -23,7 +23,7 @@ clean:
 	$(MAKE) -C examples/tcp_echo_client clean
 	$(MAKE) -C examples/hello_world clean
 	$(MAKE) -C examples/counter clean
-	$(MAKE) -C tst/core/async clean
+	$(MAKE) -C tst/core/core clean
 	$(MAKE) -C tst/core/timer clean
 	$(MAKE) -C tst/core/channel clean
 	$(MAKE) -C tst/core/tcp_client clean
