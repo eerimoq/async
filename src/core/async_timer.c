@@ -157,22 +157,24 @@ void async_timer_list_tick(struct async_timer_list_t *self_p)
     struct async_timer_t *timer_p;
 
     /* Return if no timers are active.*/
-    if (self_p->head_p != &self_p->tail) {
-        /* Fire all expired timers.*/
-        self_p->head_p->delta--;
+    if (self_p->head_p == &self_p->tail) {
+        return;
+    }
+    
+    /* Fire all expired timers.*/
+    self_p->head_p->delta--;
 
-        while (self_p->head_p->delta == 0) {
-            timer_p = self_p->head_p;
-            self_p->head_p = timer_p->next_p;
-            async_call(timer_p->async_p,
-                       timer_p->on_timeout,
-                       timer_p->obj_p);
+    while (self_p->head_p->delta == 0) {
+        timer_p = self_p->head_p;
+        self_p->head_p = timer_p->next_p;
+        async_call(timer_p->async_p,
+                   timer_p->on_timeout,
+                   timer_p->obj_p);
 
-            /* Re-set periodic timers. */
-            if (timer_p->flags & ASYNC_TIMER_PERIODIC) {
-                timer_p->delta = timer_p->timeout;
-                timer_list_insert(self_p, timer_p);
-            }
+        /* Re-set periodic timers. */
+        if (timer_p->flags & ASYNC_TIMER_PERIODIC) {
+            timer_p->delta = timer_p->timeout;
+            timer_list_insert(self_p, timer_p);
         }
     }
 }
