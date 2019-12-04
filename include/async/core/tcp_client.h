@@ -31,6 +31,8 @@
 
 #include "async/core/core.h"
 
+typedef void (*async_tcp_client_connected_t)(void *obj_p, int res);
+
 struct async_tcp_client_t {
     struct async_t *async_p;
     void *obj_p;
@@ -40,7 +42,7 @@ struct async_tcp_client_t {
  * Initialize given TCP client object.
  */
 void async_tcp_client_init(struct async_tcp_client_t *self_p,
-                           async_func_t on_connect_complete,
+                           async_tcp_client_connected_t on_connected,
                            async_func_t on_disconnected,
                            async_func_t on_input,
                            void *obj_p,
@@ -58,11 +60,6 @@ void async_tcp_client_connect(struct async_tcp_client_t *self_p,
  * Disconnect from the remote host.
  */
 void async_tcp_client_disconnect(struct async_tcp_client_t *self_p);
-
-/**
- * Returns true if connected to the peer.
- */
-bool async_tcp_client_is_connected(struct async_tcp_client_t *self_p);
 
 /**
  * Write up to size bytes to the remote host.

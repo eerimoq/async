@@ -32,7 +32,7 @@
 #include "async/core/runtime.h"
 
 void async_tcp_client_init(struct async_tcp_client_t *self_p,
-                           async_func_t on_connect_complete,
+                           async_tcp_client_connected_t on_connected,
                            async_func_t on_disconnected,
                            async_func_t on_input,
                            void *obj_p,
@@ -40,7 +40,7 @@ void async_tcp_client_init(struct async_tcp_client_t *self_p,
 {
     self_p->async_p = async_p;
     async_p->runtime_p->tcp_client.init(self_p,
-                                        on_connect_complete,
+                                        on_connected,
                                         on_disconnected,
                                         on_input,
                                         obj_p);
@@ -56,11 +56,6 @@ void async_tcp_client_connect(struct async_tcp_client_t *self_p,
 void async_tcp_client_disconnect(struct async_tcp_client_t *self_p)
 {
     self_p->async_p->runtime_p->tcp_client.disconnect(self_p);
-}
-
-bool async_tcp_client_is_connected(struct async_tcp_client_t *self_p)
-{
-    return (self_p->async_p->runtime_p->tcp_client.is_connected(self_p));
 }
 
 ssize_t async_tcp_client_write(struct async_tcp_client_t *self_p,

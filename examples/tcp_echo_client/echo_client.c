@@ -41,9 +41,9 @@ static void on_start(struct echo_client_t *self_p)
     async_tcp_client_connect(&self_p->tcp, "localhost", 33000);
 }
 
-static void on_connect_complete(struct echo_client_t *self_p)
+static void on_connected(struct echo_client_t *self_p, int res)
 {
-    if (async_tcp_client_is_connected(&self_p->tcp)) {
+    if (res == 0) {
         printf("Connected.\n");
         async_timer_start(&self_p->transmit_timer, 1000);
     } else {
@@ -80,7 +80,7 @@ static void on_timeout(struct echo_client_t *self_p)
 void echo_client_init(struct echo_client_t *self_p, struct async_t *async_p)
 {
     async_tcp_client_init(&self_p->tcp,
-                          (async_func_t)on_connect_complete,
+                          (async_tcp_client_connected_t)on_connected,
                           (async_func_t)on_disconnected,
                           (async_func_t)on_data,
                           self_p,

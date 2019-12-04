@@ -48,13 +48,13 @@ static void run_forever(void *self_p)
 }
 
 static void tcp_client_init(struct async_tcp_client_t *self_p,
-                            async_func_t on_connect_complete,
+                            async_tcp_client_connected_t on_connected,
                             async_func_t on_disconnected,
                             async_func_t on_data,
                             void *obj_p)
 {
     (void)self_p;
-    (void)on_connect_complete;
+    (void)on_connected;
     (void)on_disconnected;
     (void)on_data;
     (void)obj_p;
@@ -81,16 +81,6 @@ static void tcp_client_disconnect(struct async_tcp_client_t *self_p)
 
     fprintf(stderr, "async_tcp_client_disconnect() not implemented.\n");
     exit(1);
-}
-
-static bool tcp_client_is_connected(struct async_tcp_client_t *self_p)
-{
-    (void)self_p;
-
-    fprintf(stderr, "async_tcp_client_is_connected() not implemented.\n");
-    exit(1);
-
-    return (false);
 }
 
 static ssize_t tcp_client_write(struct async_tcp_client_t *self_p,
@@ -128,7 +118,6 @@ struct async_runtime_t runtime = {
         .init = tcp_client_init,
         .connect = tcp_client_connect,
         .disconnect = tcp_client_disconnect,
-        .is_connected = tcp_client_is_connected,
         .write = tcp_client_write,
         .read = tcp_client_read
     }

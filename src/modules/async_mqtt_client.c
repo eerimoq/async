@@ -406,12 +406,12 @@ static void stop_reconnect_timer(struct async_mqtt_client_t *self_p)
     async_timer_stop(&self_p->reconnect_timer);
 }
 
-static void on_tcp_connect_complete(struct async_mqtt_client_t *self_p)
+static void on_tcp_connected(struct async_mqtt_client_t *self_p, int res)
 {
     struct writer_t writer;
     uint8_t buf[256];
 
-    if (async_tcp_client_is_connected(&self_p->tcp)) {
+    if (res == 0) {
         writer_init(&writer, &buf[0], sizeof(buf));
         async_tcp_client_write(&self_p->tcp,
                                &buf[0],
@@ -656,7 +656,7 @@ void async_mqtt_client_init(struct async_mqtt_client_t *self_p,
     self_p->connected = false;
     self_p->next_packet_identifier = 1;
     async_tcp_client_init(&self_p->tcp,
-                          (async_func_t)on_tcp_connect_complete,
+                          (async_tcp_client_connected_t)on_tcp_connected,
                           (async_func_t)on_tcp_disconnected,
                           (async_func_t)on_tcp_input,
                           self_p,

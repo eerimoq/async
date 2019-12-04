@@ -38,7 +38,7 @@ typedef void (*async_runtime_run_forever_t)(void *self_p);
 
 typedef void (*async_runtime_tcp_client_init_t)(
     struct async_tcp_client_t *self_p,
-    async_func_t on_connect_complete,
+    async_tcp_client_connected_t on_connected,
     async_func_t on_disconnected,
     async_func_t on_data,
     void *obj_p);
@@ -49,9 +49,6 @@ typedef void (*async_runtime_tcp_client_connect_t)(
     int port);
 
 typedef void (*async_runtime_tcp_client_disconnect_t)(
-    struct async_tcp_client_t *self_p);
-
-typedef bool (*async_runtime_tcp_client_is_connected_t)(
     struct async_tcp_client_t *self_p);
 
 typedef ssize_t (*async_runtime_tcp_client_write_t)(
@@ -71,7 +68,6 @@ struct async_runtime_t {
         async_runtime_tcp_client_init_t init;
         async_runtime_tcp_client_connect_t connect;
         async_runtime_tcp_client_disconnect_t disconnect;
-        async_runtime_tcp_client_is_connected_t is_connected;
         async_runtime_tcp_client_write_t write;
         async_runtime_tcp_client_read_t read;
     } tcp_client;
