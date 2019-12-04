@@ -35,9 +35,9 @@
 
 static void start_publish_timer(struct publisher_t *self_p)
 {
-    printf("Starting the publish timer with timeout %d ms.\n",
-           self_p->publish_timeout_ms);
-    async_timer_start(&self_p->publish_timer, self_p->publish_timeout_ms);
+    printf("Starting the publish timer with timeout %u ms.\n",
+           async_timer_get_repeat(&self_p->publish_timer));
+    async_timer_start(&self_p->publish_timer);
 }
 
 static void stop_publish_timer(struct publisher_t *self_p)
@@ -77,7 +77,11 @@ static void on_publish_start(struct publisher_t *self_p,
                              const uint8_t *buf_p,
                              size_t size)
 {
-    self_p->publish_timeout_ms = parse_timeout(buf_p, size, 100, 1000);
+    unsigned int timeout;
+
+    timeout = parse_timeout(buf_p, size, 100, 1000);
+    async_timer_set_initial(&self_p->publish_timer, timeout);
+    async_timer_set_repeat(&self_p->publish_timer, timeout);
     start_publish_timer(self_p);
 }
 
@@ -86,12 +90,13 @@ static void on_publish_stop(struct publisher_t *self_p)
     stop_publish_timer(self_p);
 }
 
-static void on_reconnect_timeout(struct publisher_t *self_p)
+static void on_reconnect_timeout(struct async_timer_t *timer_p)
 {
-    if (!async_timer_is_stopped(&self_p->reconnect_timer)) {
-        printf("Starting the MQTT client.\n");
-        async_mqtt_client_start(&self_p->client);
-    }
+    struct publisher_t *self_p;
+
+    self_p = async_container_of(timer_p, typeof(*self_p), reconnect_timer);
+    printf("Starting the MQTT client.\n");
+    async_mqtt_client_start(&self_p->client);
 }
 
 static void on_publish_reconnect(struct publisher_t *self_p,
@@ -104,7 +109,8 @@ static void on_publish_reconnect(struct publisher_t *self_p,
     printf("Stopping the MQTT client for %d ms.\n", timeout_ms);
     async_mqtt_client_stop(&self_p->client);
     stop_publish_timer(self_p);
-    async_timer_start(&self_p->reconnect_timer, timeout_ms);
+    async_timer_set_initial(&self_p->reconnect_timer, timeout_ms);
+    async_timer_start(&self_p->reconnect_timer);
 }
 
 static void on_publish(struct publisher_t *self_p,
@@ -123,12 +129,14 @@ static void on_publish(struct publisher_t *self_p,
     }
 }
 
-static void on_publish_timeout(struct publisher_t *self_p)
+static void on_publish_timeout(struct async_timer_t *timer_p)
 {
     char buf[32];
     size_t size;
     static int counter = 0;
+    struct publisher_t *self_p;
 
+    self_p = async_container_of(timer_p, typeof(*self_p), publish_timer);
     size = sprintf(&buf[0], "count: %d", counter++);
     printf("Publishing '%s' on 'async/hello'.\n", &buf[0]);
     async_mqtt_client_publish(&self_p->client, "async/hello", &buf[0], size);
@@ -147,16 +155,15 @@ void publisher_init(struct publisher_t *self_p,
                            async_p);
     async_mqtt_client_set_client_id(&self_p->client, "mqtt-client-example");
     async_timer_init(&self_p->publish_timer,
-                     (async_func_t)on_publish_timeout,
-                     self_p,
-                     ASYNC_TIMER_PERIODIC,
+                     on_publish_timeout,
+                     1000,
+                     1000,
                      async_p);
     async_timer_init(&self_p->reconnect_timer,
-                     (async_func_t)on_reconnect_timeout,
-                     self_p,
+                     on_reconnect_timeout,
+                     1000,
                      0,
                      async_p);
-    self_p->publish_timeout_ms = 1000;
     printf("Starting the MQTT client.\n");
     async_mqtt_client_start(&self_p->client);
 }

@@ -49,15 +49,13 @@ static void run_forever(void *self_p)
 
 static void tcp_client_init(struct async_tcp_client_t *self_p,
                             async_tcp_client_connected_t on_connected,
-                            async_func_t on_disconnected,
-                            async_func_t on_data,
-                            void *obj_p)
+                            async_tcp_client_disconnected_t on_disconnected,
+                            async_tcp_client_input_t on_input)
 {
     (void)self_p;
     (void)on_connected;
     (void)on_disconnected;
-    (void)on_data;
-    (void)obj_p;
+    (void)on_input;
 
     fprintf(stderr, "async_tcp_client_init() not implemented.\n");
     exit(1);

@@ -389,16 +389,17 @@ static void unpack_publish(struct async_mqtt_client_t *self_p,
     *size_p = (self_p->packet.size - buf_offset);
 }
 
-static void on_reconnect_timeout(struct async_mqtt_client_t *self_p)
+static void on_reconnect_timeout(struct async_timer_t *timer_p)
 {
-    if (!async_timer_is_stopped(&self_p->reconnect_timer)) {
-        async_tcp_client_connect(&self_p->tcp, self_p->host_p, self_p->port);
-    }
+    struct async_mqtt_client_t *self_p;
+
+    self_p = async_container_of(timer_p, typeof(*self_p), reconnect_timer);
+    async_tcp_client_connect(&self_p->tcp, self_p->host_p, self_p->port);
 }
 
 static void start_reconnect_timer(struct async_mqtt_client_t *self_p)
 {
-    async_timer_start(&self_p->reconnect_timer, 1000);
+    async_timer_start(&self_p->reconnect_timer);
 }
 
 static void stop_reconnect_timer(struct async_mqtt_client_t *self_p)
@@ -406,11 +407,14 @@ static void stop_reconnect_timer(struct async_mqtt_client_t *self_p)
     async_timer_stop(&self_p->reconnect_timer);
 }
 
-static void on_tcp_connected(struct async_mqtt_client_t *self_p, int res)
+static void on_tcp_connected(struct async_tcp_client_t *tcp_p, int res)
 {
     struct writer_t writer;
     uint8_t buf[256];
+    struct async_mqtt_client_t *self_p;
 
+    self_p = async_container_of(tcp_p, typeof(*self_p), tcp);
+    
     if (res == 0) {
         writer_init(&writer, &buf[0], sizeof(buf));
         async_tcp_client_write(&self_p->tcp,
@@ -424,8 +428,11 @@ static void on_tcp_connected(struct async_mqtt_client_t *self_p, int res)
     }
 }
 
-static void on_tcp_disconnected(struct async_mqtt_client_t *self_p)
+static void on_tcp_disconnected(struct async_tcp_client_t *tcp_p)
 {
+    struct async_mqtt_client_t *self_p;
+
+    self_p = async_container_of(tcp_p, typeof(*self_p), tcp);
     self_p->connected = false;
     async_timer_stop(&self_p->keep_alive_timer);
     self_p->on_disconnected(self_p);
@@ -547,7 +554,7 @@ static bool read_packet(struct async_mqtt_client_t *self_p)
 static void handle_connack(struct async_mqtt_client_t *self_p)
 {
     self_p->connected = true;
-    async_timer_start(&self_p->keep_alive_timer, 1000 * self_p->keep_alive_s);
+    async_timer_start(&self_p->keep_alive_timer);
     self_p->on_connected(self_p->obj_p);
 }
 
@@ -574,8 +581,12 @@ static void handle_pingresp(struct async_mqtt_client_t *self_p)
     (void)self_p;
 }
 
-static void on_tcp_input(struct async_mqtt_client_t *self_p)
+static void on_tcp_input(struct async_tcp_client_t *tcp_p)
 {
+    struct async_mqtt_client_t *self_p;
+
+    self_p = async_container_of(tcp_p, typeof(*self_p), tcp);
+
     if (!read_packet(self_p)) {
         return;
     }
@@ -624,11 +635,13 @@ static size_t pack_pingreq(struct writer_t *writer_p)
     return (writer_written(writer_p));
 }
 
-static void on_keep_alive_timeout(struct async_mqtt_client_t *self_p)
+static void on_keep_alive_timeout(struct async_timer_t *timer_p)
 {
     struct writer_t writer;
     uint8_t buf[8];
+    struct async_mqtt_client_t *self_p;
 
+    self_p = async_container_of(timer_p, typeof(*self_p), keep_alive_timer);
     writer_init(&writer, &buf[0], sizeof(buf));
     async_tcp_client_write(&self_p->tcp, &buf[0], pack_pingreq(&writer));
 }
@@ -656,20 +669,19 @@ void async_mqtt_client_init(struct async_mqtt_client_t *self_p,
     self_p->connected = false;
     self_p->next_packet_identifier = 1;
     async_tcp_client_init(&self_p->tcp,
-                          (async_tcp_client_connected_t)on_tcp_connected,
-                          (async_func_t)on_tcp_disconnected,
-                          (async_func_t)on_tcp_input,
-                          self_p,
+                          on_tcp_connected,
+                          on_tcp_disconnected,
+                          on_tcp_input,
                           async_p);
     self_p->packet.state = packet_state_read_type_t;
     async_timer_init(&self_p->keep_alive_timer,
-                     (async_func_t)on_keep_alive_timeout,
-                     self_p,
-                     ASYNC_TIMER_PERIODIC,
+                     on_keep_alive_timeout,
+                     1000 * self_p->keep_alive_s,
+                     1000 * self_p->keep_alive_s,
                      async_p);
     async_timer_init(&self_p->reconnect_timer,
-                     (async_func_t)on_reconnect_timeout,
-                     self_p,
+                     on_reconnect_timeout,
+                     1000,
                      0,
                      async_p);
 }

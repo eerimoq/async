@@ -36,7 +36,6 @@ struct publisher_t {
     struct async_mqtt_client_t client;
     struct async_timer_t publish_timer;
     struct async_timer_t reconnect_timer;
-    int publish_timeout_ms;
 };
 
 void publisher_init(struct publisher_t *self_p,

@@ -33,13 +33,19 @@
 #include <stdint.h>
 #include <stdlib.h>
 
-#define ASYNC_TIMER_PERIODIC                     (1 << 0)
-
 /* Error codes. */
 #define ASYNC_ERROR_NOT_IMPLMENETED              1
 #define ASYNC_ERROR_QUEUE_FULL                   2
 
 #define ASYNC_FUNC_QUEUE_MAX                     (32 + 1)
+
+#define async_offsetof(type, member) ((size_t) &((type *)0)->member)
+
+#define async_container_of(ptr, type, member)                           \
+    ({                                                                  \
+        const typeof( ((type *)0)->member) *__mptr = (ptr);             \
+        (type *)( (char *)__mptr - async_offsetof(type,member) );       \
+    })
 
 struct async_runtime_t;
 
@@ -48,14 +54,19 @@ struct async_runtime_t;
  */
 typedef void (*async_func_t)(void *obj_p);
 
+struct async_timer_t;
+
+typedef void (*async_timer_timeout_t)(struct async_timer_t *self_p);
+
 struct async_timer_t {
     struct async_t *async_p;
-    unsigned int timeout;
+    unsigned int initial;
+    unsigned int repeat;
+    unsigned int initial_ticks;
+    unsigned int repeat_ticks;
     unsigned int delta;
-    async_func_t on_timeout;
-    void *obj_p;
-    int flags;
-    bool stopped;
+    async_timer_timeout_t on_timeout;
+    bool is_stopped;
     struct async_timer_t *next_p;
 };
 
@@ -132,33 +143,46 @@ int async_call(struct async_t *self_p,
 void async_run_forever(struct async_t *self_p);
 
 /**
- * Initialize given timer. Calls given function with given argument on
- * expiry. Give ASYNC_TIMER_PERIODIC in flags to make the timer
- * periodic.
+ * Initialize given timer with given initial and repeat timeouts in
+ * milliseconds. Calls on_timeout() on expiry.
  */
 void async_timer_init(struct async_timer_t *self_p,
-                      async_func_t on_timeout,
-                      void *obj_p,
-                      int flags,
+                      async_timer_timeout_t on_timeout,
+                      unsigned int initial,
+                      unsigned int repeat,
                       struct async_t *async_p);
 
 /**
- * (Re)start given timer with given timeout.
+ * Set the initial timeout in miliseconds.
  */
-void async_timer_start(struct async_timer_t *self_p,
-                       int timeout_ms);
+void async_timer_set_initial(struct async_timer_t *self_p,
+                             unsigned int initial);
+
+/**
+ * Get the initial timeout in miliseconds.
+ */
+unsigned int async_timer_get_initial(struct async_timer_t *self_p);
+
+/**
+ * Set the repeat timeout in miliseconds.
+ */
+void async_timer_set_repeat(struct async_timer_t *self_p,
+                            unsigned int repeat);
+
+/**
+ * Get the repeat timeout in miliseconds.
+ */
+unsigned int async_timer_get_repeat(struct async_timer_t *self_p);
+
+/**
+ * (Re)start given timer.
+ */
+void async_timer_start(struct async_timer_t *self_p);
 
 /**
  * Stop given timer. This is a noop if the timer has already been
  * stopped.
  */
 void async_timer_stop(struct async_timer_t *self_p);
-
-/**
- * Returns true if given timer is stopped. Returns false if given
- * timer is running or has expired. Can be used in the timeout
- * function to check if given timer has been stopped after it expired.
- */
-bool async_timer_is_stopped(struct async_timer_t *self_p);
 
 #endif

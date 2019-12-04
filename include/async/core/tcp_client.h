@@ -31,21 +31,24 @@
 
 #include "async/core/core.h"
 
-typedef void (*async_tcp_client_connected_t)(void *obj_p, int res);
-
 struct async_tcp_client_t {
     struct async_t *async_p;
     void *obj_p;
 };
+
+typedef void (*async_tcp_client_connected_t)(struct async_tcp_client_t *self_p,
+                                             int res);
+typedef void (*async_tcp_client_disconnected_t)(struct async_tcp_client_t *self_p);
+
+typedef void (*async_tcp_client_input_t)(struct async_tcp_client_t *self_p);
 
 /**
  * Initialize given TCP client object.
  */
 void async_tcp_client_init(struct async_tcp_client_t *self_p,
                            async_tcp_client_connected_t on_connected,
-                           async_func_t on_disconnected,
-                           async_func_t on_input,
-                           void *obj_p,
+                           async_tcp_client_disconnected_t on_disconnected,
+                           async_tcp_client_input_t on_input,
                            struct async_t *async_p);
 
 /**

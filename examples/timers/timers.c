@@ -29,20 +29,24 @@
 #include <stdio.h>
 #include "timers.h"
 
-static void on_timeout_1(struct timers_t *self_p)
+static void on_timeout_1(struct async_timer_t *timer_p)
 {
-    if (!async_timer_is_stopped(&self_p->timer_1)) {
-        printf("Timer 1 expired.\n");
-    }
+    struct timers_t *self_p;
+
+    self_p = async_container_of(timer_p, typeof(*self_p), timer_1);
+    printf("Timer 1 expired.\n");
 }
 
-static void on_timeout_2(void)
+static void on_timeout_2()
 {
     printf("Timer 2 expired.\n");
 }
 
-static void on_timeout_3(struct timers_t *self_p)
+static void on_timeout_3(struct async_timer_t *timer_p)
 {
+    struct timers_t *self_p;
+
+    self_p = async_container_of(timer_p, typeof(*self_p), timer_3);
     printf("Timer 3 expired. Stopping timer 1.\n");
     async_timer_stop(&self_p->timer_1);
 }
@@ -50,21 +54,21 @@ static void on_timeout_3(struct timers_t *self_p)
 void timers_init(struct timers_t *self_p, struct async_t *async_p)
 {
     async_timer_init(&self_p->timer_1,
-                     (async_func_t)on_timeout_1,
-                     self_p,
-                     ASYNC_TIMER_PERIODIC,
+                     on_timeout_1,
+                     1000,
+                     1000,
                      async_p);
     async_timer_init(&self_p->timer_2,
-                     (async_func_t)on_timeout_2,
-                     self_p,
-                     ASYNC_TIMER_PERIODIC,
+                     on_timeout_2,
+                     3000,
+                     3000,
                      async_p);
     async_timer_init(&self_p->timer_3,
-                     (async_func_t)on_timeout_3,
-                     self_p,
-                     0,
+                     on_timeout_3,
+                     5000,
+                     5000,
                      async_p);
-    async_timer_start(&self_p->timer_1, 1000);
-    async_timer_start(&self_p->timer_2, 3000);
-    async_timer_start(&self_p->timer_3, 5000);
+    async_timer_start(&self_p->timer_1);
+    async_timer_start(&self_p->timer_2);
+    async_timer_start(&self_p->timer_3);
 }

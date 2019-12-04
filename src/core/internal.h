@@ -31,6 +31,8 @@
 
 #include "async.h"
 
+#define DIV_CEIL(a, b) (((a) + (b) - 1) / (b))
+
 void async_timer_list_init(struct async_timer_list_t *self_p);
 
 void async_timer_list_tick(struct async_timer_list_t *self_p);

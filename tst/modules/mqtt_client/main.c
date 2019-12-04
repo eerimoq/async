@@ -4,22 +4,20 @@
 #include "async/modules/mqtt_client.h"
 
 static async_tcp_client_connected_t tcp_on_connected;
-static async_func_t tcp_on_disconnected;
-static async_func_t tcp_on_input;
-static void *tcp_obj_p;
+static async_tcp_client_disconnected_t tcp_on_disconnected;
+static async_tcp_client_input_t tcp_on_input;
+static struct async_tcp_client_t *tcp_p;
 
 static void save_tcp_callbacks(struct async_tcp_client_t *self_p,
                                async_tcp_client_connected_t on_connected,
-                               async_func_t on_disconnected,
-                               async_func_t on_input,
-                               void *obj_p,
+                               async_tcp_client_disconnected_t on_disconnected,
+                               async_tcp_client_input_t on_input,
                                struct async_t *async_p)
 {
-    (void)self_p;
+    tcp_p = self_p;
     tcp_on_connected = on_connected;
     tcp_on_disconnected = on_disconnected;
     tcp_on_input = on_input;
-    tcp_obj_p = obj_p;
     (void)async_p;
 }
 
@@ -51,7 +49,7 @@ TEST(test_basic)
 
     async_tcp_client_write_mock_once(26, 26);
     async_tcp_client_write_mock_set_buf_p_in(&connect[0], sizeof(connect));
-    tcp_on_connected(tcp_obj_p, 0);
+    tcp_on_connected(tcp_p, 0);
 
     /* ToDo: Input connack and verify connected flag (and more). */
 }

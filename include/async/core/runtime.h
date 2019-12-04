@@ -39,9 +39,8 @@ typedef void (*async_runtime_run_forever_t)(void *self_p);
 typedef void (*async_runtime_tcp_client_init_t)(
     struct async_tcp_client_t *self_p,
     async_tcp_client_connected_t on_connected,
-    async_func_t on_disconnected,
-    async_func_t on_data,
-    void *obj_p);
+    async_tcp_client_disconnected_t on_disconnected,
+    async_tcp_client_input_t on_input);
 
 typedef void (*async_runtime_tcp_client_connect_t)(
     struct async_tcp_client_t *self_p,

@@ -78,9 +78,8 @@ struct tcp_client_t {
         async_tcp_client_connected_t func;
         int res;
     } on_connected;
-    async_func_t on_disconnected;
-    async_func_t on_input;
-    void *obj_p;
+    async_tcp_client_disconnected_t on_disconnected;
+    async_tcp_client_input_t on_input;
     int sockfd;
 };
 
@@ -325,23 +324,18 @@ static void async_handle_tcp_client_connected(struct async_runtime_linux_t *self
 
     read_buf(self_p->async_fd, &ind, sizeof(ind));
     async_tcp_client_set_sockfd(ind.tcp_p, ind.sockfd);
-    tcp_client(ind.tcp_p)->on_connected.func(tcp_client(ind.tcp_p)->obj_p,
-                                             ind.sockfd == -1 ? -1 : 0);
+    tcp_client(ind.tcp_p)->on_connected.func(ind.tcp_p, ind.sockfd == -1 ? -1 : 0);
 }
 
-static void async_handle_tcp_client_data(struct async_runtime_linux_t *self_p)
+static void async_handle_tcp_client_input(void)
 {
-    async_call(self_p->async_p,
-               tcp_client(tcp_p)->on_input,
-               tcp_client(tcp_p)->obj_p);
+    tcp_client(tcp_p)->on_input(tcp_p);
 }
 
-static void async_handle_tcp_client_disconnected(struct async_runtime_linux_t *self_p)
+static void async_handle_tcp_client_disconnected(void)
 {
     async_tcp_client_set_sockfd(tcp_p, -1);
-    async_call(self_p->async_p,
-               tcp_client(tcp_p)->on_disconnected,
-               tcp_client(tcp_p)->obj_p);
+    tcp_client(tcp_p)->on_disconnected(tcp_p);
 }
 
 static void *async_main(struct async_runtime_linux_t *self_p)
@@ -362,11 +356,11 @@ static void *async_main(struct async_runtime_linux_t *self_p)
             break;
 
         case MESSAGE_TYPE_TCP_DATA:
-            async_handle_tcp_client_data(self_p);
+            async_handle_tcp_client_input();
             break;
 
         case MESSAGE_TYPE_TCP_DISCONNECTED:
-            async_handle_tcp_client_disconnected(self_p);
+            async_handle_tcp_client_disconnected();
             break;
 
         default:
@@ -440,9 +434,8 @@ void async_tcp_client_data_complete_write(struct async_tcp_client_t *self_p,
 
 static void tcp_client_init(struct async_tcp_client_t *self_p,
                             async_tcp_client_connected_t on_connected,
-                            async_func_t on_disconnected,
-                            async_func_t on_input,
-                            void *obj_p)
+                            async_tcp_client_disconnected_t on_disconnected,
+                            async_tcp_client_input_t on_input)
 {
     struct tcp_client_t *rself_p;
 
@@ -455,7 +448,6 @@ static void tcp_client_init(struct async_tcp_client_t *self_p,
     rself_p->on_connected.func = on_connected;
     rself_p->on_disconnected = on_disconnected;
     rself_p->on_input = on_input;
-    rself_p->obj_p = obj_p;
     rself_p->sockfd = -1;
     self_p->obj_p = rself_p;
 }
@@ -494,8 +486,8 @@ static size_t tcp_client_read(struct async_tcp_client_t *self_p,
         res = 0;
     } else {
         async_call(self_p->async_p,
-                   tcp_client(self_p)->on_input,
-                   tcp_client(self_p)->obj_p);
+                   (async_func_t)tcp_client(self_p)->on_input,
+                   self_p);
     }
 
     return (res);

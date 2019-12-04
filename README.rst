@@ -38,8 +38,8 @@ The hello world example, printing 'Hello world!' periodically.
 
        async_init(&async);
        async_set_runtime(&async, async_runtime_create());
-       async_timer_init(&timer, on_timeout, NULL, ASYNC_TIMER_PERIODIC, &async);
-       async_timer_start(&timer, 1000);
+       async_timer_init(&timer, on_timeout, 0, 1000, &async);
+       async_timer_start(&timer);
        async_run_forever(&async);
 
        return (0);

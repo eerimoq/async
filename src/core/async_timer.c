@@ -30,6 +30,15 @@
 #include "async.h"
 #include "internal.h"
 
+static void on_timeout(struct async_timer_t *self_p)
+{
+    if (self_p->is_stopped) {
+        return;
+    }
+
+    self_p->on_timeout(self_p);
+}
+
 static void timer_list_insert(struct async_timer_list_t *self_p,
                               struct async_timer_t *timer_p)
 {
@@ -100,49 +109,58 @@ static void timer_list_remove(struct async_timer_list_t *self_p,
 }
 
 void async_timer_init(struct async_timer_t *self_p,
-                      async_func_t on_timeout,
-                      void *obj_p,
-                      int flags,
+                      async_timer_timeout_t on_timeout,
+                      unsigned int initial,
+                      unsigned int repeat,
                       struct async_t *async_p)
 {
     self_p->async_p = async_p;
     self_p->on_timeout = on_timeout;
-    self_p->obj_p = obj_p;
-    self_p->flags = flags;
-    self_p->stopped = false;
+    async_timer_set_initial(self_p, initial);
+    async_timer_set_repeat(self_p, repeat);
+    self_p->is_stopped = false;
 }
 
-void async_timer_start(struct async_timer_t *self_p,
-                       int timeout_ms)
+void async_timer_set_initial(struct async_timer_t *self_p,
+                             unsigned int initial)
 {
-    async_timer_stop(self_p);
+    self_p->initial = initial;
+    self_p->initial_ticks = DIV_CEIL(initial, self_p->async_p->tick_in_ms);
+    self_p->initial_ticks++;
+}
 
-    self_p->timeout = (timeout_ms / self_p->async_p->tick_in_ms);
+unsigned int async_timer_get_initial(struct async_timer_t *self_p)
+{
+    return (self_p->initial);
+}
 
-    if (self_p->timeout == 0) {
-        self_p->timeout = 1;
+void async_timer_set_repeat(struct async_timer_t *self_p,
+                            unsigned int repeat)
+{
+    self_p->repeat = repeat;
+    self_p->repeat_ticks = DIV_CEIL(repeat, self_p->async_p->tick_in_ms);
+}
+
+unsigned int async_timer_get_repeat(struct async_timer_t *self_p)
+{
+    return (self_p->repeat);
+}
+
+void async_timer_start(struct async_timer_t *self_p)
+{
+    if (!self_p->is_stopped) {
+        async_timer_stop(self_p);
     }
 
-    self_p->delta = self_p->timeout;
-    self_p->stopped = false;
-
-    /* Must wait at least two ticks to ensure the timer does not
-       expire early since it may be started close to the next tick
-       occurs. */
-    self_p->delta++;
-
+    self_p->delta = self_p->initial_ticks;
+    self_p->is_stopped = false;
     timer_list_insert(&self_p->async_p->running_timers, self_p);
 }
 
 void async_timer_stop(struct async_timer_t *self_p)
 {
-    self_p->stopped = true;
+    self_p->is_stopped = true;
     timer_list_remove(&self_p->async_p->running_timers, self_p);
-}
-
-bool async_timer_is_stopped(struct async_timer_t *self_p)
-{
-    return (self_p->stopped);
 }
 
 void async_timer_list_init(struct async_timer_list_t *self_p)
@@ -160,7 +178,7 @@ void async_timer_list_tick(struct async_timer_list_t *self_p)
     if (self_p->head_p == &self_p->tail) {
         return;
     }
-    
+
     /* Fire all expired timers.*/
     self_p->head_p->delta--;
 
@@ -168,12 +186,12 @@ void async_timer_list_tick(struct async_timer_list_t *self_p)
         timer_p = self_p->head_p;
         self_p->head_p = timer_p->next_p;
         async_call(timer_p->async_p,
-                   timer_p->on_timeout,
-                   timer_p->obj_p);
+                   (async_func_t)on_timeout,
+                   timer_p);
 
         /* Re-set periodic timers. */
-        if (timer_p->flags & ASYNC_TIMER_PERIODIC) {
-            timer_p->delta = timer_p->timeout;
+        if (timer_p->repeat_ticks > 0) {
+            timer_p->delta = timer_p->repeat_ticks;
             timer_list_insert(self_p, timer_p);
         }
     }

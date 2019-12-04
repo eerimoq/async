@@ -82,7 +82,7 @@ static void print_prompt(struct bob_t *self_p)
 static void expect_response(struct bob_t *self_p)
 {
     print_prompt(self_p);
-    async_timer_start(&self_p->response_timer, 10000);
+    async_timer_start(&self_p->response_timer);
     self_p->no_response_count = 0;
 }
 
@@ -94,19 +94,20 @@ static void say_hello(struct bob_t *self_p)
     expect_response(self_p);
 }
 
-static void on_response_timeout(struct bob_t *self_p)
+static void on_response_timeout(struct async_timer_t *timer_p)
 {
-    if (!async_timer_is_stopped(&self_p->response_timer)) {
-        self_p->no_response_count++;
-        async_channel_write(self_p->channel_p, "\n", 1);
+    struct bob_t *self_p;
 
-        if (self_p->no_response_count <= 3) {
-            say(self_p, "Do you hear me?");
-            print_prompt(self_p);
-            async_timer_start(&self_p->response_timer, 10000);
-        } else {
-            say_hello(self_p);
-        }
+    self_p = async_container_of(timer_p, typeof(*self_p), response_timer);
+    self_p->no_response_count++;
+    async_channel_write(self_p->channel_p, "\n", 1);
+
+    if (self_p->no_response_count <= 3) {
+        say(self_p, "Do you hear me?");
+        print_prompt(self_p);
+        async_timer_start(&self_p->response_timer);
+    } else {
+        say_hello(self_p);
     }
 }
 
@@ -219,8 +220,8 @@ void bob_init(struct bob_t *self_p,
               struct async_t *async_p)
 {
     async_timer_init(&self_p->response_timer,
-                     (async_func_t)on_response_timeout,
-                     self_p,
+                     on_response_timeout,
+                     10000,
                      0,
                      async_p);
     strcpy(&self_p->name[0], "You");
