@@ -28,6 +28,7 @@ run: build
 	$(EXE)
 
 $(BUILD)/nala_mocks.h: main.c
+	@echo "MOCK $^"
 	mkdir -p $(BUILD)
 	[ -f nala_mocks.h ] || touch $(BUILD)/nala_mocks.h
 	$(CC) $(INC:%=-I%) -D_GNU_SOURCE=1 -E main.c \

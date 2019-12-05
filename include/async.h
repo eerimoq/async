@@ -29,6 +29,8 @@
 #ifndef ASYNC_H
 #define ASYNC_H
 
+#define ASYNC_VERSION                          "0.1.0"
+
 #include "async/core/core.h"
 #include "async/core/channel.h"
 #include "async/core/tcp_client.h"
