@@ -477,7 +477,7 @@ TEST(test_stop_multiple_timers)
     ASSERT_EQ(counters[8].value, 0);
     ASSERT_EQ(counters[9].value, 1);
 
-    /* No 100 ms should expire. */
+    /* No 100 ms timer should expire. */
     async_tick(&async);
     async_tick(&async);
     async_process(&async);
