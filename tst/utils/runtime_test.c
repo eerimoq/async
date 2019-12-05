@@ -27,24 +27,19 @@
  */
 
 #include <stdio.h>
+#include "nala.h"
 #include "async/core/runtime.h"
 #include "async/runtimes/linux.h"
+#include "runtime_test.h"
 
 static void set_async(void *self_p, struct async_t *async_p)
 {
-    (void)self_p;
-    (void)async_p;
-
-    fprintf(stderr, "set_async() not implemented.\n");
-    exit(1);
+    runtime_test_set_async(self_p, async_p);
 }
 
 static void run_forever(void *self_p)
 {
-    (void)self_p;
-
-    fprintf(stderr, "async_run_forever() not implemented.\n");
-    exit(1);
+    runtime_test_run_forever(self_p);
 }
 
 static void tcp_client_init(struct async_tcp_client_t *self_p,
@@ -52,61 +47,36 @@ static void tcp_client_init(struct async_tcp_client_t *self_p,
                             async_tcp_client_disconnected_t on_disconnected,
                             async_tcp_client_input_t on_input)
 {
-    (void)self_p;
-    (void)on_connected;
-    (void)on_disconnected;
-    (void)on_input;
-
-    fprintf(stderr, "async_tcp_client_init() not implemented.\n");
-    exit(1);
+    runtime_test_tcp_client_init(self_p,
+                                 on_connected,
+                                 on_disconnected,
+                                 on_input);
 }
 
 static void tcp_client_connect(struct async_tcp_client_t *self_p,
                                const char *host_p,
                                int port)
 {
-    (void)self_p;
-    (void)host_p;
-    (void)port;
-
-    fprintf(stderr, "async_tcp_client_connect() not implemented.\n");
-    exit(1);
+    runtime_test_tcp_client_connect(self_p, host_p, port);
 }
 
 static void tcp_client_disconnect(struct async_tcp_client_t *self_p)
 {
-    (void)self_p;
-
-    fprintf(stderr, "async_tcp_client_disconnect() not implemented.\n");
-    exit(1);
+    runtime_test_tcp_client_disconnect(self_p);
 }
 
 static ssize_t tcp_client_write(struct async_tcp_client_t *self_p,
                                 const void *buf_p,
                                 size_t size)
 {
-    (void)self_p;
-    (void)buf_p;
-    (void)size;
-
-    fprintf(stderr, "async_tcp_client_write() not implemented.\n");
-    exit(1);
-
-    return (-1);
+    return (runtime_test_tcp_client_write(self_p, buf_p, size));
 }
 
 static size_t tcp_client_read(struct async_tcp_client_t *self_p,
                               void *buf_p,
                               size_t size)
 {
-    (void)self_p;
-    (void)buf_p;
-    (void)size;
-
-    fprintf(stderr, "async_tcp_client_read() not implemented.\n");
-    exit(1);
-
-    return (0);
+    return (runtime_test_tcp_client_read(self_p, buf_p, size));
 }
 
 static struct async_runtime_t runtime = {
@@ -121,12 +91,7 @@ static struct async_runtime_t runtime = {
     }
 };
 
-struct async_runtime_t *async_runtime_create(void)
-{
-    return (async_runtime_linux_create());
-}
-
-struct async_runtime_t *async_runtime_null_create()
+struct async_runtime_t *runtime_test_create()
 {
     return (&runtime);
 }
