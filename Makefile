@@ -8,14 +8,10 @@ all: test
 	$(MAKE) -C examples/counter build
 
 test:
-	$(MAKE) -C tst/core/core run
-	$(MAKE) -C tst/core/timer run
-	$(MAKE) -C tst/core/channel run
-	$(MAKE) -C tst/core/tcp_client run
-	$(MAKE) -C tst/modules/shell run
-	$(MAKE) -C tst/modules/mqtt_client run
+	$(MAKE) -C tst test
 
 clean:
+	$(MAKE) -C tst clean
 	$(MAKE) -C examples/timers clean
 	$(MAKE) -C examples/conversation clean
 	$(MAKE) -C examples/shell clean
@@ -23,9 +19,3 @@ clean:
 	$(MAKE) -C examples/tcp_echo_client clean
 	$(MAKE) -C examples/hello_world clean
 	$(MAKE) -C examples/counter clean
-	$(MAKE) -C tst/core/core clean
-	$(MAKE) -C tst/core/timer clean
-	$(MAKE) -C tst/core/channel clean
-	$(MAKE) -C tst/core/tcp_client clean
-	$(MAKE) -C tst/modules/shell clean
-	$(MAKE) -C tst/modules/mqtt_client clean

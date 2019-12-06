@@ -3,7 +3,7 @@
 #include "async.h"
 #include "runtime_test.h"
 
-TEST(test_call_all_functions)
+TEST(call_all_functions)
 {
     struct async_t async;
     struct async_tcp_client_t tcp;

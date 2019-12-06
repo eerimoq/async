@@ -1,7 +1,7 @@
 #include "nala.h"
 #include "async.h"
 
-TEST(test_init_all_null)
+TEST(init_all_null)
 {
     struct async_t async;
     struct async_channel_t channel;
@@ -20,7 +20,7 @@ TEST(test_init_all_null)
     async_process(&async);
 }
 
-TEST(test_set_on_null)
+TEST(set_on_null)
 {
     struct async_t async;
     struct async_channel_t channel;

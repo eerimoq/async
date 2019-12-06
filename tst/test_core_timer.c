@@ -15,7 +15,7 @@ static void on_timeout(struct async_timer_t *timer_p)
     self_p->value++;
 }
 
-TEST(test_single_shot_timer)
+TEST(single_shot_timer)
 {
     struct async_t async;
     struct counter_t counter;
@@ -34,7 +34,7 @@ TEST(test_single_shot_timer)
     async_destroy(&async);
 }
 
-TEST(test_single_shot_timer_stop_running)
+TEST(single_shot_timer_stop_running)
 {
     struct async_t async;
     struct counter_t counter;
@@ -51,7 +51,7 @@ TEST(test_single_shot_timer_stop_running)
     async_destroy(&async);
 }
 
-TEST(test_single_shot_timer_stop_expired_before_handled)
+TEST(single_shot_timer_stop_expired_before_handled)
 {
     struct async_t async;
     struct counter_t counter;
@@ -71,7 +71,7 @@ TEST(test_single_shot_timer_stop_expired_before_handled)
     async_destroy(&async);
 }
 
-TEST(test_timer_get_and_set_initial_and_repeat)
+TEST(timer_get_and_set_initial_and_repeat)
 {
     struct async_t async;
     struct async_timer_t timer;
@@ -90,7 +90,7 @@ TEST(test_timer_get_and_set_initial_and_repeat)
     ASSERT_EQ(async_timer_get_repeat(&timer), 4u);
 }
 
-TEST(test_initial_and_repeat)
+TEST(initial_and_repeat)
 {
     struct async_t async;
     struct counter_t counter;
@@ -171,7 +171,7 @@ TEST(test_initial_and_repeat)
     async_destroy(&async);
 }
 
-TEST(test_restart_with_outstanding_timeout)
+TEST(restart_with_outstanding_timeout)
 {
     struct async_t async;
     struct counter_t counter;
@@ -192,7 +192,7 @@ TEST(test_restart_with_outstanding_timeout)
     async_destroy(&async);
 }
 
-TEST(test_restart_with_outstanding_timeouts)
+TEST(restart_with_outstanding_timeouts)
 {
     struct async_t async;
     struct counter_t counter;
@@ -226,7 +226,7 @@ TEST(test_restart_with_outstanding_timeouts)
     async_destroy(&async);
 }
 
-TEST(test_multiple_timers)
+TEST(multiple_timers)
 {
     int timeouts[10] = {
         50, 0, 100, 75, 50, 50, 100, 90, 10, 0
@@ -348,7 +348,7 @@ TEST(test_multiple_timers)
     ASSERT_EQ(counters[9].value, 1)
 }
 
-TEST(test_stop_multiple_timers)
+TEST(stop_multiple_timers)
 {
     int timeouts[10] = {
         50, 0, 100, 75, 50, 50, 100, 90, 10, 0

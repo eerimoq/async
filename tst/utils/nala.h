@@ -8,11 +8,11 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define NALA_VERSION "0.41.0"
+#define NALA_VERSION "0.45.0"
 
 #define TEST(name)                                      \
-    void name(void);                                    \
-    void name ## _before_fork() {}                      \
+    static void name(void);                             \
+    static void name ## _before_fork() {}               \
     static struct nala_test_t nala_test_ ## name = {    \
         .name_p = #name,                                \
         .file_p = __FILE__,                             \
@@ -22,11 +22,11 @@
         .next_p = NULL                                  \
     };                                                  \
     __attribute__ ((constructor))                       \
-    void nala_constructor_ ## name(void)                \
+    static void nala_constructor_ ## name(void)         \
     {                                                   \
         nala_register_test(&nala_test_ ## name);        \
     }                                                   \
-    void name(void)
+    static void name(void)
 
 #define NALA_TEST_FAILURE(message_p)                    \
     nala_test_failure(__FILE__, __LINE__, message_p)
@@ -68,8 +68,8 @@
 
 #define NALA_BINARY_ASSERTION(left, right, check, format, formatter)    \
     do {                                                                \
-        __typeof__(left) _nala_assert_left = (left);                    \
-        __typeof__(right) _nala_assert_right = (right);                 \
+        __typeof__(left) _nala_assert_left = left;                      \
+        __typeof__(right) _nala_assert_right = right;                   \
                                                                         \
         if (!check(_nala_assert_left, _nala_assert_right)) {            \
             nala_reset_all_mocks();                                     \
@@ -231,7 +231,9 @@
 
 #define ASSERT_MEMORY(left, right, size)                                \
     do {                                                                \
-        if (memcmp((left), (right), (size)) != 0) {                     \
+        if (((left == NULL) && (right != NULL))                         \
+            || ((left != NULL) && (right == NULL))                      \
+            || (memcmp((left), (right), (size)) != 0)) {                \
             nala_reset_all_mocks();                                     \
             NALA_TEST_FAILURE(nala_format_memory((left),                \
                                                  (right),               \

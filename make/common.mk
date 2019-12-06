@@ -13,7 +13,6 @@ SRC += $(ASYNC_ROOT)/src/runtimes/async_runtime_linux.c
 SRC += $(ASYNC_ROOT)/src/utils/async_utils_linux.c
 SRC += $(ASYNC_ROOT)/3pp/bitstream/bitstream.c
 SRC += $(ASYNC_ROOT)/3pp/humanfriendly/src/hf.c
-SRC += main.c
 
 OBJ = $(patsubst %,$(BUILD)%,$(abspath $(SRC:%.c=%.o)))
 

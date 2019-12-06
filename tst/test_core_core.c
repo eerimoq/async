@@ -2,7 +2,7 @@
 #include "nala_mocks.h"
 #include "async.h"
 
-TEST(test_process_empty)
+TEST(process_empty)
 {
     struct async_t async;
 
@@ -16,7 +16,7 @@ static void increment(int *arg_p)
     (*arg_p)++;
 }
 
-TEST(test_call_once)
+TEST(call_once)
 {
     struct async_t async;
     int arg;
@@ -29,7 +29,7 @@ TEST(test_call_once)
     async_destroy(&async);
 }
 
-TEST(test_call_twice)
+TEST(call_twice)
 {
     struct async_t async;
     int arg;
@@ -43,7 +43,7 @@ TEST(test_call_twice)
     async_destroy(&async);
 }
 
-TEST(test_call_queue_full)
+TEST(call_queue_full)
 {
     struct async_t async;
     int arg;

@@ -42,7 +42,7 @@ static struct async_t async;
 static struct async_shell_t shell;
 static struct async_channel_t channel;
 
-int setup(void)
+static void setup(void)
 {
     async_init(&async);
     async_channel_init(&channel,
@@ -58,21 +58,18 @@ int setup(void)
     channel_open_mock_once();
     async_shell_start(&shell);
     async_process(&async);
-
-    return (0);
 }
 
-int teardown(void)
+static void teardown(void)
 {
     channel_close_mock_once();
     async_shell_stop(&shell);
     async_process(&async);
-
-    return (0);
 }
 
-TEST(test_command_help)
+TEST(command_help)
 {
+    setup();
     mock_prepare_command("help\n", "help\n");
     mock_prepare_output(
         "Cursor movement\n"
@@ -105,10 +102,12 @@ TEST(test_command_help)
     mock_prepare_output("$ ");
     async_channel_input(&channel);
     async_process(&async);
+    teardown();
 }
 
-TEST(test_command_history)
+TEST(command_history)
 {
+    setup();
     mock_prepare_command("history\n", "history\n");
     mock_prepare_output("1");
     mock_prepare_output(": ");
@@ -118,10 +117,12 @@ TEST(test_command_history)
     mock_prepare_output("$ ");
     async_channel_input(&channel);
     async_process(&async);
+    teardown();
 }
 
-TEST(test_autocomplete_no_input)
+TEST(autocomplete_no_input)
 {
+    setup();
     mock_prepare_input("\t");
     mock_prepare_input_zero();
     mock_prepare_output("h");
@@ -135,4 +136,5 @@ TEST(test_autocomplete_no_input)
     mock_prepare_output("lp ");
     async_channel_input(&channel);
     async_process(&async);
+    teardown();
 }

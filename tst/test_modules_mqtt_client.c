@@ -21,7 +21,7 @@ static void save_tcp_callbacks(struct async_tcp_client_t *self_p,
     (void)async_p;
 }
 
-TEST(test_basic)
+TEST(basic)
 {
     struct async_t async;
     struct async_mqtt_client_t client;

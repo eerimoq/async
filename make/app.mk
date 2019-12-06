@@ -3,6 +3,7 @@ EXE = $(BUILD)/app
 CFLAGS += -fno-omit-frame-pointer
 CFLAGS += -Wall -Wextra -std=gnu11
 CFLAGS += -g -Og
+SRC += main.c
 
 .PHONY: all run build
 
