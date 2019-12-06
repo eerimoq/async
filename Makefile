@@ -1,4 +1,14 @@
-all: test
+.PHONY: examples
+
+all: run examples
+
+run:
+	$(MAKE) -C tst run
+
+test:
+	$(MAKE) -C tst test
+
+examples:
 	$(MAKE) -C examples/timers build
 	$(MAKE) -C examples/conversation build
 	$(MAKE) -C examples/shell build
@@ -6,9 +16,6 @@ all: test
 	$(MAKE) -C examples/tcp_echo_client build
 	$(MAKE) -C examples/hello_world build
 	$(MAKE) -C examples/counter build
-
-test:
-	$(MAKE) -C tst test
 
 clean:
 	$(MAKE) -C tst clean
