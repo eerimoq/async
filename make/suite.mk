@@ -12,7 +12,7 @@ LDFLAGS_MOCKS = $(shell cat $(BUILD)/nala_mocks.ld)
 COVERAGE_FILTERS +=
 INC += $(ASYNC_ROOT)/tst/utils
 INC += $(BUILD)
-SRC += utils.c
+SRC += $(ASYNC_ROOT)/tst/utils/utils.c
 SRC += $(ASYNC_ROOT)/tst/utils/nala.c
 SRC += $(ASYNC_ROOT)/tst/utils/runtime_test.c
 SRC += $(ASYNC_ROOT)/tst/utils/runtime_test_impl.c
@@ -20,7 +20,6 @@ SRC += $(BUILD)/nala_mocks.c
 SRC += $(TESTS)
 TESTS ?= main
 TESTS_O = $(patsubst %,$(BUILD)%,$(abspath $(TESTS:%.c=%.o)))
-NALA = nala
 
 .PHONY: all run build coverage
 
@@ -43,7 +42,7 @@ $(BUILD)/nala_mocks.c: $(TESTS)
 	[ -f nala_mocks.h ] || touch $(BUILD)/nala_mocks.h
 	cat $(TESTS) > tests.pp.c
 	$(CC) $(INC:%=-I%) -D_GNU_SOURCE=1 -E tests.pp.c \
-	    | $(NALA) generate_mocks -o $(BUILD)
+	    | nala generate_mocks -o $(BUILD)
 
 coverage:
 	gcovr --root ../.. \
