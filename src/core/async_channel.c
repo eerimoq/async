@@ -128,12 +128,12 @@ void async_channel_set_on(struct async_channel_t *self_p,
 
 void async_channel_open(struct async_channel_t *self_p)
 {
-    return (self_p->open(self_p));
+    self_p->open(self_p);
 }
 
 void async_channel_close(struct async_channel_t *self_p)
 {
-    return (self_p->close(self_p));
+    self_p->close(self_p);
 }
 
 size_t async_channel_read(struct async_channel_t *self_p,

@@ -4,7 +4,7 @@ CFLAGS += -fno-omit-frame-pointer
 CFLAGS += -fsanitize=address
 CFLAGS += -fsanitize=undefined
 CFLAGS += -coverage
-CFLAGS += -Wall -Wextra -std=gnu11
+CFLAGS += -Wall -Wextra -Wpedantic -std=gnu11
 CFLAGS += -g -Og
 CFLAGS += -DUNIT_TEST
 CFLAGS += -no-pie
