@@ -70,7 +70,7 @@ int async_utils_linux_create_periodic_timer(struct async_t *async_p)
     int timer_fd;
     struct itimerspec timeout;
 
-    timer_fd = timerfd_create(CLOCK_REALTIME, 0);
+    timer_fd = timerfd_create(CLOCK_MONOTONIC, 0);
 
     if (timer_fd == -1) {
         return (timer_fd);
@@ -100,22 +100,6 @@ void async_utils_linux_handle_timeout(struct async_t *async_p,
     async_tick(async_p);
 }
 
-void async_utils_linux_channel_stdin_init(struct async_channel_t *channel_p,
-                                          struct async_t *async_p)
-{
-    async_channel_init(channel_p,
-                       NULL,
-                       NULL,
-                       stdin_read,
-                       stdin_write,
-                       async_p);
-}
-
-void async_utils_linux_channel_stdin_handle(struct async_channel_t *channel_p)
-{
-    async_channel_input(channel_p);
-}
-
 int async_utils_linux_init_periodic_timer(struct async_t *async_p,
                                           int epoll_fd)
 {
@@ -130,27 +114,6 @@ int async_utils_linux_init_periodic_timer(struct async_t *async_p,
     async_utils_linux_epoll_add_in(epoll_fd, timer_fd);
 
     return (timer_fd);
-}
-
-void async_utils_linux_fatal_perror(const char *message_p)
-{
-    perror(message_p);
-    exit(1);
-}
-
-void async_utils_linux_init_stdin(int epoll_fd)
-{
-    int res;
-
-    res = fcntl(fileno(stdin),
-                F_SETFL,
-                fcntl(fileno(stdin), F_GETFL) | O_NONBLOCK);
-
-    if (res == -1) {
-        async_utils_linux_fatal_perror("fcntl");
-    }
-
-    async_utils_linux_epoll_add_in(epoll_fd, fileno(stdin));
 }
 
 int async_utils_linux_epoll_create(void)
@@ -178,6 +141,43 @@ void async_utils_linux_epoll_add_in(int epoll_fd, int fd)
     if (res == -1) {
         async_utils_linux_fatal_perror("epoll_ctl");
     }
+}
+
+void async_utils_linux_channel_stdin_init(struct async_channel_t *channel_p,
+                                          struct async_t *async_p)
+{
+    async_channel_init(channel_p,
+                       NULL,
+                       NULL,
+                       stdin_read,
+                       stdin_write,
+                       async_p);
+}
+
+void async_utils_linux_channel_stdin_handle(struct async_channel_t *channel_p)
+{
+    async_channel_input(channel_p);
+}
+
+void async_utils_linux_fatal_perror(const char *message_p)
+{
+    perror(message_p);
+    exit(1);
+}
+
+void async_utils_linux_init_stdin(int epoll_fd)
+{
+    int res;
+
+    res = fcntl(fileno(stdin),
+                F_SETFL,
+                fcntl(fileno(stdin), F_GETFL) | O_NONBLOCK);
+
+    if (res == -1) {
+        async_utils_linux_fatal_perror("fcntl");
+    }
+
+    async_utils_linux_epoll_add_in(epoll_fd, fileno(stdin));
 }
 
 void async_utils_linux_make_stdin_unbuffered()

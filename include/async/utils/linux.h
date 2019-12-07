@@ -31,26 +31,44 @@
 
 #include "async.h"
 
+/**
+ * Create a periodic timer and start it with the async period. Returns
+ * the timer file descriptor.
+ */
 int async_utils_linux_create_periodic_timer(struct async_t *async_p);
 
+/**
+ * Called when the timer expirs. Reads from the timer file descriptor
+ * and calls the async tick function.
+ */
 void async_utils_linux_handle_timeout(struct async_t *async_p,
                                       int timer_fd);
+
+/**
+ * Both creates and add the timer file descriptor to given epoll
+ * instance. Returns the timer file descriptor.
+ */
+int async_utils_linux_init_periodic_timer(struct async_t *async_p,
+                                          int epoll_fd);
+
+/**
+ * Create an epoll instance and return its handle.
+ */
+int async_utils_linux_epoll_create(void);
+
+/**
+ * Add given file descriptor to given epoll instance with EPOLLIN.
+ */
+void async_utils_linux_epoll_add_in(int epoll_fd, int fd);
 
 void async_utils_linux_channel_stdin_init(struct async_channel_t *channel_p,
                                           struct async_t *async_p);
 
 void async_utils_linux_channel_stdin_handle(struct async_channel_t *channel_p);
 
-int async_utils_linux_init_periodic_timer(struct async_t *async_p,
-                                          int epoll_fd);
-
 void async_utils_linux_fatal_perror(const char *message_p);
 
 void async_utils_linux_init_stdin(int epoll_fd);
-
-int async_utils_linux_epoll_create(void);
-
-void async_utils_linux_epoll_add_in(int epoll_fd, int fd);
 
 void async_utils_linux_make_stdin_unbuffered(void);
 
