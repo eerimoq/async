@@ -114,7 +114,7 @@ Execute one test suite.
 
 .. code-block:: shell
 
-   $ make -s -j4 SUITE=core_timer test
+   $ make -s -j4 TEST=core_timer test
    ...
 
 .. |buildstatus| image:: https://travis-ci.org/eerimoq/async.svg?branch=master

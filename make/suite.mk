@@ -1,10 +1,10 @@
-SUITE ?= all
+TEST ?= all
 
-ifneq ($(SUITE), all)
-TESTS = $(SUITE:%=test_%.c)
+ifneq ($(TEST), all)
+TESTS = $(TEST:%=test_%.c)
 endif
 
-BUILD = build/$(SUITE)
+BUILD = build/$(TEST)
 EXE = $(BUILD)/suite
 CFLAGS += -fno-omit-frame-pointer
 CFLAGS += -fsanitize=address
@@ -25,6 +25,7 @@ SRC += $(ASYNC_ROOT)/tst/utils/runtime_test_impl.c
 SRC += $(BUILD)/nala_mocks.c
 SRC += $(TESTS)
 TESTS ?= main
+TESTS_C = $(BUILD)/suites.c
 
 .PHONY: all run build coverage
 
@@ -43,8 +44,8 @@ $(BUILD)/nala_mocks.h: $(TESTS)
 	echo "MOCKGEN $^"
 	mkdir -p $(BUILD)
 	[ -f nala_mocks.h ] || touch $(BUILD)/nala_mocks.h
-	cat $(TESTS) > tests.pp.c
-	$(CC) $(INC:%=-I%) -D_GNU_SOURCE=1 -E tests.pp.c \
+	cat $(TESTS) > $(TESTS_C)
+	$(CC) $(INC:%=-I%) -D_GNU_SOURCE=1 -E $(TESTS_C) \
 	    | nala generate_mocks -o $(BUILD)
 
 coverage:
