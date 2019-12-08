@@ -338,10 +338,6 @@ static struct tests_t tests = {
 static struct capture_output_t capture_stdout;
 static struct capture_output_t capture_stderr;
 
-int setup(void);
-
-int teardown(void);
-
 void nala_assert_all_mocks_completed(void);
 
 __attribute__ ((weak)) void nala_assert_all_mocks_completed(void)
@@ -383,6 +379,43 @@ static void color_start(FILE *file_p, const char *color_p)
 static void color_reset(FILE *file_p)
 {
     fprintf(file_p, "%s", ANSI_RESET);
+}
+
+static char *format_suite_prefix(struct nala_test_t *test_p,
+                                 char *buf_p,
+                                 size_t size)
+{
+    size_t length;
+
+    strncpy(buf_p, test_p->file_p, size);
+    buf_p = basename(buf_p);
+    length = strlen(buf_p);
+
+    if (length < 2) {
+        return ("");
+    }
+
+    buf_p[length - 2] = '\0';
+
+    if (strcmp(buf_p, "main") == 0) {
+        return ("");
+    }
+
+    strcat(buf_p, "::");
+
+    return (buf_p);
+}
+
+static char *full_test_name(struct nala_test_t *test_p)
+{
+    static char buf[512];
+    char suite[512];
+    char *suite_p;
+
+    suite_p = format_suite_prefix(test_p, &suite[0], sizeof(suite));
+    snprintf(&buf[0], sizeof(buf), "%s%s", suite_p, test_p->name_p);
+
+    return (&buf[0]);
 }
 
 static void capture_output_init(struct capture_output_t *self_p,
@@ -487,7 +520,7 @@ static float timeval_to_ms(struct timeval *timeval_p)
 static void print_signal_failure(struct nala_test_t *test_p)
 {
     printf("\n");
-    printf("%s failed:\n", test_p->name_p);
+    printf("%s failed:\n", full_test_name(test_p));
     printf("\n");
     printf("  Location: unknown\n");
     printf("  Error:    " COLOR_BOLD(RED, "Terminated by signal %d.\n"),
@@ -565,39 +598,11 @@ static const char *test_result(struct nala_test_t *test_p, bool color)
     return (result_p);
 }
 
-static char *format_suite_prefix(struct nala_test_t *test_p,
-                                 char *buf_p,
-                                 size_t size)
-{
-    size_t length;
-
-    strncpy(buf_p, test_p->file_p, size);
-    buf_p = basename(buf_p);
-    length = strlen(buf_p);
-
-    if (length < 2) {
-        return ("");
-    }
-
-    buf_p[length - 2] = '\0';
-
-    if (strcmp(buf_p, "main") == 0) {
-        return ("");
-    }
-
-    strcat(buf_p, "::");
-
-    return (buf_p);
-}
-
 static void print_test_result(struct nala_test_t *test_p)
 {
-    char suite[512];
-
-    printf("%s %s%s (" COLOR_BOLD(YELLOW, "%s") ")",
+    printf("%s %s (" COLOR_BOLD(YELLOW, "%s") ")",
            test_result(test_p, true),
-           format_suite_prefix(test_p, &suite[0], sizeof(suite)),
-           test_p->name_p,
+           full_test_name(test_p),
            format_timespan(test_p->elapsed_time_ms));
 
     if (test_p->signal_number != -1) {
@@ -674,7 +679,7 @@ static void write_report_json(struct nala_test_t *test_p)
                 "            \"result\": \"%s\",\n"
                 "            \"execution_time\": \"%s\"\n"
                 "        }%s\n",
-                test_p->name_p,
+                full_test_name(test_p),
                 test_result(test_p, false),
                 format_timespan(test_p->elapsed_time_ms),
                 (test_p->next_p != NULL ? "," : ""));
@@ -690,29 +695,16 @@ static void write_report_json(struct nala_test_t *test_p)
 static void test_entry(void *arg_p)
 {
     struct nala_test_t *test_p;
-    int res;
 
     test_p = (struct nala_test_t *)arg_p;
-
     capture_output_init(&capture_stdout, stdout);
     capture_output_init(&capture_stderr, stderr);
-
-    res = setup();
-
-    if (res == 0) {
-        test_p->func();
-        res = teardown();
-
-        if (res == 0) {
-            nala_assert_all_mocks_completed();
-        }
-    }
-
+    test_p->func();
+    nala_assert_all_mocks_completed();
     nala_reset_all_mocks();
     capture_output_destroy(&capture_stdout);
     capture_output_destroy(&capture_stderr);
-
-    exit(res == 0 ? 0 : 1);
+    exit(0);
 }
 
 static int run_tests(struct nala_test_t *tests_p)
@@ -1010,7 +1002,8 @@ const char *nala_format_string(const char *format_p, ...)
     return (buf_p);
 }
 
-const char *nala_format_memory(const void *left_p,
+const char *nala_format_memory(const char *prefix_p,
+                               const void *left_p,
                                const void *right_p,
                                size_t size)
 {
@@ -1021,7 +1014,18 @@ const char *nala_format_memory(const void *left_p,
     char *right_hexdump_p;
 
     file_p = open_memstream(&buf_p, &file_size);
-    fprintf(file_p, COLOR_BOLD(RED, "Memory mismatch. See diff for details.\n"));
+    fprintf(file_p,
+            COLOR_BOLD(RED, "%sMemory mismatch. See diff for details.\n"),
+            prefix_p);
+
+    if (left_p == NULL) {
+        left_p = "<null>";
+    }
+
+    if (right_p == NULL) {
+        right_p = "<null>";
+    }
+
     left_hexdump_p = nala_hexdump(left_p, size, 16);
     right_hexdump_p = nala_hexdump(right_p, size, 16);
     print_string_diff(file_p, right_hexdump_p, left_hexdump_p);
@@ -1048,7 +1052,7 @@ void nala_test_failure(const char *file_p,
     capture_output_destroy(&capture_stdout);
     capture_output_destroy(&capture_stderr);
     printf("\n");
-    printf("%s failed:\n", current_test_p->name_p);
+    printf("%s failed:\n", full_test_name(current_test_p));
     printf("\n");
     printf("  Location:  %s:%d\n", file_p, line);
     printf("  Error:     %s", message_p);
@@ -1084,16 +1088,6 @@ void nala_register_test(struct nala_test_t *test_p)
 int nala_run_tests()
 {
     return (run_tests(tests.head_p));
-}
-
-__attribute__((weak)) int setup(void)
-{
-    return (0);
-}
-
-__attribute__((weak)) int teardown(void)
-{
-    return (0);
 }
 
 __attribute__((weak)) int main(void)

@@ -1,4 +1,10 @@
-BUILD = $(shell readlink -f build)
+SUITE ?= all
+
+ifneq ($(SUITE), all)
+TESTS = $(SUITE:%=test_%.c)
+endif
+
+BUILD = build/$(SUITE)
 EXE = $(BUILD)/suite
 CFLAGS += -fno-omit-frame-pointer
 CFLAGS += -fsanitize=address
@@ -19,13 +25,12 @@ SRC += $(ASYNC_ROOT)/tst/utils/runtime_test_impl.c
 SRC += $(BUILD)/nala_mocks.c
 SRC += $(TESTS)
 TESTS ?= main
-TESTS_O = $(patsubst %,$(BUILD)%,$(abspath $(TESTS:%.c=%.o)))
 
 .PHONY: all run build coverage
 
 all: run
 
-build:
+build: $(BUILD)/nala_mocks.h
 	$(MAKE) $(EXE)
 
 run: build
@@ -34,9 +39,7 @@ run: build
 test: run
 	$(MAKE) coverage
 
-$(TESTS_O): $(BUILD)/nala_mocks.c
-
-$(BUILD)/nala_mocks.c: $(TESTS)
+$(BUILD)/nala_mocks.h: $(TESTS)
 	echo "MOCKGEN $^"
 	mkdir -p $(BUILD)
 	[ -f nala_mocks.h ] || touch $(BUILD)/nala_mocks.h
@@ -47,11 +50,11 @@ $(BUILD)/nala_mocks.c: $(TESTS)
 coverage:
 	gcovr --root ../.. \
 	    --exclude-directories ".*tst.*" $(COVERAGE_FILTERS:%=-f %) \
-	    --html-details --output index.html build
+	    --html-details --output index.html $(BUILD)
 	mkdir -p $(BUILD)/coverage
 	mv index.* $(BUILD)/coverage
 	@echo
-	@echo "Code coverage report: $$(readlink -f build/coverage/index.html)"
+	@echo "Code coverage report: $$(readlink -f $(BUILD)/coverage/index.html)"
 	@echo
 
 include $(ASYNC_ROOT)/make/common.mk

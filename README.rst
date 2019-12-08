@@ -94,6 +94,29 @@ Typical usage:
    ...
    async_run_forever(&async);
 
+Unit testing
+============
+
+Source the development environment setup script.
+
+.. code-block:: shell
+
+   $ source setup.sh
+
+Execute all unit tests.
+
+.. code-block:: shell
+
+   $ make -s -j4 test
+   ...
+
+Execute one test suite.
+
+.. code-block:: shell
+
+   $ make -s -j4 SUITE=core_timer test
+   ...
+
 .. |buildstatus| image:: https://travis-ci.org/eerimoq/async.svg?branch=master
 .. _buildstatus: https://travis-ci.org/eerimoq/async
 
