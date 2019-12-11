@@ -1,4 +1,5 @@
 #include <errno.h>
+#include <string.h>
 #include "nala.h"
 #include "nala_mocks.h"
 #include "async.h"
