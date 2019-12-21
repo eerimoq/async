@@ -26,3 +26,12 @@ clean:
 	$(MAKE) -C examples/tcp_echo_client clean
 	$(MAKE) -C examples/hello_world clean
 	$(MAKE) -C examples/counter clean
+
+help:
+	@echo "TARGET     DESCRIPTION"
+	@echo "------------------------------------------------------"
+	@echo "all        run + examples"
+	@echo "run        Build and run all tests."
+	@echo "test       run + coverage report."
+	@echo "examples   Build all examples."
+	@echo "clean      Remove build and run files."
