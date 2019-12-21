@@ -350,7 +350,7 @@ static size_t pack_connect(struct writer_t *writer_p,
     uint8_t flags;
     int payload_length;
 
-    flags = 0;
+    flags = CLEAN_START;
     payload_length = strlen(client_id_p) + 2;
 
     if (will_p->topic_p != NULL) {
