@@ -33,6 +33,14 @@
 #include "hf.h"
 #include "publisher.h"
 
+static void on_subscribe_complete(struct publisher_t *self_p,
+                                  uint16_t transaction_id)
+{
+    (void)self_p;
+
+    printf("Subscribe with transaction id %d completed.\n", transaction_id);
+}
+
 static void start_publish_timer(struct publisher_t *self_p)
 {
     printf("Starting the publish timer with timeout %u ms.\n",
@@ -160,6 +168,9 @@ void publisher_init(struct publisher_t *self_p,
                                "async/will",
                                &will_message[0],
                                sizeof(will_message));
+    async_mqtt_client_set_on_subscribe_complete(
+        &self_p->client,
+        (async_mqtt_client_on_subscribe_complete_t)on_subscribe_complete);
     async_timer_init(&self_p->publish_timer,
                      on_publish_timeout,
                      1000,

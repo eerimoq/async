@@ -264,13 +264,22 @@ static void reader_init(struct reader_t *self_p,
     self_p->offset = 0;
 }
 
+static uint16_t reader_read_u16(struct reader_t *self_p)
+{
+    uint16_t value;
+
+    value = ((self_p->buf_p[self_p->offset] << 8)
+             | self_p->buf_p[self_p->offset + 1]);
+    self_p->offset += 2;
+
+    return (value);
+}
+
 static void reader_get_string(struct reader_t *self_p,
                               char **string_pp,
                               size_t *size_p)
 {
-    *size_p = ((self_p->buf_p[self_p->offset] << 8)
-               | self_p->buf_p[self_p->offset + 1]);
-    self_p->offset += 2;
+    *size_p = reader_read_u16(self_p);
     *string_pp = (char *)&self_p->buf_p[self_p->offset];
     self_p->offset += *size_p;
 }
@@ -281,6 +290,27 @@ static void reader_get_bytes(struct reader_t *self_p,
 {
     *buf_pp = &self_p->buf_p[self_p->offset];
     *offset_p = self_p->offset;
+}
+
+static bool reader_ok(struct reader_t *self_p)
+{
+    (void)self_p;
+
+    return (true);
+}
+
+static void on_subscribe_complete_null(void *obj_p,
+                                       uint16_t transaction_id)
+{
+    (void)obj_p;
+    (void)transaction_id;
+}
+
+static void on_unsubscribe_complete_null(void *obj_p,
+                                         uint16_t transaction_id)
+{
+    (void)obj_p;
+    (void)transaction_id;
 }
 
 static void pack_variable_integer(struct writer_t *writer_p, int value)
@@ -368,14 +398,25 @@ static size_t pack_subscribe(struct writer_t *writer_p,
 {
     pack_fixed_header(writer_p,
                       control_packet_type_subscribe_t,
-                      packet_identifier,
+                      0,
                       strlen(topic_p) + 6);
-    writer_write_u16(writer_p, 1);
+    writer_write_u16(writer_p, packet_identifier);
     writer_write_u8(writer_p, 0);
     writer_write_string(writer_p, topic_p);
     writer_write_u8(writer_p, 0);
 
     return (writer_written(writer_p));
+}
+
+static bool unpack_suback(struct async_mqtt_client_t *self_p,
+                          uint16_t *packet_identifier_p)
+{
+    struct reader_t reader;
+
+    reader_init(&reader, &self_p->packet.buf[0], self_p->packet.size);
+    *packet_identifier_p = reader_read_u16(&reader);
+
+    return (reader_ok(&reader));
 }
 
 static size_t pack_publish(struct writer_t *writer_p,
@@ -583,7 +624,11 @@ static void handle_connack(struct async_mqtt_client_t *self_p)
 
 static void handle_suback(struct async_mqtt_client_t *self_p)
 {
-    (void)self_p;
+    uint16_t packet_identifier;
+
+    if (unpack_suback(self_p, &packet_identifier)) {
+        self_p->on_subscribe_complete(self_p->obj_p, packet_identifier);
+    }
 }
 
 static void handle_publish(struct async_mqtt_client_t *self_p)
@@ -683,6 +728,8 @@ void async_mqtt_client_init(struct async_mqtt_client_t *self_p,
     self_p->on_connected = on_connected;
     self_p->on_disconnected = on_disconnected;
     self_p->on_publish = on_publish;
+    self_p->on_subscribe_complete = on_subscribe_complete_null;
+    self_p->on_unsubscribe_complete = on_unsubscribe_complete_null;
     self_p->obj_p = obj_p;
     self_p->async_p = async_p;
     sprintf(&self_p->client_id[0], "async-12345");
@@ -739,6 +786,20 @@ void async_mqtt_client_set_will(struct async_mqtt_client_t *self_p,
     self_p->will.message.size = size;
 }
 
+void async_mqtt_client_set_on_subscribe_complete(
+    struct async_mqtt_client_t *self_p,
+    async_mqtt_client_on_subscribe_complete_t on_subscribe_complete)
+{
+    self_p->on_subscribe_complete = on_subscribe_complete;
+}
+
+void async_mqtt_client_set_on_unsubscribe_complete(
+    struct async_mqtt_client_t *self_p,
+    async_mqtt_client_on_unsubscribe_complete_t on_unsubscribe_complete)
+{
+    self_p->on_unsubscribe_complete = on_unsubscribe_complete;
+}
+
 void async_mqtt_client_start(struct async_mqtt_client_t *self_p)
 {
     async_tcp_client_connect(&self_p->tcp, self_p->host_p, self_p->port);
@@ -760,25 +821,31 @@ void async_mqtt_client_stop(struct async_mqtt_client_t *self_p)
     async_timer_stop(&self_p->keep_alive_timer);
 }
 
-void async_mqtt_client_subscribe(struct async_mqtt_client_t *self_p,
-                                 const char *topic_p)
+uint16_t async_mqtt_client_subscribe(struct async_mqtt_client_t *self_p,
+                                     const char *topic_p)
 {
     struct writer_t writer;
     uint8_t buf[512];
+    uint16_t packet_identifier;
 
     writer_init(&writer, &buf[0], sizeof(buf));
+    packet_identifier = next_packet_identifier(self_p);
     async_tcp_client_write(&self_p->tcp,
                            &buf[0],
                            pack_subscribe(&writer,
                                           topic_p,
-                                          next_packet_identifier(self_p)));
+                                          packet_identifier));
+
+    return (packet_identifier);
 }
 
-void async_mqtt_client_unsubscribe(struct async_mqtt_client_t *self_p,
-                                   const char *topic_p)
+uint16_t async_mqtt_client_unsubscribe(struct async_mqtt_client_t *self_p,
+                                       const char *topic_p)
 {
     (void)self_p;
     (void)topic_p;
+
+    return (0);
 }
 
 void async_mqtt_client_publish(struct async_mqtt_client_t *self_p,

@@ -36,6 +36,12 @@ typedef void (*async_mqtt_client_on_publish_t)(void *obj_p,
                                                const uint8_t *buf_p,
                                                size_t size);
 
+typedef void (*async_mqtt_client_on_subscribe_complete_t)(void *obj_p,
+                                                          uint16_t transaction_id);
+
+typedef void (*async_mqtt_client_on_unsubscribe_complete_t)(void *obj_p,
+                                                            uint16_t transaction_id);
+
 struct async_mqtt_client_packet_t {
     uint8_t buf[256];
     int size;
@@ -59,6 +65,8 @@ struct async_mqtt_client_t {
     async_func_t on_connected;
     async_func_t on_disconnected;
     async_mqtt_client_on_publish_t on_publish;
+    async_mqtt_client_on_subscribe_complete_t on_subscribe_complete;
+    async_mqtt_client_on_unsubscribe_complete_t on_unsubscribe_complete;
     void *obj_p;
     struct async_t *async_p;
     char client_id[64];
@@ -118,6 +126,22 @@ void async_mqtt_client_set_will(struct async_mqtt_client_t *self_p,
                                 size_t size);
 
 /**
+ * Set the on subscribe complete callback. Must be called after
+ * async_mqtt_client_init() and before async_mqtt_client_start().
+ */
+void async_mqtt_client_set_on_subscribe_complete(
+    struct async_mqtt_client_t *self_p,
+    async_mqtt_client_on_subscribe_complete_t on_subscribe_complete);
+
+/**
+ * Set the on unsubscribe complete callback. Must be called after
+ * async_mqtt_client_init() and before async_mqtt_client_start().
+ */
+void async_mqtt_client_set_on_unsubscribe_complete(
+    struct async_mqtt_client_t *self_p,
+    async_mqtt_client_on_unsubscribe_complete_t on_unsubscribe_complete);
+
+/**
  * Start given client. A startd client will try to connect to the
  * broker until successful. `on_connected()` passed to
  * `async_mqtt_client_init()` is called once connected.
@@ -130,16 +154,18 @@ void async_mqtt_client_start(struct async_mqtt_client_t *self_p);
 void async_mqtt_client_stop(struct async_mqtt_client_t *self_p);
 
 /**
- * Subscribe to given topic.
+ * Subscribe to given topic. Returns the transaction id, passed to
+ * `on_subscribe_complete()`, if set, once completed.
  */
-void async_mqtt_client_subscribe(struct async_mqtt_client_t *self_p,
-                                 const char *topic_p);
+uint16_t async_mqtt_client_subscribe(struct async_mqtt_client_t *self_p,
+                                     const char *topic_p);
 
 /**
- * Unsubscribe from given topic.
+ * Unsubscribe from given topic. Returns the transaction id, passed to
+ * `on_unsubscribe_complete()`, of set, once completed.
  */
-void async_mqtt_client_unsubscribe(struct async_mqtt_client_t *self_p,
-                                   const char *topic_p);
+uint16_t async_mqtt_client_unsubscribe(struct async_mqtt_client_t *self_p,
+                                       const char *topic_p);
 
 /**
  * Publish to given message on given topic, with quality of service
