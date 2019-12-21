@@ -145,6 +145,8 @@ static void on_publish_timeout(struct async_timer_t *timer_p)
 void publisher_init(struct publisher_t *self_p,
                     struct async_t *async_p)
 {
+    static uint8_t will_message[] = { ':', '(' };
+
     async_mqtt_client_init(&self_p->client,
                            "localhost",
                            1883,
@@ -154,6 +156,10 @@ void publisher_init(struct publisher_t *self_p,
                            self_p,
                            async_p);
     async_mqtt_client_set_client_id(&self_p->client, "mqtt-client-example");
+    async_mqtt_client_set_will(&self_p->client,
+                               "async/will",
+                               &will_message[0],
+                               sizeof(will_message));
     async_timer_init(&self_p->publish_timer,
                      on_publish_timeout,
                      1000,

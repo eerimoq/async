@@ -232,18 +232,21 @@ static void writer_write_bytes(struct writer_t *self_p,
     }
 }
 
+static void writer_write_binary(struct writer_t *self_p,
+                                const uint8_t *buf_p,
+                                size_t size)
+{
+    if (writer_available(self_p, size + 2)) {
+        bitstream_writer_write_u16(&self_p->writer, size);
+        bitstream_writer_write_bytes(&self_p->writer, buf_p, size);
+    }
+}
+
 static void writer_write_string(struct writer_t *self_p, const char *string_p)
 {
-    int length;
-
-    length = strlen(string_p);
-
-    if (writer_available(self_p, length + 2)) {
-        bitstream_writer_write_u16(&self_p->writer, length);
-        bitstream_writer_write_bytes(&self_p->writer,
-                                     (const uint8_t *)string_p,
-                                     length);
-    }
+    writer_write_binary(self_p,
+                        (const uint8_t *)string_p,
+                        strlen(string_p));
 }
 
 struct reader_t {
@@ -311,21 +314,40 @@ static void pack_fixed_header(struct writer_t *writer_p,
 
 static size_t pack_connect(struct writer_t *writer_p,
                            const char *client_id_p,
+                           struct async_mqtt_client_will_t *will_p,
                            int keep_alive_s)
 {
+    uint8_t flags;
     int payload_length;
 
+    flags = 0;
     payload_length = strlen(client_id_p) + 2;
+
+    if (will_p->topic_p != NULL) {
+        flags |= WILL_FLAG;
+        payload_length++;
+        payload_length += (strlen(will_p->topic_p) + 2);
+        payload_length += (will_p->message.size + 2);
+    }
+
     pack_fixed_header(writer_p,
                       control_packet_type_connect_t,
                       0,
                       10 + payload_length + 1);
     writer_write_string(writer_p, "MQTT");
     writer_write_u8(writer_p, PROTOCOL_VERSION);
-    writer_write_u8(writer_p, 0);
+    writer_write_u8(writer_p, flags);
     writer_write_u16(writer_p, keep_alive_s);
     pack_variable_integer(writer_p, 0);
     writer_write_string(writer_p, client_id_p);
+
+    if (flags & WILL_FLAG) {
+        pack_variable_integer(writer_p, 0);
+        writer_write_string(writer_p, will_p->topic_p);
+        writer_write_binary(writer_p,
+                            will_p->message.buf_p,
+                            will_p->message.size);
+    }
 
     return (writer_written(writer_p));
 }
@@ -414,13 +436,14 @@ static void on_tcp_connected(struct async_tcp_client_t *tcp_p, int res)
     struct async_mqtt_client_t *self_p;
 
     self_p = async_container_of(tcp_p, typeof(*self_p), tcp);
-    
+
     if (res == 0) {
         writer_init(&writer, &buf[0], sizeof(buf));
         async_tcp_client_write(&self_p->tcp,
                                &buf[0],
                                pack_connect(&writer,
                                             &self_p->client_id[0],
+                                            &self_p->will,
                                             30));
         stop_reconnect_timer(self_p);
     } else {
@@ -666,6 +689,7 @@ void async_mqtt_client_init(struct async_mqtt_client_t *self_p,
     self_p->keep_alive_s = 10;
     self_p->response_timeout = 5;
     self_p->session_expiry_interval = 0;
+    self_p->will.topic_p = NULL;
     self_p->connected = false;
     self_p->next_packet_identifier = 1;
     async_tcp_client_init(&self_p->tcp,
@@ -703,6 +727,16 @@ void async_mqtt_client_set_session_expiry_interval(
     int session_expiry_interval)
 {
     self_p->session_expiry_interval = session_expiry_interval;
+}
+
+void async_mqtt_client_set_will(struct async_mqtt_client_t *self_p,
+                                const char *topic_p,
+                                uint8_t *buf_p,
+                                size_t size)
+{
+    self_p->will.topic_p = topic_p;
+    self_p->will.message.buf_p = buf_p;
+    self_p->will.message.size = size;
 }
 
 void async_mqtt_client_start(struct async_mqtt_client_t *self_p)

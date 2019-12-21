@@ -45,6 +45,14 @@ struct async_mqtt_client_packet_t {
     int flags;
 };
 
+struct async_mqtt_client_will_t {
+    const char *topic_p;
+    struct {
+        uint8_t *buf_p;
+        size_t size;
+    } message;
+};
+
 struct async_mqtt_client_t {
     const char *host_p;
     int port;
@@ -57,6 +65,7 @@ struct async_mqtt_client_t {
     int keep_alive_s;
     int response_timeout;
     int session_expiry_interval;
+    struct async_mqtt_client_will_t will;
     bool connected;
     uint16_t next_packet_identifier;
     struct async_tcp_client_t tcp;
@@ -100,8 +109,18 @@ void async_mqtt_client_set_session_expiry_interval(
     int session_expiry_interval);
 
 /**
+ * Set the will topic and message pointers. Must be called after
+ * async_mqtt_client_init() and before async_mqtt_client_start().
+ */
+void async_mqtt_client_set_will(struct async_mqtt_client_t *self_p,
+                                const char *topic_p,
+                                uint8_t *buf_p,
+                                size_t size);
+
+/**
  * Start given client. A startd client will try to connect to the
- * broker until successful.
+ * broker until successful. `on_connected()` passed to
+ * `async_mqtt_client_init()` is called once connected.
  */
 void async_mqtt_client_start(struct async_mqtt_client_t *self_p);
 

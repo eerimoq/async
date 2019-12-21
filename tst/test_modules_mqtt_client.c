@@ -47,9 +47,48 @@ TEST(basic)
     async_tcp_client_connect_mock_once("foo", 1883);
     async_mqtt_client_start(&client);
 
-    async_tcp_client_write_mock_once(26, 26);
+    async_tcp_client_write_mock_once(26);
     async_tcp_client_write_mock_set_buf_p_in(&connect[0], sizeof(connect));
     tcp_on_connected(tcp_p, 0);
 
     /* ToDo: Input connack and verify connected flag (and more). */
+}
+
+TEST(connect_will)
+{
+    struct async_t async;
+    struct async_mqtt_client_t client;
+    const char will_topic[] = "foo";
+    uint8_t will_message[] = { 'b', 'a', 'r' };
+    /* Connect with will topic 'foo' and message 'bar'. */
+    uint8_t connect[] = {
+        0x10, 0x23, 0x00, 0x04, 0x4d, 0x51, 0x54, 0x54, 0x05, 0x04,
+        0x00, 0x1e, 0x00, 0x00, 0x0b, 0x61, 0x73, 0x79, 0x6e, 0x63,
+        0x2d, 0x31, 0x32, 0x33, 0x34, 0x35, 0x00, 0x00, 0x03, 0x66,
+        0x6f, 0x6f, 0x00, 0x03, 0x62, 0x61, 0x72
+    };
+
+    async_tcp_client_init_mock_ignore_in_once();
+    async_tcp_client_init_mock_set_callback(save_tcp_callbacks);
+
+    async_init(&async);
+    async_mqtt_client_init(&client,
+                           "host",
+                           1883,
+                           NULL,
+                           NULL,
+                           NULL,
+                           NULL,
+                           &async);
+    async_mqtt_client_set_will(&client,
+                               &will_topic[0],
+                               &will_message[0],
+                               sizeof(will_message));
+
+    async_tcp_client_connect_mock_once("host", 1883);
+    async_mqtt_client_start(&client);
+
+    async_tcp_client_write_mock_once(37);
+    async_tcp_client_write_mock_set_buf_p_in(&connect[0], sizeof(connect));
+    tcp_on_connected(tcp_p, 0);
 }
