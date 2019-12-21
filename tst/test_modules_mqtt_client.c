@@ -21,6 +21,15 @@ static void save_tcp_callbacks(struct async_tcp_client_t *self_p,
     (void)async_p;
 }
 
+static int on_connected_count;
+
+static void on_connected(void *obj_p)
+{
+    (void)obj_p;
+
+    on_connected_count++;
+}
+
 TEST(basic)
 {
     struct async_t async;
@@ -30,6 +39,12 @@ TEST(basic)
         0x00, 0x1e, 0x00, 0x00, 0x0b, 0x61, 0x73, 0x79, 0x6e, 0x63,
         0x2d, 0x31, 0x32, 0x33, 0x34, 0x35
     };
+    uint8_t connack[] = {
+        0x20, 0x0b, 0x00, 0x00, 0x08, 0x24, 0x00, 0x25, 0x00, 0x28,
+        0x00, 0x2a, 0x00
+    };
+
+    on_connected_count = 0;
 
     async_tcp_client_init_mock_ignore_in_once();
     async_tcp_client_init_mock_set_callback(save_tcp_callbacks);
@@ -38,7 +53,7 @@ TEST(basic)
     async_mqtt_client_init(&client,
                            "foo",
                            1883,
-                           NULL,
+                           on_connected,
                            NULL,
                            NULL,
                            NULL,
@@ -51,7 +66,20 @@ TEST(basic)
     async_tcp_client_write_mock_set_buf_p_in(&connect[0], sizeof(connect));
     tcp_on_connected(tcp_p, 0);
 
-    /* ToDo: Input connack and verify connected flag (and more). */
+    /* CONNACK: Fixed header. */
+    async_tcp_client_read_mock_once(1, 1);
+    async_tcp_client_read_mock_set_buf_p_out(&connack[0], 1);
+    tcp_on_input(tcp_p);
+    async_tcp_client_read_mock_once(1, 1);
+    async_tcp_client_read_mock_set_buf_p_out(&connack[1], 1);
+    tcp_on_input(tcp_p);
+
+    /* CONNACK: Data. */
+    async_tcp_client_read_mock_once(11, 11);
+    async_tcp_client_read_mock_set_buf_p_out(&connack[2], 11);
+    tcp_on_input(tcp_p);
+
+    ASSERT_EQ(on_connected_count, 1)
 }
 
 TEST(connect_will)

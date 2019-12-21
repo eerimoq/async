@@ -26,6 +26,7 @@ SRC += $(BUILD)/nala_mocks.c
 SRC += $(TESTS)
 TESTS ?= main
 TESTS_C = $(BUILD)/suites.c
+NALA ?= nala
 
 .PHONY: all run build coverage
 
@@ -45,8 +46,8 @@ $(BUILD)/nala_mocks.h: $(TESTS)
 	mkdir -p $(BUILD)
 	[ -f nala_mocks.h ] || touch $(BUILD)/nala_mocks.h
 	cat $(TESTS) > $(TESTS_C)
-	$(CC) $(INC:%=-I%) -D_GNU_SOURCE=1 -E $(TESTS_C) \
-	    | nala generate_mocks -o $(BUILD)
+	$(CC) $(INC:%=-I%) -D_GNU_SOURCE=1 -DNALA_GENERATE_MOCKS -E $(TESTS_C) \
+	    | $(NALA) generate_mocks -o $(BUILD)
 
 coverage:
 	gcovr --root ../.. \
