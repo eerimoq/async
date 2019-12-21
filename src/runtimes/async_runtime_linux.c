@@ -464,11 +464,16 @@ static void tcp_client_disconnect(struct async_tcp_client_t *self_p)
     async_tcp_client_disconnect_write(self_p);
 }
 
-static ssize_t tcp_client_write(struct async_tcp_client_t *self_p,
-                                const void *buf_p,
-                                size_t size)
+static void tcp_client_write(struct async_tcp_client_t *self_p,
+                             const void *buf_p,
+                             size_t size)
 {
-    return (write(tcp_client(self_p)->sockfd, buf_p, size));
+    ssize_t res;
+
+    res = write(tcp_client(self_p)->sockfd, buf_p, size);
+
+    if (res != (ssize_t)size) {
+    }
 }
 
 static size_t tcp_client_read(struct async_tcp_client_t *self_p,

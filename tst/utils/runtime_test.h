@@ -46,9 +46,9 @@ void runtime_test_tcp_client_connect(struct async_tcp_client_t *self_p,
 
 void runtime_test_tcp_client_disconnect(struct async_tcp_client_t *self_p);
 
-ssize_t runtime_test_tcp_client_write(struct async_tcp_client_t *self_p,
-                                      const void *buf_p,
-                                      size_t size);
+void runtime_test_tcp_client_write(struct async_tcp_client_t *self_p,
+                                   const void *buf_p,
+                                   size_t size);
 
 size_t runtime_test_tcp_client_read(struct async_tcp_client_t *self_p,
                                     void *buf_p,

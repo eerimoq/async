@@ -65,11 +65,11 @@ static void tcp_client_disconnect(struct async_tcp_client_t *self_p)
     runtime_test_tcp_client_disconnect(self_p);
 }
 
-static ssize_t tcp_client_write(struct async_tcp_client_t *self_p,
-                                const void *buf_p,
-                                size_t size)
+static void tcp_client_write(struct async_tcp_client_t *self_p,
+                             const void *buf_p,
+                             size_t size)
 {
-    return (runtime_test_tcp_client_write(self_p, buf_p, size));
+    runtime_test_tcp_client_write(self_p, buf_p, size);
 }
 
 static size_t tcp_client_read(struct async_tcp_client_t *self_p,

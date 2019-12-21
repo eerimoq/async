@@ -81,9 +81,9 @@ static void tcp_client_disconnect(struct async_tcp_client_t *self_p)
     exit(1);
 }
 
-static ssize_t tcp_client_write(struct async_tcp_client_t *self_p,
-                                const void *buf_p,
-                                size_t size)
+static void tcp_client_write(struct async_tcp_client_t *self_p,
+                             const void *buf_p,
+                             size_t size)
 {
     (void)self_p;
     (void)buf_p;
@@ -91,8 +91,6 @@ static ssize_t tcp_client_write(struct async_tcp_client_t *self_p,
 
     fprintf(stderr, "async_tcp_client_write() not implemented.\n");
     exit(1);
-
-    return (-1);
 }
 
 static size_t tcp_client_read(struct async_tcp_client_t *self_p,

@@ -50,7 +50,7 @@ typedef void (*async_runtime_tcp_client_connect_t)(
 typedef void (*async_runtime_tcp_client_disconnect_t)(
     struct async_tcp_client_t *self_p);
 
-typedef ssize_t (*async_runtime_tcp_client_write_t)(
+typedef void (*async_runtime_tcp_client_write_t)(
     struct async_tcp_client_t *self_p,
     const void *buf_p,
     size_t size);

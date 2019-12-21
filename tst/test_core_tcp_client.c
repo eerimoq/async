@@ -19,8 +19,8 @@ TEST(call_all_functions)
     runtime_test_tcp_client_connect_mock_once("foo", 5);
     async_tcp_client_connect(&tcp, "foo", 5);
 
-    runtime_test_tcp_client_write_mock_once(3, 4);
-    ASSERT_EQ(async_tcp_client_write(&tcp, NULL, 3), 4);
+    runtime_test_tcp_client_write_mock_once(3);
+    async_tcp_client_write(&tcp, NULL, 3);
 
     runtime_test_tcp_client_read_mock_once(5, 6);
     ASSERT_EQ(async_tcp_client_read(&tcp, NULL, 5), 6u);

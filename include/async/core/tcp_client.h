@@ -65,14 +65,15 @@ void async_tcp_client_connect(struct async_tcp_client_t *self_p,
 void async_tcp_client_disconnect(struct async_tcp_client_t *self_p);
 
 /**
- * Write up to size bytes to the remote host.
+ * Write size bytes to the remote host.
  */
-ssize_t async_tcp_client_write(struct async_tcp_client_t *self_p,
-                               const void *buf_p,
-                               size_t size);
+void async_tcp_client_write(struct async_tcp_client_t *self_p,
+                            const void *buf_p,
+                            size_t size);
 
 /**
- * Read up to size bytes from the remote host.
+ * Read up to size bytes from the remote host. Returns the number of
+ * read bytes (0..size).
  */
 size_t async_tcp_client_read(struct async_tcp_client_t *self_p,
                              void *buf_p,

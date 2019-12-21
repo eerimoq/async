@@ -77,17 +77,15 @@ void runtime_test_tcp_client_disconnect(struct async_tcp_client_t *self_p)
     FAIL();
 }
 
-ssize_t runtime_test_tcp_client_write(struct async_tcp_client_t *self_p,
-                                      const void *buf_p,
-                                      size_t size)
+void runtime_test_tcp_client_write(struct async_tcp_client_t *self_p,
+                                   const void *buf_p,
+                                   size_t size)
 {
     (void)self_p;
     (void)buf_p;
     (void)size;
 
     FAIL();
-
-    return (-1);
 }
 
 size_t runtime_test_tcp_client_read(struct async_tcp_client_t *self_p,

@@ -56,11 +56,11 @@ void async_tcp_client_disconnect(struct async_tcp_client_t *self_p)
     self_p->async_p->runtime_p->tcp_client.disconnect(self_p);
 }
 
-ssize_t async_tcp_client_write(struct async_tcp_client_t *self_p,
-                               const void *buf_p,
-                               size_t size)
+void async_tcp_client_write(struct async_tcp_client_t *self_p,
+                            const void *buf_p,
+                            size_t size)
 {
-    return (self_p->async_p->runtime_p->tcp_client.write(self_p, buf_p, size));
+    self_p->async_p->runtime_p->tcp_client.write(self_p, buf_p, size);
 }
 
 size_t async_tcp_client_read(struct async_tcp_client_t *self_p,
