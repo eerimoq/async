@@ -269,15 +269,43 @@ static uint16_t reader_offset(struct reader_t *self_p)
     return (bitstream_reader_tell(&self_p->reader) / 8);
 }
 
+static bool reader_available(struct reader_t *self_p, int size)
+{
+    bool ok;
+
+    ok = ((reader_offset(self_p) + size) <= self_p->size);
+
+    if (!ok) {
+        self_p->size = -1;
+    }
+
+    return (ok);
+}
+
+static bool reader_ok(struct reader_t *self_p)
+{
+    return (self_p->size >= 0);
+}
+
 static void reader_seek(struct reader_t *self_p,
                         int offset)
 {
-    bitstream_reader_seek(&self_p->reader, 8 * offset);
+    if (reader_available(self_p, offset)) {
+        bitstream_reader_seek(&self_p->reader, 8 * offset);
+    }
 }
 
 static uint16_t reader_read_u16(struct reader_t *self_p)
 {
-    return (bitstream_reader_read_u16(&self_p->reader));
+    uint16_t value;
+
+    if (reader_available(self_p, 2)) {
+        value = bitstream_reader_read_u16(&self_p->reader);
+    } else {
+        value = 0;
+    }
+
+    return (value);
 }
 
 static void reader_get_string(struct reader_t *self_p,
@@ -285,25 +313,25 @@ static void reader_get_string(struct reader_t *self_p,
                               size_t *size_p)
 {
     *size_p = reader_read_u16(self_p);
-    *string_pp = (char *)&self_p->buf_p[reader_offset(self_p)];
-    reader_seek(self_p, *size_p);
+
+    if (reader_available(self_p, *size_p)) {
+        *string_pp = (char *)&self_p->buf_p[reader_offset(self_p)];
+        reader_seek(self_p, *size_p);
+    }
 }
 
-static void null_terminate_string(char *string_p, size_t size)
+static void reader_null_terminate_string(struct reader_t *self_p,
+                                         char *string_p,
+                                         size_t size)
 {
-    string_p[size] = '\0';
+    if (reader_ok(self_p)) {
+        string_p[size] = '\0';
+    }
 }
 
 static uint8_t *reader_pointer(struct reader_t *self_p)
 {
     return (&self_p->buf_p[reader_offset(self_p)]);
-}
-
-static bool reader_ok(struct reader_t *self_p)
-{
-    (void)self_p;
-
-    return (true);
 }
 
 static void on_subscribe_complete_null(void *obj_p,
@@ -453,7 +481,7 @@ static bool unpack_publish(struct async_mqtt_client_t *self_p,
     reader_init(&reader, &self_p->packet.buf[0], self_p->packet.size);
     reader_get_string(&reader, topic_pp, &topic_size);
     reader_seek(&reader, 1);
-    null_terminate_string(*topic_pp, topic_size);
+    reader_null_terminate_string(&reader, *topic_pp, topic_size);
     *buf_pp = reader_pointer(&reader);
     *size_p = (self_p->packet.size - reader_offset(&reader));
 

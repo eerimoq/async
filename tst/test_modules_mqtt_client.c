@@ -90,9 +90,12 @@ static void input_packet(uint8_t *buf_p,
 
     /* Data. */
     size -= (length_size + 1);
-    async_tcp_client_read_mock_once(size, size);
-    async_tcp_client_read_mock_set_buf_p_out(&buf_p[length_size + 1], size);
-    tcp_on_input(tcp_p);
+
+    if (size > 0) {
+        async_tcp_client_read_mock_once(size, size);
+        async_tcp_client_read_mock_set_buf_p_out(&buf_p[length_size + 1], size);
+        tcp_on_input(tcp_p);
+    }
 }
 
 static void input_packet_suback(uint16_t transaction_id)
@@ -247,6 +250,29 @@ TEST(subscribe)
     assert_stop(&client);
 }
 
+TEST(subscribe_error_short_suback)
+{
+    struct async_t async;
+    struct async_mqtt_client_t client;
+    uint16_t transaction_id;
+    uint8_t suback[] = {
+        0x90, 0x00
+    };
+
+    assert_init(&async, &client);
+    async_mqtt_client_set_on_subscribe_complete(&client, on_subscribe_complete);
+    assert_start_until_connected(&client);
+
+    /* SUBSCRIBE. */
+    mock_prepare_subscribe_default();
+    transaction_id = 1;
+    ASSERT_EQ(async_mqtt_client_subscribe(&client, "ttt"), transaction_id);
+
+    /* Short SUBACK. */
+    input_packet(&suback[0], 1, sizeof(suback));
+    assert_stop(&client);
+}
+
 TEST(publish)
 {
     struct async_t async;
@@ -275,5 +301,33 @@ TEST(receive_publish)
     mqtt_on_publish_mock_once("barfoo", 2);
     mqtt_on_publish_mock_set_buf_p_in(&message[0], sizeof(message));
     input_packet_publish();
+    assert_stop(&client);
+}
+
+TEST(receive_publish_no_data)
+{
+    struct async_t async;
+    struct async_mqtt_client_t client;
+    uint8_t publish[] = {
+        0x30, 0x09, 0x00, 0x06, 'b', 'a', 'r', 'f', 'o', 'o',
+        0x00
+    };
+
+    assert_until_connected(&async, &client);
+    mqtt_on_publish_mock_once("barfoo", 0);
+    input_packet(&publish[0], 1, sizeof(publish));
+    assert_stop(&client);
+}
+
+TEST(receive_publish_error_short_message_no_props)
+{
+    struct async_t async;
+    struct async_mqtt_client_t client;
+    uint8_t publish[] = {
+        0x30, 0x08, 0x00, 0x06, 'b', 'a', 'r', 'f', 'o', 'o'
+    };
+
+    assert_until_connected(&async, &client);
+    input_packet(&publish[0], 1, sizeof(publish));
     assert_stop(&client);
 }
