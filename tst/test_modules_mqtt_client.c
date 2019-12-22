@@ -104,6 +104,16 @@ static void input_packet_suback(uint16_t transaction_id)
     input_packet(&suback[0], 1, sizeof(suback));
 }
 
+static void input_packet_publish(void)
+{
+    uint8_t publish[] = {
+        0x30, 0x0b, 0x00, 0x06, 'b', 'a', 'r', 'f', 'o', 'o',
+        0x00, 0x56, 0x78
+    };
+
+    input_packet(&publish[0], 1, sizeof(publish));
+}
+
 static void assert_on_connected(uint8_t *connack_p,
                                 size_t length_size,
                                 size_t size)
@@ -252,5 +262,18 @@ TEST(publish)
                               "foobar",
                               &message,
                               sizeof(message));
+    assert_stop(&client);
+}
+
+TEST(receive_publish)
+{
+    struct async_t async;
+    struct async_mqtt_client_t client;
+    uint8_t message[] = { 0x56, 0x78 };
+
+    assert_until_connected(&async, &client);
+    mqtt_on_publish_mock_once("barfoo", 2);
+    mqtt_on_publish_mock_set_buf_p_in(&message[0], sizeof(message));
+    input_packet_publish();
     assert_stop(&client);
 }
