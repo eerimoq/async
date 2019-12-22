@@ -36,6 +36,9 @@ timer, ``async/stop`` to stop the publish timer and
    Starting the MQTT client.
    Connected.
    Starting the publish timer with timeout 1000 ms.
+   Subscribe with transaction id 1 completed.
+   Subscribe with transaction id 2 completed.
+   Subscribe with transaction id 3 completed.
    Publishing 'count: 0' on 'async/hello'.
    Publishing 'count: 1' on 'async/hello'.
    Publishing 'count: 2' on 'async/hello'.
