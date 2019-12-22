@@ -15,4 +15,13 @@ ssize_t channel_write(struct async_channel_t *self_p,
                       const void *buf_p,
                       size_t size);
 
+void mqtt_on_connected(void *obj_p);
+
+void mqtt_on_subscribe_complete(void *obj_p, uint16_t transaction_id);
+
+void mqtt_on_publish(void *obj_p,
+                     const char *topic_p,
+                     const uint8_t *buf_p,
+                     size_t size);
+
 #endif

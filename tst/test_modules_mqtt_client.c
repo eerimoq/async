@@ -2,6 +2,7 @@
 #include "nala_mocks.h"
 #include "async.h"
 #include "async/modules/mqtt_client.h"
+#include "utils.h"
 
 static async_tcp_client_connected_t tcp_on_connected;
 static async_tcp_client_disconnected_t tcp_on_disconnected;
@@ -14,26 +15,105 @@ static void save_tcp_callbacks(struct async_tcp_client_t *self_p,
                                async_tcp_client_input_t on_input,
                                struct async_t *async_p)
 {
+    (void)async_p;
+
     tcp_p = self_p;
     tcp_on_connected = on_connected;
     tcp_on_disconnected = on_disconnected;
     tcp_on_input = on_input;
-    (void)async_p;
 }
-
-static int on_connected_count;
 
 static void on_connected(void *obj_p)
 {
-    (void)obj_p;
-
-    on_connected_count++;
+    mqtt_on_connected(obj_p);
 }
 
-TEST(basic)
+static void on_publish(void *obj_p,
+                       const char *topic_p,
+                       const uint8_t *buf_p,
+                       size_t size)
 {
-    struct async_t async;
-    struct async_mqtt_client_t client;
+    mqtt_on_publish(obj_p, topic_p, buf_p, size);
+}
+
+static void on_subscribe_complete(void *obj_p, uint16_t transaction_id)
+{
+    mqtt_on_subscribe_complete(obj_p, transaction_id);
+}
+
+static void assert_init(struct async_t *async_p,
+                        struct async_mqtt_client_t *client_p)
+{
+    async_tcp_client_init_mock_ignore_in_once();
+    async_tcp_client_init_mock_set_callback(save_tcp_callbacks);
+
+    async_init(async_p);
+    async_mqtt_client_init(client_p,
+                           "foo",
+                           1883,
+                           on_connected,
+                           NULL,
+                           on_publish,
+                           NULL,
+                           async_p);
+}
+
+static void assert_start_and_on_tcp_connected(
+    struct async_mqtt_client_t *client_p,
+    uint8_t *connect_p,
+    size_t size)
+{
+    async_tcp_client_connect_mock_once("foo", 1883);
+    async_mqtt_client_start(client_p);
+
+    async_tcp_client_write_mock_once(size);
+    async_tcp_client_write_mock_set_buf_p_in(connect_p, size);
+    tcp_on_connected(tcp_p, 0);
+}
+
+static void input_packet(uint8_t *buf_p,
+                         size_t length_size,
+                         size_t size)
+{
+    /* Fixed header. */
+    async_tcp_client_read_mock_once(1, 1);
+    async_tcp_client_read_mock_set_buf_p_out(&buf_p[0], 1);
+    tcp_on_input(tcp_p);
+
+    if (length_size != 1) {
+        FAIL();
+    }
+
+    async_tcp_client_read_mock_once(length_size, length_size);
+    async_tcp_client_read_mock_set_buf_p_out(&buf_p[1], length_size);
+    tcp_on_input(tcp_p);
+
+    /* Data. */
+    size -= (length_size + 1);
+    async_tcp_client_read_mock_once(size, size);
+    async_tcp_client_read_mock_set_buf_p_out(&buf_p[length_size + 1], size);
+    tcp_on_input(tcp_p);
+}
+
+static void input_packet_suback(uint16_t transaction_id)
+{
+    uint8_t suback[] = {
+        0x90, 0x04, 0x00, transaction_id, 0x00, 0x00
+    };
+
+    input_packet(&suback[0], 1, sizeof(suback));
+}
+
+static void assert_on_connected(uint8_t *connack_p,
+                                size_t length_size,
+                                size_t size)
+{
+    mqtt_on_connected_mock_once();
+    input_packet(connack_p, length_size, size);
+}
+
+static void assert_start_until_connected(struct async_mqtt_client_t *client_p)
+{
     uint8_t connect[] = {
         0x10, 0x18, 0x00, 0x04, 0x4d, 0x51, 0x54, 0x54, 0x05, 0x02,
         0x00, 0x1e, 0x00, 0x00, 0x0b, 0x61, 0x73, 0x79, 0x6e, 0x63,
@@ -44,42 +124,65 @@ TEST(basic)
         0x00, 0x2a, 0x00
     };
 
-    on_connected_count = 0;
+    assert_start_and_on_tcp_connected(client_p,
+                                      &connect[0],
+                                      sizeof(connect));
+    assert_on_connected(&connack[0], 1, sizeof(connack));
+}
 
-    async_tcp_client_init_mock_ignore_in_once();
-    async_tcp_client_init_mock_set_callback(save_tcp_callbacks);
+static void assert_until_connected(struct async_t *async_p,
+                                   struct async_mqtt_client_t *client_p)
+{
+    assert_init(async_p, client_p);
+    assert_start_until_connected(client_p);
+}
 
-    async_init(&async);
-    async_mqtt_client_init(&client,
-                           "foo",
-                           1883,
-                           on_connected,
-                           NULL,
-                           NULL,
-                           NULL,
-                           &async);
+static void mock_prepare_stop(void)
+{
+    uint8_t disconnect[] = {
+        0xe0, 0x02, 0x00, 0x00
+    };
 
-    async_tcp_client_connect_mock_once("foo", 1883);
-    async_mqtt_client_start(&client);
+    async_tcp_client_write_mock_once(sizeof(disconnect));
+    async_tcp_client_write_mock_set_buf_p_in(&disconnect[0], sizeof(disconnect));
+    async_tcp_client_disconnect_mock_once(tcp_p);
+}
 
-    async_tcp_client_write_mock_once(26);
-    async_tcp_client_write_mock_set_buf_p_in(&connect[0], sizeof(connect));
-    tcp_on_connected(tcp_p, 0);
+static void assert_stop(struct async_mqtt_client_t *client_p)
+{
+    mock_prepare_stop();
+    async_mqtt_client_stop(client_p);
+}
 
-    /* CONNACK: Fixed header. */
-    async_tcp_client_read_mock_once(1, 1);
-    async_tcp_client_read_mock_set_buf_p_out(&connack[0], 1);
-    tcp_on_input(tcp_p);
-    async_tcp_client_read_mock_once(1, 1);
-    async_tcp_client_read_mock_set_buf_p_out(&connack[1], 1);
-    tcp_on_input(tcp_p);
+static void mock_prepare_subscribe_default(void)
+{
+    uint8_t subscribe[] = {
+        0x80, 0x09, 0x00, 0x01, 0x00, 0x00, 0x03, 0x74, 0x74, 0x74,
+        0x00
+    };
 
-    /* CONNACK: Data. */
-    async_tcp_client_read_mock_once(11, 11);
-    async_tcp_client_read_mock_set_buf_p_out(&connack[2], 11);
-    tcp_on_input(tcp_p);
+    async_tcp_client_write_mock_once(sizeof(subscribe));
+    async_tcp_client_write_mock_set_buf_p_in(&subscribe[0], sizeof(subscribe));
+}
 
-    ASSERT_EQ(on_connected_count, 1)
+static void mock_prepare_publish_default(void)
+{
+    uint8_t publish[] = {
+        0x30, 0x0b, 0x00, 0x06, 'f', 'o', 'o', 'b', 'a', 'r',
+        0x00, 0x12, 0x34
+    };
+
+    async_tcp_client_write_mock_once(sizeof(publish));
+    async_tcp_client_write_mock_set_buf_p_in(&publish[0], sizeof(publish));
+}
+
+TEST(init_start_stop)
+{
+    struct async_t async;
+    struct async_mqtt_client_t client;
+
+    assert_until_connected(&async, &client);
+    assert_stop(&client);
 }
 
 TEST(connect_will)
@@ -95,28 +198,59 @@ TEST(connect_will)
         0x2d, 0x31, 0x32, 0x33, 0x34, 0x35, 0x00, 0x00, 0x03, 0x66,
         0x6f, 0x6f, 0x00, 0x03, 0x62, 0x61, 0x72
     };
+    uint8_t connack[] = {
+        0x20, 0x0b, 0x00, 0x00, 0x08, 0x24, 0x00, 0x25, 0x00, 0x28,
+        0x00, 0x2a, 0x00
+    };
 
-    async_tcp_client_init_mock_ignore_in_once();
-    async_tcp_client_init_mock_set_callback(save_tcp_callbacks);
-
-    async_init(&async);
-    async_mqtt_client_init(&client,
-                           "host",
-                           1883,
-                           NULL,
-                           NULL,
-                           NULL,
-                           NULL,
-                           &async);
+    assert_init(&async, &client);
     async_mqtt_client_set_will(&client,
                                &will_topic[0],
                                &will_message[0],
                                sizeof(will_message));
+    assert_start_and_on_tcp_connected(&client,
+                                      &connect[0],
+                                      sizeof(connect));
+    assert_on_connected(&connack[0], 1, sizeof(connack));
+    assert_stop(&client);
+}
 
-    async_tcp_client_connect_mock_once("host", 1883);
-    async_mqtt_client_start(&client);
+TEST(subscribe)
+{
+    struct async_t async;
+    struct async_mqtt_client_t client;
+    uint16_t transaction_id;
 
-    async_tcp_client_write_mock_once(37);
-    async_tcp_client_write_mock_set_buf_p_in(&connect[0], sizeof(connect));
-    tcp_on_connected(tcp_p, 0);
+    assert_init(&async, &client);
+    async_mqtt_client_set_on_subscribe_complete(&client, on_subscribe_complete);
+    assert_start_until_connected(&client);
+
+    /* SUBSCRIBE. */
+    mock_prepare_subscribe_default();
+    transaction_id = 1;
+    ASSERT_EQ(async_mqtt_client_subscribe(&client, "ttt"), transaction_id);
+
+    /* SUBACK. */
+    mqtt_on_subscribe_complete_mock_once(transaction_id);
+    input_packet_suback(transaction_id);
+
+    assert_stop(&client);
+}
+
+TEST(publish)
+{
+    struct async_t async;
+    struct async_mqtt_client_t client;
+    uint8_t message[] = {
+         0x12, 0x34
+    };
+
+    assert_init(&async, &client);
+    assert_start_until_connected(&client);
+    mock_prepare_publish_default();
+    async_mqtt_client_publish(&client,
+                              "foobar",
+                              &message,
+                              sizeof(message));
+    assert_stop(&client);
 }
