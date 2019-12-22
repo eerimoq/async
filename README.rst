@@ -16,7 +16,7 @@ Features
 
 - Timers.
 
-- MQTT client.
+- An MQTT client (only QoS 0 is supported).
 
 - A simple shell.
 
