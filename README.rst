@@ -16,6 +16,10 @@ Features
 
 - Timers.
 
+- MQTT client.
+
+- A simple shell.
+
 Examples
 ========
 
