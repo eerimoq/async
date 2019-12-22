@@ -250,29 +250,34 @@ static void writer_write_string(struct writer_t *self_p, const char *string_p)
 }
 
 struct reader_t {
+    struct bitstream_reader_t reader;
     uint8_t *buf_p;
     int size;
-    int offset;
 };
 
 static void reader_init(struct reader_t *self_p,
                         uint8_t *buf_p,
                         size_t size)
 {
+    bitstream_reader_init(&self_p->reader, buf_p);
     self_p->buf_p = buf_p;
     self_p->size = size;
-    self_p->offset = 0;
+}
+
+static uint16_t reader_offset(struct reader_t *self_p)
+{
+    return (bitstream_reader_tell(&self_p->reader) / 8);
+}
+
+static void reader_seek(struct reader_t *self_p,
+                        int offset)
+{
+    bitstream_reader_seek(&self_p->reader, 8 * offset);
 }
 
 static uint16_t reader_read_u16(struct reader_t *self_p)
 {
-    uint16_t value;
-
-    value = ((self_p->buf_p[self_p->offset] << 8)
-             | self_p->buf_p[self_p->offset + 1]);
-    self_p->offset += 2;
-
-    return (value);
+    return (bitstream_reader_read_u16(&self_p->reader));
 }
 
 static void reader_get_string(struct reader_t *self_p,
@@ -280,16 +285,18 @@ static void reader_get_string(struct reader_t *self_p,
                               size_t *size_p)
 {
     *size_p = reader_read_u16(self_p);
-    *string_pp = (char *)&self_p->buf_p[self_p->offset];
-    self_p->offset += *size_p;
+    *string_pp = (char *)&self_p->buf_p[reader_offset(self_p)];
+    reader_seek(self_p, *size_p);
 }
 
-static void reader_get_bytes(struct reader_t *self_p,
-                             uint8_t **buf_pp,
-                             int *offset_p)
+static void null_terminate_string(char *string_p, size_t size)
 {
-    *buf_pp = &self_p->buf_p[self_p->offset];
-    *offset_p = self_p->offset;
+    string_p[size] = '\0';
+}
+
+static uint8_t *reader_pointer(struct reader_t *self_p)
+{
+    return (&self_p->buf_p[reader_offset(self_p)]);
 }
 
 static bool reader_ok(struct reader_t *self_p)
@@ -435,21 +442,22 @@ static size_t pack_publish(struct writer_t *writer_p,
     return (writer_written(writer_p));
 }
 
-static void unpack_publish(struct async_mqtt_client_t *self_p,
+static bool unpack_publish(struct async_mqtt_client_t *self_p,
                            char **topic_pp,
-                           void *buf_pp,
+                           uint8_t **buf_pp,
                            size_t *size_p)
 {
     struct reader_t reader;
     size_t topic_size;
-    int buf_offset;
 
     reader_init(&reader, &self_p->packet.buf[0], self_p->packet.size);
     reader_get_string(&reader, topic_pp, &topic_size);
-    reader.offset++;
-    reader_get_bytes(&reader, buf_pp, &buf_offset);
-    (*topic_pp)[topic_size] = '\0';
-    *size_p = (self_p->packet.size - buf_offset);
+    reader_seek(&reader, 1);
+    null_terminate_string(*topic_pp, topic_size);
+    *buf_pp = reader_pointer(&reader);
+    *size_p = (self_p->packet.size - reader_offset(&reader));
+
+    return (reader_ok(&reader));
 }
 
 static void on_reconnect_timeout(struct async_timer_t *timer_p)
@@ -634,14 +642,12 @@ static void handle_suback(struct async_mqtt_client_t *self_p)
 static void handle_publish(struct async_mqtt_client_t *self_p)
 {
     char *topic_p;
-    void *buf_p;
+    uint8_t *buf_p;
     size_t size;
 
-    unpack_publish(self_p,
-                   &topic_p,
-                   &buf_p,
-                   &size);
-    self_p->on_publish(self_p->obj_p, topic_p, buf_p, size);
+    if (unpack_publish(self_p, &topic_p, &buf_p, &size)) {
+        self_p->on_publish(self_p->obj_p, topic_p, buf_p, size);
+    }
 }
 
 static void handle_pingresp(struct async_mqtt_client_t *self_p)
