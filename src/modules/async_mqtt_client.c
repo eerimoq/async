@@ -770,8 +770,6 @@ void async_mqtt_client_init(struct async_mqtt_client_t *self_p,
     self_p->async_p = async_p;
     sprintf(&self_p->client_id[0], "async-12345");
     self_p->keep_alive_s = 10;
-    self_p->response_timeout = 5;
-    self_p->session_expiry_interval = 0;
     self_p->will.topic_p = NULL;
     self_p->connected = false;
     self_p->next_packet_identifier = 1;
@@ -797,19 +795,6 @@ void async_mqtt_client_set_client_id(struct async_mqtt_client_t *self_p,
                                      const char *client_id_p)
 {
     strncpy(&self_p->client_id[0], client_id_p, sizeof(self_p->client_id));
-}
-
-void async_mqtt_client_set_response_timeout(struct async_mqtt_client_t *self_p,
-                                            int response_timeout)
-{
-    self_p->response_timeout = response_timeout;
-}
-
-void async_mqtt_client_set_session_expiry_interval(
-    struct async_mqtt_client_t *self_p,
-    int session_expiry_interval)
-{
-    self_p->session_expiry_interval = session_expiry_interval;
 }
 
 void async_mqtt_client_set_will(struct async_mqtt_client_t *self_p,

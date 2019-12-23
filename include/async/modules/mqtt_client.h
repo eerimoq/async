@@ -67,8 +67,6 @@ struct async_mqtt_client_t {
     struct async_t *async_p;
     char client_id[64];
     int keep_alive_s;
-    int response_timeout;
-    int session_expiry_interval;
     struct async_mqtt_client_will_t will;
     bool connected;
     uint16_t next_packet_identifier;
@@ -96,21 +94,6 @@ void async_mqtt_client_init(struct async_mqtt_client_t *self_p,
  */
 void async_mqtt_client_set_client_id(struct async_mqtt_client_t *self_p,
                                      const char *client_id_p);
-
-/**
- * Set the response timeout. Must be called after
- * async_mqtt_client_init() and before async_mqtt_client_start().
- */
-void async_mqtt_client_set_response_timeout(struct async_mqtt_client_t *self_p,
-                                            int response_timeout);
-
-/**
- * Set the session expiry interval. Must be called after
- * async_mqtt_client_init() and before async_mqtt_client_start().
- */
-void async_mqtt_client_set_session_expiry_interval(
-    struct async_mqtt_client_t *self_p,
-    int session_expiry_interval);
 
 /**
  * Set the will topic and message pointers. Must be called after
