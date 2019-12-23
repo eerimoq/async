@@ -680,7 +680,7 @@ static void handle_publish(struct async_mqtt_client_t *self_p)
 
 static void handle_pingresp(struct async_mqtt_client_t *self_p)
 {
-    (void)self_p;
+    async_timer_start(&self_p->keep_alive_timer);
 }
 
 static void on_tcp_input(struct async_tcp_client_t *tcp_p)
@@ -782,7 +782,7 @@ void async_mqtt_client_init(struct async_mqtt_client_t *self_p,
     async_timer_init(&self_p->keep_alive_timer,
                      on_keep_alive_timeout,
                      1000 * self_p->keep_alive_s,
-                     1000 * self_p->keep_alive_s,
+                     0,
                      async_p);
     async_timer_init(&self_p->reconnect_timer,
                      on_reconnect_timeout,

@@ -9,6 +9,14 @@ static async_tcp_client_disconnected_t tcp_on_disconnected;
 static async_tcp_client_input_t tcp_on_input;
 static struct async_tcp_client_t *tcp_p;
 
+static void tick_many(struct async_t *async_p, int ticks)
+{
+    while (ticks > 0) {
+        async_tick(async_p);
+        ticks--;
+    }
+}
+
 static void save_tcp_callbacks(struct async_tcp_client_t *self_p,
                                async_tcp_client_connected_t on_connected,
                                async_tcp_client_disconnected_t on_disconnected,
@@ -117,6 +125,15 @@ static void input_packet_publish(void)
     input_packet(&publish[0], 1, sizeof(publish));
 }
 
+static void input_packet_pingresp(void)
+{
+    uint8_t pingresp[] = {
+        0xd0, 0x00
+    };
+
+    input_packet(&pingresp[0], 1, sizeof(pingresp));
+}
+
 static void assert_on_connected(uint8_t *connack_p,
                                 size_t length_size,
                                 size_t size)
@@ -187,6 +204,16 @@ static void mock_prepare_publish_default(void)
 
     async_tcp_client_write_mock_once(sizeof(publish));
     async_tcp_client_write_mock_set_buf_p_in(&publish[0], sizeof(publish));
+}
+
+static void mock_prepare_pingreq(void)
+{
+    uint8_t pingreq[] = {
+        0xc0, 0x00
+    };
+
+    async_tcp_client_write_mock_once(sizeof(pingreq));
+    async_tcp_client_write_mock_set_buf_p_in(&pingreq[0], sizeof(pingreq));
 }
 
 TEST(init_start_stop)
@@ -329,5 +356,27 @@ TEST(receive_publish_error_short_message_no_props)
 
     assert_until_connected(&async, &client);
     input_packet(&publish[0], 1, sizeof(publish));
+    assert_stop(&client);
+}
+
+TEST(ping)
+{
+    struct async_t async;
+    struct async_mqtt_client_t client;
+
+    assert_until_connected(&async, &client);
+
+    /* First ping-pong. */
+    mock_prepare_pingreq();
+    tick_many(&async, 101);
+    async_process(&async);
+    input_packet_pingresp();
+
+    /* Second ping-pong. */
+    mock_prepare_pingreq();
+    tick_many(&async, 101);
+    async_process(&async);
+    input_packet_pingresp();
+
     assert_stop(&client);
 }
