@@ -36,6 +36,11 @@ static void on_connected(void *obj_p)
     mqtt_on_connected(obj_p);
 }
 
+static void on_disconnected(void *obj_p)
+{
+    mqtt_on_disconnected(obj_p);
+}
+
 static void on_publish(void *obj_p,
                        const char *topic_p,
                        const uint8_t *buf_p,
@@ -60,7 +65,7 @@ static void assert_init(struct async_t *async_p,
                            "foo",
                            1883,
                            on_connected,
-                           NULL,
+                           on_disconnected,
                            on_publish,
                            NULL,
                            async_p);
@@ -373,6 +378,52 @@ TEST(ping)
     input_packet_pingresp();
 
     /* Second ping-pong. */
+    mock_prepare_pingreq();
+    tick_many(&async, 101);
+    async_process(&async);
+    input_packet_pingresp();
+
+    assert_stop(&client);
+}
+
+TEST(reconnect_after_tcp_disconnect)
+{
+    struct async_t async;
+    struct async_mqtt_client_t client;
+    uint8_t connect[] = {
+        0x10, 0x18, 0x00, 0x04, 0x4d, 0x51, 0x54, 0x54, 0x05, 0x02,
+        0x00, 0x1e, 0x00, 0x00, 0x0b, 0x61, 0x73, 0x79, 0x6e, 0x63,
+        0x2d, 0x31, 0x32, 0x33, 0x34, 0x35
+    };
+    uint8_t connack[] = {
+        0x20, 0x0b, 0x00, 0x00, 0x08, 0x24, 0x00, 0x25, 0x00, 0x28,
+        0x00, 0x2a, 0x00
+    };
+    int i;
+
+    assert_until_connected(&async, &client);
+    mqtt_on_disconnected_mock_once();
+    tcp_on_disconnected(tcp_p);
+
+    /* Reconnects every 1 seconds, make it fail until first ping
+       should have been sent (10 seconds, wait 15 to be sure). */
+    for (i = 0; i < 15; i++) {
+        async_tcp_client_connect_mock_once("foo", 1883);
+        tick_many(&async, 11);
+        async_process(&async);
+        tcp_on_connected(tcp_p, -1);
+    }
+
+    /* Reconnects after 1 second, make it successful. */
+    async_tcp_client_connect_mock_once("foo", 1883);
+    tick_many(&async, 11);
+    async_process(&async);
+    async_tcp_client_write_mock_once(sizeof(connect));
+    async_tcp_client_write_mock_set_buf_p_in(&connect[0], sizeof(connect));
+    tcp_on_connected(tcp_p, 0);
+    assert_on_connected(&connack[0], 1, sizeof(connack));
+
+    /* ping-pong after 10 seconds. */
     mock_prepare_pingreq();
     tick_many(&async, 101);
     async_process(&async);

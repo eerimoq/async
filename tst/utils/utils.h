@@ -17,6 +17,8 @@ ssize_t channel_write(struct async_channel_t *self_p,
 
 void mqtt_on_connected(void *obj_p);
 
+void mqtt_on_disconnected(void *obj_p);
+
 void mqtt_on_subscribe_complete(void *obj_p, uint16_t transaction_id);
 
 void mqtt_on_publish(void *obj_p,

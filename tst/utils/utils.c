@@ -46,6 +46,13 @@ void mqtt_on_connected(void *obj_p)
     FAIL();
 }
 
+void mqtt_on_disconnected(void *obj_p)
+{
+    (void)obj_p;
+
+    FAIL();
+}
+
 void mqtt_on_subscribe_complete(void *obj_p, uint16_t transaction_id)
 {
     (void)obj_p;
