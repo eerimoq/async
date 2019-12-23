@@ -582,6 +582,16 @@ static bool read_packet_size(struct async_mqtt_client_t *self_p)
 
         break;
 
+    case 2:
+        if ((self_p->packet.buf[1] & 0x80) == 0) {
+            self_p->packet.size = self_p->packet.buf[1];
+            self_p->packet.size *= 128;
+            self_p->packet.size += (self_p->packet.buf[0] & 0x7f);
+            complete = true;
+        }
+
+        break;
+
     default:
         self_p->packet.state = packet_state_read_type_t;
         break;
