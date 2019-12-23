@@ -341,13 +341,6 @@ static void on_subscribe_complete_null(void *obj_p,
     (void)transaction_id;
 }
 
-static void on_unsubscribe_complete_null(void *obj_p,
-                                         uint16_t transaction_id)
-{
-    (void)obj_p;
-    (void)transaction_id;
-}
-
 static void pack_variable_integer(struct writer_t *writer_p, int value)
 {
     uint8_t encoded_byte;
@@ -773,7 +766,6 @@ void async_mqtt_client_init(struct async_mqtt_client_t *self_p,
     self_p->on_disconnected = on_disconnected;
     self_p->on_publish = on_publish;
     self_p->on_subscribe_complete = on_subscribe_complete_null;
-    self_p->on_unsubscribe_complete = on_unsubscribe_complete_null;
     self_p->obj_p = obj_p;
     self_p->async_p = async_p;
     sprintf(&self_p->client_id[0], "async-12345");
@@ -837,13 +829,6 @@ void async_mqtt_client_set_on_subscribe_complete(
     self_p->on_subscribe_complete = on_subscribe_complete;
 }
 
-void async_mqtt_client_set_on_unsubscribe_complete(
-    struct async_mqtt_client_t *self_p,
-    async_mqtt_client_on_unsubscribe_complete_t on_unsubscribe_complete)
-{
-    self_p->on_unsubscribe_complete = on_unsubscribe_complete;
-}
-
 void async_mqtt_client_start(struct async_mqtt_client_t *self_p)
 {
     async_tcp_client_connect(&self_p->tcp, self_p->host_p, self_p->port);
@@ -881,15 +866,6 @@ uint16_t async_mqtt_client_subscribe(struct async_mqtt_client_t *self_p,
                                           packet_identifier));
 
     return (packet_identifier);
-}
-
-uint16_t async_mqtt_client_unsubscribe(struct async_mqtt_client_t *self_p,
-                                       const char *topic_p)
-{
-    (void)self_p;
-    (void)topic_p;
-
-    return (0);
 }
 
 void async_mqtt_client_publish(struct async_mqtt_client_t *self_p,
