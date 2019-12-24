@@ -46,8 +46,8 @@ static void on_connected(struct async_tcp_client_t *tcp_p, int res)
     self_p = async_container_of(tcp_p, typeof(*self_p), tcp);
 
     if (res == 0) {
-        printf("--------------------- HTTP GET BEGIN ---------------------\n");
         async_tcp_client_write(tcp_p, &request[0], sizeof(request) - 1);
+        printf("--------------------- HTTP GET BEGIN ---------------------\n");
     } else {
         printf("Connect failed.\n");
     }
