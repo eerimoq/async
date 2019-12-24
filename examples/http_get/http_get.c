@@ -28,91 +28,56 @@
 
 #include <stdio.h>
 #include "async.h"
-#include "echo_client.h"
+#include "http_get.h"
 
-static void do_connect(struct echo_client_t *self_p)
+static void do_get(struct http_get_t *self_p)
 {
-    printf("Connecting to 'localhost:33000'...\n");
-    async_tcp_client_connect(&self_p->tcp, "localhost", 33000);
-}
-
-static void on_start(struct echo_client_t *self_p)
-{
-    do_connect(self_p);
+    printf("Getting 'http://localhost:8080/main.c'...\n");
+    async_tcp_client_connect(&self_p->tcp, "localhost", 8080);
 }
 
 static void on_connected(struct async_tcp_client_t *tcp_p, int res)
 {
-    struct echo_client_t *self_p;
+    struct http_get_t *self_p;
+    static const char request[] = (
+        "GET /main.c HTTP/1.1\r\n"
+        "\r\n");
 
     self_p = async_container_of(tcp_p, typeof(*self_p), tcp);
 
     if (res == 0) {
-        printf("Connected.\n");
-        async_timer_start(&self_p->transmit_timer);
+        printf("--------------------- HTTP GET BEGIN ---------------------\n");
+        async_tcp_client_write(tcp_p, &request[0], sizeof(request) - 1);
     } else {
         printf("Connect failed.\n");
-        async_timer_start(&self_p->reconnect_timer);
     }
 }
 
 static void on_disconnected(struct async_tcp_client_t *tcp_p)
 {
-    struct echo_client_t *self_p;
+    (void)tcp_p;
 
-    self_p = async_container_of(tcp_p, typeof(*self_p), tcp);
-    printf("Disconnected.\n");
-    async_timer_stop(&self_p->transmit_timer);
-    async_timer_start(&self_p->reconnect_timer);
+    printf("---------------------- HTTP GET END ----------------------\n");
 }
 
 static void on_input(struct async_tcp_client_t *tcp_p)
 {
-    char buf[8];
+    char buf[64];
     ssize_t size;
-    struct echo_client_t *self_p;
+    struct http_get_t *self_p;
 
     self_p = async_container_of(tcp_p, typeof(*self_p), tcp);
     size = async_tcp_client_read(&self_p->tcp, &buf[0], sizeof(buf));
 
-    printf("RX: '");
     fwrite(&buf[0], 1, size, stdout);
-    printf("'\n");
 }
 
-static void on_transmit_timeout(struct async_timer_t *timer_p)
-{
-    struct echo_client_t *self_p;
-
-    self_p = async_container_of(timer_p, typeof(*self_p), transmit_timer);
-    printf("TX: 'Hello!'\n");
-    async_tcp_client_write(&self_p->tcp, "Hello!", 6);
-}
-
-static void on_reconnect_timeout(struct async_timer_t *timer_p)
-{
-    struct echo_client_t *self_p;
-
-    self_p = async_container_of(timer_p, typeof(*self_p), reconnect_timer);
-    do_connect(self_p);
-}
-
-void echo_client_init(struct echo_client_t *self_p, struct async_t *async_p)
+void http_get_init(struct http_get_t *self_p, struct async_t *async_p)
 {
     async_tcp_client_init(&self_p->tcp,
                           on_connected,
                           on_disconnected,
                           on_input,
                           async_p);
-    async_timer_init(&self_p->transmit_timer,
-                     on_transmit_timeout,
-                     0,
-                     1000,
-                     async_p);
-    async_timer_init(&self_p->reconnect_timer,
-                     on_reconnect_timeout,
-                     1000,
-                     0,
-                     async_p);
-    async_call(async_p, (async_func_t)on_start, self_p);
+    async_call(async_p, (async_func_t)do_get, self_p);
 }

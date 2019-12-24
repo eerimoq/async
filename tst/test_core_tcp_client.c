@@ -13,7 +13,7 @@ TEST(call_all_functions)
     runtime_test_set_async_mock();
     async_set_runtime(&async, runtime_test_create());
 
-    runtime_test_tcp_client_init_mock_once(NULL, NULL, NULL);
+    runtime_test_tcp_client_init_mock_ignore_in_once();
     async_tcp_client_init(&tcp, NULL, NULL, NULL, &async);
 
     runtime_test_tcp_client_connect_mock_once("foo", 5);

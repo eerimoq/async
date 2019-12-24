@@ -16,6 +16,7 @@ examples:
 	$(MAKE) -C examples/tcp_echo_client build
 	$(MAKE) -C examples/hello_world build
 	$(MAKE) -C examples/counter build
+	$(MAKE) -C examples/http_get build
 
 clean:
 	$(MAKE) -C tst clean
@@ -26,6 +27,7 @@ clean:
 	$(MAKE) -C examples/tcp_echo_client clean
 	$(MAKE) -C examples/hello_world clean
 	$(MAKE) -C examples/counter clean
+	$(MAKE) -C examples/http_get clean
 
 help:
 	@echo "TARGET     DESCRIPTION"

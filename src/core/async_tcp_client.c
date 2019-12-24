@@ -31,12 +31,31 @@
 #include "async.h"
 #include "async/core/runtime.h"
 
+static void on_connected_default(struct async_tcp_client_t *self_p, int res)
+{
+    (void)self_p;
+    (void)res;
+}
+
+static void on_disconnected_default(struct async_tcp_client_t *self_p)
+{
+    (void)self_p;
+}
+
 void async_tcp_client_init(struct async_tcp_client_t *self_p,
                            async_tcp_client_connected_t on_connected,
                            async_tcp_client_disconnected_t on_disconnected,
                            async_tcp_client_input_t on_input,
                            struct async_t *async_p)
 {
+    if (on_connected == NULL) {
+        on_connected = on_connected_default;
+    }
+
+    if (on_disconnected == NULL) {
+        on_disconnected = on_disconnected_default;
+    }
+
     self_p->async_p = async_p;
     async_p->runtime_p->tcp_client.init(self_p,
                                         on_connected,
