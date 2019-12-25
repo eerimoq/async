@@ -136,6 +136,18 @@ int async_call(struct async_t *self_p,
                void *obj_p);
 
 /**
+ * Call given function `entry` in the default worker pool. Once the
+ * entry function returns, call `on_complete` in the spawning async
+ * context. All long-running operations should be spawned to allow the
+ * async loop to continue. `obj_p` is passed to both `entry` and
+ * `on_complete` as their only argument.
+ */
+int async_spawn(struct async_t *self_p,
+                async_func_t entry,
+                void *obj_p,
+                async_func_t on_complete);
+
+/**
  * Run given async object forever. This function never returns.
  */
 void async_run_forever(struct async_t *self_p);
