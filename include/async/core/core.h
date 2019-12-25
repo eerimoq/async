@@ -149,6 +149,9 @@ int async_call_threadsafe(struct async_t *self_p,
  * context. All long-running operations should be spawned to allow the
  * async loop to continue. `obj_p` is passed to both `entry` and
  * `on_complete` as their only argument.
+ *
+ * It is not allowed to call any async-functions from a spawned
+ * function, as it is executed in a separate thread!
  */
 int async_spawn(struct async_t *self_p,
                 async_func_t entry,
