@@ -136,6 +136,14 @@ int async_call(struct async_t *self_p,
                void *obj_p);
 
 /**
+ * Call given function with given argument later. This function may be
+ * called from any thread.
+ */
+int async_call_threadsafe(struct async_t *self_p,
+                          async_func_t func,
+                          void *obj_p);
+
+/**
  * Call given function `entry` in the default worker pool. Once the
  * entry function returns, call `on_complete` in the spawning async
  * context. All long-running operations should be spawned to allow the
