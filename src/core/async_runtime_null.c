@@ -39,6 +39,20 @@ static void set_async(void *self_p, struct async_t *async_p)
     exit(1);
 }
 
+static int spawn(void *self_p,
+                 async_func_t entry,
+                 void *obj_p,
+                 async_func_t on_complete)
+{
+    (void)self_p;
+    (void)entry;
+    (void)obj_p;
+    (void)on_complete;
+
+    fprintf(stderr, "async_spawn() not implemented.\n");
+    exit(1);
+}
+
 static void run_forever(void *self_p)
 {
     (void)self_p;
@@ -109,6 +123,7 @@ static size_t tcp_client_read(struct async_tcp_client_t *self_p,
 
 static struct async_runtime_t runtime = {
     .set_async = set_async,
+    .spawn = spawn,
     .run_forever = run_forever,
     .tcp_client = {
         .init = tcp_client_init,

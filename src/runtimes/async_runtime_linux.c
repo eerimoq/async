@@ -379,6 +379,17 @@ static void set_async(struct async_runtime_linux_t *self_p,
     self_p->async_p = async_p;
 }
 
+static int spawn(struct async_runtime_linux_t *self_p,
+                 async_func_t entry,
+                 void *obj_p,
+                 async_func_t on_complete)
+{
+    entry(obj_p);
+    async_call(self_p->async_p, on_complete, obj_p);
+
+    return (0);
+}
+
 static void run_forever(struct async_runtime_linux_t *self_p)
 {
     pthread_create(&self_p->io_pthread,
@@ -512,6 +523,7 @@ struct async_runtime_t *async_runtime_linux_create()
     }
 
     runtime_p->set_async = (async_runtime_set_async_t)set_async;
+    runtime_p->spawn = (async_runtime_spawn_t)spawn;
     runtime_p->run_forever = (async_runtime_run_forever_t)run_forever;
     runtime_p->tcp_client.init = tcp_client_init;
     runtime_p->tcp_client.connect = tcp_client_connect;

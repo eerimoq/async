@@ -151,7 +151,7 @@ int async_call_threadsafe(struct async_t *self_p,
  * `on_complete` as their only argument.
  *
  * It is not allowed to call any async-functions from a spawned
- * function, as it is executed in a separate thread!
+ * function, as it is not executed in the async thread!
  */
 int async_spawn(struct async_t *self_p,
                 async_func_t entry,

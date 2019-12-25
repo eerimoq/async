@@ -119,6 +119,17 @@ void async_destroy(struct async_t *self_p)
     async_func_queue_destroy(&self_p->funcs);
 }
 
+int async_spawn(struct async_t *self_p,
+                async_func_t entry,
+                void *obj_p,
+                async_func_t on_complete)
+{
+    return (self_p->runtime_p->spawn(self_p->runtime_p->obj_p,
+                                     entry,
+                                     obj_p,
+                                     on_complete));
+}
+
 void async_run_forever(struct async_t *self_p)
 {
     self_p->runtime_p->run_forever(self_p->runtime_p->obj_p);
