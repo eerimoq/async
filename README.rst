@@ -25,7 +25,7 @@ Features
 Wish list
 =========
 
-- Secure TCP communications with TLS (OpenSSL, BearSSL and/or
+- Secure TCP communication with TLS (OpenSSL, BearSSL and/or
   WolfSSL?).
 
 Examples
