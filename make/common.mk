@@ -1,6 +1,7 @@
 INC += $(ASYNC_ROOT)/include
 INC += $(ASYNC_ROOT)/3pp/bitstream
 INC += $(ASYNC_ROOT)/3pp/humanfriendly/include
+INC += $(ASYNC_ROOT)/3pp/monolinux-c-library/include
 
 SRC += $(ASYNC_ROOT)/src/core/async_core.c
 SRC += $(ASYNC_ROOT)/src/core/async_timer.c
@@ -14,6 +15,11 @@ SRC += $(ASYNC_ROOT)/src/runtimes/async_runtime_linux.c
 SRC += $(ASYNC_ROOT)/src/utils/async_utils_linux.c
 SRC += $(ASYNC_ROOT)/3pp/bitstream/bitstream.c
 SRC += $(ASYNC_ROOT)/3pp/humanfriendly/src/hf.c
+SRC += $(ASYNC_ROOT)/3pp/monolinux-c-library/src/ml.c
+SRC += $(ASYNC_ROOT)/3pp/monolinux-c-library/src/ml_libc.c
+SRC += $(ASYNC_ROOT)/3pp/monolinux-c-library/src/ml_message.c
+SRC += $(ASYNC_ROOT)/3pp/monolinux-c-library/src/ml_queue.c
+SRC += $(ASYNC_ROOT)/3pp/monolinux-c-library/src/ml_worker_pool.c
 
 OBJ = $(patsubst %,$(BUILD)%,$(abspath $(SRC:%.c=%.o)))
 
