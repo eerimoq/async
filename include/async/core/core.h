@@ -144,8 +144,8 @@ int async_call_threadsafe(struct async_t *self_p,
                           void *obj_p);
 
 /**
- * Call given function `entry` in the default worker pool. Once the
- * entry function returns, call `on_complete` in the spawning async
+ * Call given function `entry` in the worker pool. Once the entry
+ * function returns, `on_complete` is called in the original async
  * context. All long-running operations should be spawned to allow the
  * async loop to continue. `obj_p` is passed to both `entry` and
  * `on_complete` as their only argument.
