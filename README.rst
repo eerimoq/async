@@ -78,7 +78,7 @@ Typical usage:
    async_init(&async);
    ...
    while (true) {
-       select(...);
+       epoll_wait(...);
        ...
        if (timeout) {
            async_tick(&async);
