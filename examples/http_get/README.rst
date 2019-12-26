@@ -17,21 +17,7 @@ Then build and run the example program.
 .. code-block:: text
 
    $ make -s
-   CC http_get.c
-   CC main.c
-   CC /home/erik/workspace/async/src/core/async_core.c
-   CC /home/erik/workspace/async/src/core/async_timer.c
-   CC /home/erik/workspace/async/src/core/async_channel.c
-   CC /home/erik/workspace/async/src/core/async_tcp_client.c
-   CC /home/erik/workspace/async/src/core/async_runtime_null.c
-   CC /home/erik/workspace/async/src/modules/async_shell.c
-   CC /home/erik/workspace/async/src/modules/async_mqtt_client.c
-   CC /home/erik/workspace/async/src/runtimes/async_runtime.c
-   CC /home/erik/workspace/async/src/runtimes/async_runtime_linux.c
-   CC /home/erik/workspace/async/src/utils/async_utils_linux.c
-   CC /home/erik/workspace/async/3pp/bitstream/bitstream.c
-   CC /home/erik/workspace/async/3pp/humanfriendly/src/hf.c
-   LD /home/erik/workspace/async/examples/http_get/build/app
+   ...
    Getting 'http://localhost:8080/main.c'...
    --------------------- HTTP GET BEGIN ---------------------
    HTTP/1.0 200 OK
