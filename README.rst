@@ -20,6 +20,14 @@ Features
 
 - A simple shell.
 
+- A basic TCP client.
+
+Wish list
+=========
+
+- Secure TCP communications with TLS (OpenSSL, BearSSL and/or
+  WolfSSL?).
+
 Examples
 ========
 
