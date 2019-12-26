@@ -28,6 +28,8 @@ Wish list
 - Secure TCP communication with TLS (OpenSSL, BearSSL and/or
   WolfSSL?).
 
+- A basic UDP client.
+
 Examples
 ========
 
