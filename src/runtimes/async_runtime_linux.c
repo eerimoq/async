@@ -46,6 +46,12 @@ static ML_UID(uid_tcp_data);
 static ML_UID(uid_tcp_data_complete);
 static ML_UID(uid_tcp_disconnected);
 static ML_UID(uid_worker_job);
+static ML_UID(uid_call_threadsafe);
+
+struct call_threadsafe_t {
+    async_func_t func;
+    void *obj_p;
+};
 
 struct worker_job_t {
     async_func_t entry;
@@ -331,6 +337,11 @@ static void async_handle_worker_job(struct worker_job_t *job_p)
     job_p->on_complete(job_p->obj_p);
 }
 
+static void async_handle_call_threadsafe(struct call_threadsafe_t *message_p)
+{
+    message_p->func(message_p->obj_p);
+}
+
 static void *async_main(struct async_runtime_linux_t *self_p)
 {
     struct ml_uid_t *uid_p;
@@ -349,6 +360,8 @@ static void *async_main(struct async_runtime_linux_t *self_p)
             async_handle_tcp_client_disconnected();
         } else if (uid_p == &uid_worker_job) {
             async_handle_worker_job(message_p);
+        } else if (uid_p == &uid_call_threadsafe) {
+            async_handle_call_threadsafe(message_p);
         }
 
         ml_message_free(message_p);
@@ -362,6 +375,19 @@ static void set_async(struct async_runtime_linux_t *self_p,
                       struct async_t *async_p)
 {
     self_p->async_p = async_p;
+}
+
+static void call_threadsafe(struct async_runtime_linux_t *self_p,
+                            async_func_t func,
+                            void *obj_p)
+{
+    struct call_threadsafe_t *message_p;
+
+    message_p = ml_message_alloc(&uid_call_threadsafe, sizeof(*message_p));
+    message_p->func = func;
+    message_p->obj_p = obj_p;
+    ml_queue_put(&self_p->async.queue, message_p);
+
 }
 
 static void job(struct worker_job_t *job_p)
@@ -522,6 +548,7 @@ struct async_runtime_t *async_runtime_linux_create()
     }
 
     runtime_p->set_async = (async_runtime_set_async_t)set_async;
+    runtime_p->call_threadsafe = (async_runtime_call_threadsafe_t)call_threadsafe;
     runtime_p->spawn = (async_runtime_spawn_t)spawn;
     runtime_p->run_forever = (async_runtime_run_forever_t)run_forever;
     runtime_p->tcp_client.init = tcp_client_init;

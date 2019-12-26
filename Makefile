@@ -18,6 +18,7 @@ examples:
 	$(MAKE) -C examples/counter build
 	$(MAKE) -C examples/http_get build
 	$(MAKE) -C examples/spawn build
+	$(MAKE) -C examples/call_threadsafe build
 
 clean:
 	$(MAKE) -C tst clean
@@ -30,6 +31,7 @@ clean:
 	$(MAKE) -C examples/counter clean
 	$(MAKE) -C examples/http_get clean
 	$(MAKE) -C examples/spawn clean
+	$(MAKE) -C examples/call_threadsafe clean
 
 help:
 	@echo "TARGET     DESCRIPTION"

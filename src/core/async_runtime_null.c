@@ -39,6 +39,18 @@ static void set_async(void *self_p, struct async_t *async_p)
     exit(1);
 }
 
+static void call_threadsafe(void *self_p,
+                            async_func_t func,
+                            void *obj_p)
+{
+    (void)self_p;
+    (void)func;
+    (void)obj_p;
+
+    fprintf(stderr, "async_call_threadsafe() not implemented.\n");
+    exit(1);
+}
+
 static int spawn(void *self_p,
                  async_func_t entry,
                  void *obj_p,
@@ -123,6 +135,7 @@ static size_t tcp_client_read(struct async_tcp_client_t *self_p,
 
 static struct async_runtime_t runtime = {
     .set_async = set_async,
+    .call_threadsafe = call_threadsafe,
     .spawn = spawn,
     .run_forever = run_forever,
     .tcp_client = {

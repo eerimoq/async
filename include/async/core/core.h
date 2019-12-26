@@ -137,11 +137,11 @@ int async_call(struct async_t *self_p,
 
 /**
  * Call given function with given argument later. This function may be
- * called from any thread.
+ * called from any thread except given async thread.
  */
-int async_call_threadsafe(struct async_t *self_p,
-                          async_func_t func,
-                          void *obj_p);
+void async_call_threadsafe(struct async_t *self_p,
+                           async_func_t func,
+                           void *obj_p);
 
 /**
  * Call given function `entry` in the worker pool. Once the entry

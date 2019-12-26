@@ -34,6 +34,10 @@
 
 typedef void (*async_runtime_set_async_t)(void *self_p, struct async_t *async_p);
 
+typedef void (*async_runtime_call_threadsafe_t)(void *self_p,
+                                                async_func_t func,
+                                                void *obj_p);
+
 typedef int (*async_runtime_spawn_t)(void *self_p,
                                      async_func_t entry,
                                      void *obj_p,
@@ -68,6 +72,7 @@ typedef size_t (*async_runtime_tcp_client_read_t)(
 struct async_runtime_t {
     async_runtime_set_async_t set_async;
     async_runtime_spawn_t spawn;
+    async_runtime_call_threadsafe_t call_threadsafe;
     async_runtime_run_forever_t run_forever;
     struct {
         async_runtime_tcp_client_init_t init;
