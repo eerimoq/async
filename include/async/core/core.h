@@ -146,17 +146,18 @@ void async_call_threadsafe(struct async_t *self_p,
 /**
  * Call given function `entry` in the worker pool. Once the entry
  * function returns, `on_complete` is called in the original async
- * context. All long-running operations should be spawned to allow the
- * async loop to continue. `obj_p` is passed to both `entry` and
- * `on_complete` as their only argument.
+ * context. All long-running operations should be called in the worker
+ * pool to allow the async loop to continue. `obj_p` is passed to both
+ * `entry` and `on_complete` as their only argument.
  *
- * It is not allowed to call any async-functions from a spawned
- * function, as it is not executed in the async thread!
+ * It is not allowed to call any async-functions from a function
+ * called in the worker pool, as it is not executed in the async
+ * thread!
  */
-int async_spawn(struct async_t *self_p,
-                async_func_t entry,
-                void *obj_p,
-                async_func_t on_complete);
+int async_call_worker_pool(struct async_t *self_p,
+                           async_func_t entry,
+                           void *obj_p,
+                           async_func_t on_complete);
 
 /**
  * Run given async object forever. This function never returns.

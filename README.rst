@@ -60,6 +60,10 @@ A runtime implements zero or more of the following features:
 
 - Networking (TCP).
 
+- Call functions in the worker pool.
+
+- Call functions from any thread.
+
 Default
 -------
 

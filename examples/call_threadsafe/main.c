@@ -51,7 +51,7 @@ int main()
 
     async_init(&async);
     async_set_runtime(&async, async_runtime_create());
-    async_spawn(&async, (async_func_t)caller, &async, NULL);
+    async_call_worker_pool(&async, (async_func_t)caller, &async, NULL);
     async_run_forever(&async);
 
     return (0);

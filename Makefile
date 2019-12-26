@@ -17,7 +17,7 @@ examples:
 	$(MAKE) -C examples/hello_world build
 	$(MAKE) -C examples/counter build
 	$(MAKE) -C examples/http_get build
-	$(MAKE) -C examples/spawn build
+	$(MAKE) -C examples/call_worker_pool build
 	$(MAKE) -C examples/call_threadsafe build
 
 clean:
@@ -30,7 +30,7 @@ clean:
 	$(MAKE) -C examples/hello_world clean
 	$(MAKE) -C examples/counter clean
 	$(MAKE) -C examples/http_get clean
-	$(MAKE) -C examples/spawn clean
+	$(MAKE) -C examples/call_worker_pool clean
 	$(MAKE) -C examples/call_threadsafe clean
 
 help:

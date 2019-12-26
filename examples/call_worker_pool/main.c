@@ -62,7 +62,7 @@ int main()
     async_set_runtime(&async, async_runtime_create());
     async_timer_init(&timer, on_timeout, 0, 1000, &async);
     async_timer_start(&timer);
-    async_spawn(&async, hello, NULL, on_complete);
+    async_call_worker_pool(&async, hello, NULL, on_complete);
     async_run_forever(&async);
 
     return (0);

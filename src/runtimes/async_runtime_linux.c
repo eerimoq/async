@@ -396,10 +396,10 @@ static void job(struct worker_job_t *job_p)
     ml_queue_put(job_p->async_queue_p, job_p);
 }
 
-static int spawn(struct async_runtime_linux_t *self_p,
-                 async_func_t entry,
-                 void *obj_p,
-                 async_func_t on_complete)
+static int call_worker_pool(struct async_runtime_linux_t *self_p,
+                            async_func_t entry,
+                            void *obj_p,
+                            async_func_t on_complete)
 {
     struct worker_job_t *job_p;
 
@@ -549,7 +549,7 @@ struct async_runtime_t *async_runtime_linux_create()
 
     runtime_p->set_async = (async_runtime_set_async_t)set_async;
     runtime_p->call_threadsafe = (async_runtime_call_threadsafe_t)call_threadsafe;
-    runtime_p->spawn = (async_runtime_spawn_t)spawn;
+    runtime_p->call_worker_pool = (async_runtime_call_worker_pool_t)call_worker_pool;
     runtime_p->run_forever = (async_runtime_run_forever_t)run_forever;
     runtime_p->tcp_client.init = tcp_client_init;
     runtime_p->tcp_client.connect = tcp_client_connect;

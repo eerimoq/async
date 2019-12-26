@@ -159,19 +159,19 @@ static void on_complete_default(void *obj_p)
     (void)obj_p;
 }
 
-int async_spawn(struct async_t *self_p,
-                async_func_t entry,
-                void *obj_p,
-                async_func_t on_complete)
+int async_call_worker_pool(struct async_t *self_p,
+                           async_func_t entry,
+                           void *obj_p,
+                           async_func_t on_complete)
 {
     if (on_complete == NULL) {
         on_complete = on_complete_default;
     }
 
-    return (self_p->runtime_p->spawn(self_p->runtime_p->obj_p,
-                                     entry,
-                                     obj_p,
-                                     on_complete));
+    return (self_p->runtime_p->call_worker_pool(self_p->runtime_p->obj_p,
+                                                entry,
+                                                obj_p,
+                                                on_complete));
 }
 
 void async_run_forever(struct async_t *self_p)

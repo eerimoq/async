@@ -51,17 +51,17 @@ static void call_threadsafe(void *self_p,
     exit(1);
 }
 
-static int spawn(void *self_p,
-                 async_func_t entry,
-                 void *obj_p,
-                 async_func_t on_complete)
+static int call_worker_pool(void *self_p,
+                            async_func_t entry,
+                            void *obj_p,
+                            async_func_t on_complete)
 {
     (void)self_p;
     (void)entry;
     (void)obj_p;
     (void)on_complete;
 
-    fprintf(stderr, "async_spawn() not implemented.\n");
+    fprintf(stderr, "async_call_worker_pool() not implemented.\n");
     exit(1);
 }
 
@@ -136,7 +136,7 @@ static size_t tcp_client_read(struct async_tcp_client_t *self_p,
 static struct async_runtime_t runtime = {
     .set_async = set_async,
     .call_threadsafe = call_threadsafe,
-    .spawn = spawn,
+    .call_worker_pool = call_worker_pool,
     .run_forever = run_forever,
     .tcp_client = {
         .init = tcp_client_init,

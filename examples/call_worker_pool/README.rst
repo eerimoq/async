@@ -1,8 +1,8 @@
 About
 =====
 
-Spawn a function that sleeps for 5 seconds. In parallel a periodic
-timer is running.
+Call a function that sleeps for 5 seconds in the worker pool. In
+parallel a periodic timer is running.
 
 Compile and run
 ===============
