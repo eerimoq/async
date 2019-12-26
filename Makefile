@@ -17,6 +17,7 @@ examples:
 	$(MAKE) -C examples/hello_world build
 	$(MAKE) -C examples/counter build
 	$(MAKE) -C examples/http_get build
+	$(MAKE) -C examples/spawn build
 
 clean:
 	$(MAKE) -C tst clean
@@ -28,6 +29,7 @@ clean:
 	$(MAKE) -C examples/hello_world clean
 	$(MAKE) -C examples/counter clean
 	$(MAKE) -C examples/http_get clean
+	$(MAKE) -C examples/spawn clean
 
 help:
 	@echo "TARGET     DESCRIPTION"
