@@ -89,6 +89,7 @@ struct async_func_queue_t {
 
 struct async_t {
     int tick_in_ms;
+    uint64_t time_ms;
     struct async_timer_list_t running_timers;
     struct async_func_queue_t funcs;
     struct async_func_queue_elem_t elems[ASYNC_FUNC_QUEUE_MAX];
@@ -122,6 +123,11 @@ void async_destroy(struct async_t *self_p);
  * Advance the async time one tick. Should be called periodically.
  */
 void async_tick(struct async_t *self_p);
+
+/**
+ * Get the cached current time in milliseconds.
+ */
+uint64_t async_now(struct async_t *self_p);
 
 /**
  * Returns once all async functions have been called.
