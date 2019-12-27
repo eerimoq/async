@@ -81,20 +81,19 @@ The default runtime does not implement any runtime features. It's
 designed for minimal dependencies and easy integration in any
 application.
 
-Typical usage with periodic time advance:
+Typical usage:
 
 .. code-block:: c
 
    async_init(&async);
+   timeout_ms = 0;
    ...
    while (true) {
-       epoll_wait(...);
+       timer_update(timeout_ms);
+       epoll_wait();
        ...
-       if (timeout) {
-           async_process(&async, 100);
-       } else {
-           async_process(&async, 0);
-       }
+       time_advance_ms = ...;
+       timeout_ms = async_process(&async, time_advance_ms);
    }
 
 Native
