@@ -28,7 +28,7 @@ TEST(single_shot_timer)
                      &async);
     counter.value = 0;
     async_timer_start(&counter.timer);
-    async_process(&async, 100);
+    ASSERT_EQ(async_process(&async, 100), -1);
     ASSERT_EQ(counter.value, 1);
     async_destroy(&async);
 }
@@ -69,7 +69,7 @@ TEST(single_shot_timer_stop_expired_before_handled)
     counter.value = 0;
     async_timer_start(&counter.timer);
     async_call(&async, (async_func_t)stop_timer, &counter.timer);
-    async_process(&async, 100);
+    ASSERT_EQ(async_process(&async, 100), -1);
     ASSERT_EQ(counter.value, 0);
     async_destroy(&async);
 }
@@ -108,34 +108,34 @@ TEST(initial_and_repeat)
     async_timer_start(&counter.timer);
 
     /* Initial timeout. */
-    async_process(&async, 300);
+    ASSERT_EQ(async_process(&async, 300), 100);
     ASSERT_EQ(counter.value, 1);
 
     /* Repeated timeout 1. */
-    async_process(&async, 100);
+    ASSERT_EQ(async_process(&async, 100), 100);
     ASSERT_EQ(counter.value, 2);
 
     /* Repeated timeout 2. */
-    async_process(&async, 100);
+    ASSERT_EQ(async_process(&async, 100), 100);
     ASSERT_EQ(counter.value, 3);
 
     /* Repeated timeout 3. */
-    async_process(&async, 100);
+    ASSERT_EQ(async_process(&async, 100), 100);
     ASSERT_EQ(counter.value, 4);
 
     /* Change repeat. Takes effect after current expiry. */
     async_timer_set_repeat(&counter.timer, 200);
 
     /* Repeated timeout 4. */
-    async_process(&async, 100);
+    ASSERT_EQ(async_process(&async, 100), 200);
     ASSERT_EQ(counter.value, 5);
 
     /* Repeated timeout 5. */
-    async_process(&async, 200);
+    ASSERT_EQ(async_process(&async, 200), 200);
     ASSERT_EQ(counter.value, 6);
 
     /* Repeated timeout 6. */
-    async_process(&async, 200);
+    ASSERT_EQ(async_process(&async, 200), 200);
     ASSERT_EQ(counter.value, 7);
 
     /* Stop the timer, set initial and repeat and start it again. */
@@ -145,15 +145,15 @@ TEST(initial_and_repeat)
     async_timer_start(&counter.timer);
 
     /* Inital timeout. */
-    async_process(&async, 0);
+    ASSERT_EQ(async_process(&async, 0), 100);
     ASSERT_EQ(counter.value, 8);
 
     /* Repeated timeout 1. */
-    async_process(&async, 100);
+    ASSERT_EQ(async_process(&async, 100), 100);
     ASSERT_EQ(counter.value, 9);
 
     /* Repeated timeout 2. */
-    async_process(&async, 100);
+    ASSERT_EQ(async_process(&async, 100), 100);
     ASSERT_EQ(counter.value, 10);
 
     async_destroy(&async);
@@ -179,7 +179,7 @@ TEST(restart_with_outstanding_timeout)
     counter.value = 0;
     async_timer_start(&counter.timer);
     async_call(&async, (async_func_t)restart_timer, &counter.timer);
-    async_process(&async, 100);
+    ASSERT_EQ(async_process(&async, 100), 0);
     ASSERT_EQ(counter.value, 0);
     async_destroy(&async);
 }
@@ -200,11 +200,11 @@ TEST(restart_with_outstanding_timeouts)
     /* Ignore 5 timeouts.  */
     async_timer_start(&counter.timer);
     async_timer_stop(&counter.timer);
-    async_process(&async, 500);
+    ASSERT_EQ(async_process(&async, 500), -1);
 
     /* Start again and count 3 timeouts. */
     async_timer_start(&counter.timer);
-    async_process(&async, 200);
+    ASSERT_EQ(async_process(&async, 200), 100);
     ASSERT_EQ(counter.value, 3);
 
     async_destroy(&async);
@@ -232,7 +232,7 @@ TEST(multiple_timers)
     }
 
     /* 0 ms timers expires. */
-    async_process(&async, 5);
+    ASSERT_EQ(async_process(&async, 5), 5);
     ASSERT_EQ(counters[0].value, 0)
     ASSERT_EQ(counters[1].value, 1)
     ASSERT_EQ(counters[2].value, 0)
@@ -245,7 +245,7 @@ TEST(multiple_timers)
     ASSERT_EQ(counters[9].value, 1)
 
     /* 10 ms timer expire. */
-    async_process(&async, 10);
+    ASSERT_EQ(async_process(&async, 5), 40);
     ASSERT_EQ(counters[0].value, 0)
     ASSERT_EQ(counters[1].value, 1)
     ASSERT_EQ(counters[2].value, 0)
@@ -258,7 +258,7 @@ TEST(multiple_timers)
     ASSERT_EQ(counters[9].value, 1)
 
     /* 50 ms timers expires. */
-    async_process(&async, 40);
+    ASSERT_EQ(async_process(&async, 40), 25);
     ASSERT_EQ(counters[0].value, 1)
     ASSERT_EQ(counters[1].value, 1)
     ASSERT_EQ(counters[2].value, 0)
@@ -271,7 +271,7 @@ TEST(multiple_timers)
     ASSERT_EQ(counters[9].value, 1)
 
     /* 75 ms timer expire. */
-    async_process(&async, 25);
+    ASSERT_EQ(async_process(&async, 25), 15);
     ASSERT_EQ(counters[0].value, 1)
     ASSERT_EQ(counters[1].value, 1)
     ASSERT_EQ(counters[2].value, 0)
@@ -284,7 +284,7 @@ TEST(multiple_timers)
     ASSERT_EQ(counters[9].value, 1)
 
     /* 90 ms timer expire. */
-    async_process(&async, 15);
+    ASSERT_EQ(async_process(&async, 15), 10);
     ASSERT_EQ(counters[0].value, 1)
     ASSERT_EQ(counters[1].value, 1)
     ASSERT_EQ(counters[2].value, 0)
@@ -297,7 +297,7 @@ TEST(multiple_timers)
     ASSERT_EQ(counters[9].value, 1)
 
     /* 100 ms timers expires. */
-    async_process(&async, 10);
+    ASSERT_EQ(async_process(&async, 10), -1);
     ASSERT_EQ(counters[0].value, 1)
     ASSERT_EQ(counters[1].value, 1)
     ASSERT_EQ(counters[2].value, 1)
@@ -332,7 +332,7 @@ TEST(stop_multiple_timers)
     }
 
     /* 0 ms timers expires. */
-    async_process(&async, 5);
+    ASSERT_EQ(async_process(&async, 5), 5);
     ASSERT_EQ(counters[0].value, 0);
     ASSERT_EQ(counters[1].value, 1);
     ASSERT_EQ(counters[2].value, 0);
@@ -355,7 +355,7 @@ TEST(stop_multiple_timers)
     async_timer_stop(&counters[8].timer);
 
     /* Just before 50 ms timers expires. */
-    async_process(&async, 40);
+    ASSERT_EQ(async_process(&async, 40), 5);
     ASSERT_EQ(counters[0].value, 0);
     ASSERT_EQ(counters[1].value, 1);
     ASSERT_EQ(counters[2].value, 0);
@@ -368,7 +368,7 @@ TEST(stop_multiple_timers)
     ASSERT_EQ(counters[9].value, 1);
 
     /* 50 ms timers expires. */
-    async_process(&async, 5);
+    ASSERT_EQ(async_process(&async, 5), 25);
     ASSERT_EQ(counters[0].value, 1);
     ASSERT_EQ(counters[1].value, 1);
     ASSERT_EQ(counters[2].value, 0);
@@ -381,7 +381,7 @@ TEST(stop_multiple_timers)
     ASSERT_EQ(counters[9].value, 1);
 
     /* Just before 75 ms timer expire. */
-    async_process(&async, 20);
+    ASSERT_EQ(async_process(&async, 20), 5);
     ASSERT_EQ(counters[0].value, 1);
     ASSERT_EQ(counters[1].value, 1);
     ASSERT_EQ(counters[2].value, 0);
@@ -394,7 +394,7 @@ TEST(stop_multiple_timers)
     ASSERT_EQ(counters[9].value, 1);
 
     /* 75 ms timer expire. */
-    async_process(&async, 5);
+    ASSERT_EQ(async_process(&async, 5), 15);
     ASSERT_EQ(counters[0].value, 1);
     ASSERT_EQ(counters[1].value, 1);
     ASSERT_EQ(counters[2].value, 0);
@@ -407,7 +407,7 @@ TEST(stop_multiple_timers)
     ASSERT_EQ(counters[9].value, 1);
 
     /* 90 ms timer expire. */
-    async_process(&async, 15);
+    ASSERT_EQ(async_process(&async, 15), -1);
     ASSERT_EQ(counters[0].value, 1);
     ASSERT_EQ(counters[1].value, 1);
     ASSERT_EQ(counters[2].value, 0);
@@ -420,7 +420,7 @@ TEST(stop_multiple_timers)
     ASSERT_EQ(counters[9].value, 1);
 
     /* No 100 ms timer should expire. */
-    async_process(&async, 10);
+    ASSERT_EQ(async_process(&async, 10), -1);
     ASSERT_EQ(counters[0].value, 1);
     ASSERT_EQ(counters[1].value, 1);
     ASSERT_EQ(counters[2].value, 0);
