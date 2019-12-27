@@ -30,17 +30,6 @@
 #include "async.h"
 #include "internal.h"
 
-static bool is_any_timer_running(struct async_timer_list_t *self_p)
-{
-    return (self_p->head_p != &self_p->tail);
-}
-
-static bool is_tail_timer(struct async_timer_list_t *self_p,
-                          struct async_timer_t *timer_p)
-{
-    return (timer_p == &self_p->tail);
-}
-
 static void on_timeout(struct async_timer_t *self_p)
 {
     self_p->number_of_outstanding_timeouts--;
@@ -66,16 +55,9 @@ static void timer_list_insert(struct async_timer_list_t *self_p,
 
     /* Find the element to insert this timer before. Delta is
        initially the timeout. */
-    while (elem_p->delta < timer_p->delta) {
-        timer_p->delta -= elem_p->delta;
+    while (elem_p->expiry_time_ms < timer_p->expiry_time_ms) {
         prev_p = elem_p;
         elem_p = elem_p->next_p;
-    }
-
-    /* Adjust the next timer for this timers delta. Do not adjust the
-       tail timer. */
-    if (!is_tail_timer(self_p, elem_p)) {
-        elem_p->delta -= timer_p->delta;
     }
 
     /* Insert the new timer into list. */
@@ -110,11 +92,6 @@ static void timer_list_remove(struct async_timer_list_t *self_p,
                 self_p->head_p = elem_p->next_p;
             }
 
-            /* Add the delta timeout to the next timer. */
-            if (!is_tail_timer(self_p, elem_p->next_p)) {
-                elem_p->next_p->delta += elem_p->delta;
-            }
-
             return;
         }
 
@@ -140,32 +117,30 @@ void async_timer_init(struct async_timer_t *self_p,
 void async_timer_set_initial(struct async_timer_t *self_p,
                              unsigned int initial)
 {
-    self_p->initial = initial;
-    self_p->initial_ticks = DIV_CEIL(initial, self_p->async_p->tick_in_ms);
-    self_p->initial_ticks++;
+    self_p->initial_ms = initial;
 }
 
 unsigned int async_timer_get_initial(struct async_timer_t *self_p)
 {
-    return (self_p->initial);
+    return (self_p->initial_ms);
 }
 
 void async_timer_set_repeat(struct async_timer_t *self_p,
                             unsigned int repeat)
 {
-    self_p->repeat = repeat;
-    self_p->repeat_ticks = DIV_CEIL(repeat, self_p->async_p->tick_in_ms);
+    self_p->repeat_ms = repeat;
 }
 
 unsigned int async_timer_get_repeat(struct async_timer_t *self_p)
 {
-    return (self_p->repeat);
+    return (self_p->repeat_ms);
 }
 
 void async_timer_start(struct async_timer_t *self_p)
 {
     async_timer_stop(self_p);
-    self_p->delta = self_p->initial_ticks;
+    self_p->expiry_time_ms = (self_p->async_p->now_ms + self_p->initial_ms);
+    self_p->expiry_time_ms += (self_p->async_p->tick_in_ms - 1);
     timer_list_insert(&self_p->async_p->running_timers, self_p);
 }
 
@@ -179,29 +154,23 @@ void async_timer_list_init(struct async_timer_list_t *self_p)
 {
     self_p->head_p = &self_p->tail;
     self_p->tail.next_p = NULL;
-    self_p->tail.delta = -1;
+    self_p->tail.expiry_time_ms = 0xffffffffffffffff;
 }
 
-void async_timer_list_tick(struct async_timer_list_t *self_p)
+void async_timer_list_process(struct async_timer_list_t *self_p,
+                              uint64_t now_ms)
 {
     struct async_timer_t *timer_p;
 
-    if (!is_any_timer_running(self_p)) {
-        return;
-    }
-
-    /* Fire all expired timers.*/
-    self_p->head_p->delta--;
-
-    while (self_p->head_p->delta == 0) {
+    while (self_p->head_p->expiry_time_ms <= now_ms) {
         timer_p = self_p->head_p;
         self_p->head_p = timer_p->next_p;
         timer_p->number_of_outstanding_timeouts++;
         async_call(timer_p->async_p, (async_func_t)on_timeout, timer_p);
 
         /* Re-set periodic timers. */
-        if (timer_p->repeat_ticks > 0) {
-            timer_p->delta = timer_p->repeat_ticks;
+        if (timer_p->repeat_ms > 0) {
+            timer_p->expiry_time_ms = (timer_p->async_p->now_ms + timer_p->repeat_ms);
             timer_list_insert(self_p, timer_p);
         }
     }

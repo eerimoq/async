@@ -57,11 +57,9 @@ typedef void (*async_timer_timeout_t)(struct async_timer_t *self_p);
 
 struct async_timer_t {
     struct async_t *async_p;
-    unsigned int initial;
-    unsigned int repeat;
-    unsigned int initial_ticks;
-    unsigned int repeat_ticks;
-    unsigned int delta;
+    unsigned int initial_ms;
+    unsigned int repeat_ms;
+    uint64_t expiry_time_ms;
     async_timer_timeout_t on_timeout;
     int number_of_outstanding_timeouts;
     int number_of_timeouts_to_ignore;
@@ -89,7 +87,7 @@ struct async_func_queue_t {
 
 struct async_t {
     int tick_in_ms;
-    uint64_t time_ms;
+    uint64_t now_ms;
     struct async_timer_list_t running_timers;
     struct async_func_queue_t funcs;
     struct async_func_queue_elem_t elems[ASYNC_FUNC_QUEUE_MAX];

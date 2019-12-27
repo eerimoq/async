@@ -90,7 +90,7 @@ static int async_func_queue_put(struct async_func_queue_t *self_p,
 void async_init(struct async_t *self_p)
 {
     self_p->tick_in_ms = 100;
-    self_p->time_ms = 0;
+    self_p->now_ms = 0;
     async_timer_list_init(&self_p->running_timers);
     async_func_queue_init(&self_p->funcs,
                           &self_p->elems[0],
@@ -138,12 +138,13 @@ void async_process(struct async_t *self_p)
 
 void async_tick(struct async_t *self_p)
 {
-    async_timer_list_tick(&self_p->running_timers);
+    self_p->now_ms += self_p->tick_in_ms;
+    async_timer_list_process(&self_p->running_timers, self_p->now_ms);
 }
 
 uint64_t async_now(struct async_t *self_p)
 {
-    return (self_p->time_ms);
+    return (self_p->now_ms);
 }
 
 int async_call(struct async_t *self_p, async_func_t func, void *obj_p)
