@@ -86,7 +86,6 @@ struct async_func_queue_t {
 };
 
 struct async_t {
-    int tick_in_ms;
     uint64_t now_ms;
     struct async_timer_list_t running_timers;
     struct async_func_queue_t funcs;
@@ -101,11 +100,6 @@ struct async_t {
 void async_init(struct async_t *self_p);
 
 /**
- * Set the tick duration in milliseconds for given async object.
- */
-void async_set_tick_in_ms(struct async_t *self_p, int tick_in_ms);
-
-/**
  * Set the runtime for given async object. The default runtime exits
  * the program if used.
  */
@@ -118,19 +112,11 @@ void async_set_runtime(struct async_t *self_p,
 void async_destroy(struct async_t *self_p);
 
 /**
- * Advance the async time one tick. Should be called periodically.
+ * Evaluates timers and calls all async functions. Returns the time in
+ * milliseconds until the next timer expires, or -1 if no timer is
+ * running.
  */
-void async_tick(struct async_t *self_p);
-
-/**
- * Get the cached current time in milliseconds.
- */
-uint64_t async_now(struct async_t *self_p);
-
-/**
- * Returns once all async functions have been called.
- */
-void async_process(struct async_t *self_p);
+int async_process(struct async_t *self_p, unsigned int time_advance_ms);
 
 /**
  * Call given function with given argument later.

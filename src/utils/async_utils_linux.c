@@ -67,6 +67,8 @@ static ssize_t stdin_write(struct async_channel_t *self_p,
 
 int async_utils_linux_create_periodic_timer(struct async_t *async_p)
 {
+    (void)async_p;
+
     int timer_fd;
     struct itimerspec timeout;
 
@@ -77,9 +79,9 @@ int async_utils_linux_create_periodic_timer(struct async_t *async_p)
     }
 
     timeout.it_value.tv_sec = 0;
-    timeout.it_value.tv_nsec = async_p->tick_in_ms * 1000000;
+    timeout.it_value.tv_nsec = 100000000;
     timeout.it_interval.tv_sec= 0;
-    timeout.it_interval.tv_nsec = async_p->tick_in_ms * 1000000;
+    timeout.it_interval.tv_nsec = 100000000;
     timerfd_settime(timer_fd, 0, &timeout, NULL);
 
     return (timer_fd);
@@ -97,7 +99,7 @@ void async_utils_linux_handle_timeout(struct async_t *async_p,
         async_utils_linux_fatal_perror("read timer");
     }
 
-    async_tick(async_p);
+    async_process(async_p, 100);
 }
 
 int async_utils_linux_init_periodic_timer(struct async_t *async_p,

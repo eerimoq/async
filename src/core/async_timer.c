@@ -30,6 +30,11 @@
 #include "async.h"
 #include "internal.h"
 
+static bool is_any_timer_running(struct async_timer_list_t *self_p)
+{
+    return (self_p->head_p != &self_p->tail);
+}
+
 static void on_timeout(struct async_timer_t *self_p)
 {
     self_p->number_of_outstanding_timeouts--;
@@ -140,7 +145,6 @@ void async_timer_start(struct async_timer_t *self_p)
 {
     async_timer_stop(self_p);
     self_p->expiry_time_ms = (self_p->async_p->now_ms + self_p->initial_ms);
-    self_p->expiry_time_ms += (self_p->async_p->tick_in_ms - 1);
     timer_list_insert(&self_p->async_p->running_timers, self_p);
 }
 
@@ -170,8 +174,22 @@ void async_timer_list_process(struct async_timer_list_t *self_p,
 
         /* Re-set periodic timers. */
         if (timer_p->repeat_ms > 0) {
-            timer_p->expiry_time_ms = (timer_p->async_p->now_ms + timer_p->repeat_ms);
+            timer_p->expiry_time_ms += timer_p->repeat_ms;
             timer_list_insert(self_p, timer_p);
         }
     }
+}
+
+int async_timer_list_next_timeout(struct async_timer_list_t *self_p,
+                                  uint64_t now_ms)
+{
+    int time_until_next_timeout;
+
+    if (is_any_timer_running(self_p)) {
+        time_until_next_timeout = (int)(self_p->head_p->expiry_time_ms - now_ms);
+    } else {
+        time_until_next_timeout = -1;
+    }
+
+    return (time_until_next_timeout);
 }

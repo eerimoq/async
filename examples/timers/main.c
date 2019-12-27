@@ -51,8 +51,7 @@ int main()
             break;
         }
 
-        async_tick(&async);
-        async_process(&async);
+        async_process(&async, 100);
     }
 
     return (1);

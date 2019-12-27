@@ -66,7 +66,7 @@ Runtimes
 
 A runtime implements zero or more of the following features:
 
-- Tick timers.
+- Advance time.
 
 - Networking (TCP).
 
@@ -81,7 +81,7 @@ The default runtime does not implement any runtime features. It's
 designed for minimal dependencies and easy integration in any
 application.
 
-Typical usage:
+Typical usage with periodic time advance:
 
 .. code-block:: c
 
@@ -91,9 +91,10 @@ Typical usage:
        epoll_wait(...);
        ...
        if (timeout) {
-           async_tick(&async);
+           async_process(&async, 100);
+       } else {
+           async_process(&async, 0);
        }
-       async_process(&async);
    }
 
 Native

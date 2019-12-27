@@ -58,9 +58,9 @@ int main()
             } else if (event.data.fd == fileno(stdin)) {
                 async_utils_linux_channel_stdin_handle(&channel);
             }
-        }
 
-        async_process(&async);
+            async_process(&async, 0);
+        }
     }
 
     return (1);

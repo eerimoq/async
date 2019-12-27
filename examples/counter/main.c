@@ -87,9 +87,9 @@ int main()
             } else if (event.data.fd == fileno(stdin)) {
                 handle_stdin(&counter);
             }
-        }
 
-        async_process(&async);
+            async_process(&async, 0);
+        }
     }
 
     return (1);

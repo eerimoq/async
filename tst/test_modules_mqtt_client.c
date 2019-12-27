@@ -9,14 +9,6 @@ static async_tcp_client_disconnected_t tcp_on_disconnected;
 static async_tcp_client_input_t tcp_on_input;
 static struct async_tcp_client_t *tcp_p;
 
-static void tick_many(struct async_t *async_p, int ticks)
-{
-    while (ticks > 0) {
-        async_tick(async_p);
-        ticks--;
-    }
-}
-
 static void save_tcp_callbacks(struct async_tcp_client_t *self_p,
                                async_tcp_client_connected_t on_connected,
                                async_tcp_client_disconnected_t on_disconnected,
@@ -500,14 +492,12 @@ TEST(ping)
 
     /* First ping-pong. */
     mock_prepare_pingreq();
-    tick_many(&async, 101);
-    async_process(&async);
+    async_process(&async, 10100);
     input_packet_pingresp();
 
     /* Second ping-pong. */
     mock_prepare_pingreq();
-    tick_many(&async, 101);
-    async_process(&async);
+    async_process(&async, 10100);
     input_packet_pingresp();
 
     assert_stop(&client);
@@ -536,15 +526,13 @@ TEST(reconnect_after_tcp_disconnect)
        should have been sent (10 seconds, wait 15 to be sure). */
     for (i = 0; i < 15; i++) {
         async_tcp_client_connect_mock_once("foo", 1883);
-        tick_many(&async, 11);
-        async_process(&async);
+        async_process(&async, 1100);
         tcp_on_connected(tcp_p, -1);
     }
 
     /* Reconnects after 1 second, make it successful. */
     async_tcp_client_connect_mock_once("foo", 1883);
-    tick_many(&async, 11);
-    async_process(&async);
+    async_process(&async, 1100);
     async_tcp_client_write_mock_once(sizeof(connect));
     async_tcp_client_write_mock_set_buf_p_in(&connect[0], sizeof(connect));
     tcp_on_connected(tcp_p, 0);
@@ -552,8 +540,7 @@ TEST(reconnect_after_tcp_disconnect)
 
     /* ping-pong after 10 seconds. */
     mock_prepare_pingreq();
-    tick_many(&async, 101);
-    async_process(&async);
+    async_process(&async, 10100);
     input_packet_pingresp();
 
     assert_stop(&client);
