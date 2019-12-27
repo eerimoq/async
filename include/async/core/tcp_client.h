@@ -30,6 +30,7 @@
 #define ASYNC_TCP_CLIENT_H
 
 #include "async/core/core.h"
+#include "async/core/ssl.h"
 
 struct async_tcp_client_t {
     struct async_t *async_p;
@@ -50,6 +51,13 @@ void async_tcp_client_init(struct async_tcp_client_t *self_p,
                            async_tcp_client_disconnected_t on_disconnected,
                            async_tcp_client_input_t on_input,
                            struct async_t *async_p);
+
+/**
+ * Make given TCP client use given SSL context to encrypt and possible
+ * authenticate the connection.
+ */
+void async_tcp_client_set_ssl_context(struct async_tcp_client_t *self_p,
+                                      struct async_ssl_context_t *ssl_context_p);
 
 /**
  * Opens a TCP connection to a remote host. on_connect_complete is
