@@ -36,6 +36,8 @@
 /* Error codes. */
 #define ASYNC_ERROR_NOT_IMPLMENETED              1
 #define ASYNC_ERROR_QUEUE_FULL                   2
+#define ASYNC_ERROR_TIMER_NO_ACTION              3
+#define ASYNC_ERROR_TIMER_LAST_STOPPED           4
 
 #define ASYNC_FUNC_QUEUE_MAX                     (32 + 1)
 
@@ -67,10 +69,9 @@ struct async_timer_t {
 };
 
 struct async_timer_list_t {
-    /* List of timers sorted by expiry time. */
     struct async_timer_t *head_p;
-    /* Tail element of list. */
     struct async_timer_t tail;
+    uint64_t latest_expiry_time_ms;
 };
 
 struct async_func_queue_elem_t {
@@ -86,7 +87,6 @@ struct async_func_queue_t {
 };
 
 struct async_t {
-    uint64_t now_ms;
     struct async_timer_list_t running_timers;
     struct async_func_queue_t funcs;
     struct async_func_queue_elem_t elems[ASYNC_FUNC_QUEUE_MAX];
@@ -113,10 +113,11 @@ void async_destroy(struct async_t *self_p);
 
 /**
  * Evaluates timers and calls all async functions. Returns the time in
- * milliseconds until the next timer expires, or -1 if no timer is
- * running.
+ * milliseconds until the next timer expires,
+ * -ASYNC_ERROR_TIMER_NO_ACTION if no action is required, or
+ * -ASYNC_ERROR_TIMER_LAST_STOPPED if the last timer was stopped.
  */
-int async_process(struct async_t *self_p, unsigned int time_advance_ms);
+int async_process(struct async_t *self_p);
 
 /**
  * Call given function with given argument later.
@@ -165,24 +166,24 @@ void async_timer_init(struct async_timer_t *self_p,
                       struct async_t *async_p);
 
 /**
- * Set the initial timeout in miliseconds.
+ * Set the initial timeout in milliseconds.
  */
 void async_timer_set_initial(struct async_timer_t *self_p,
                              unsigned int initial);
 
 /**
- * Get the initial timeout in miliseconds.
+ * Get the initial timeout in milliseconds.
  */
 unsigned int async_timer_get_initial(struct async_timer_t *self_p);
 
 /**
- * Set the repeat timeout in miliseconds.
+ * Set the repeat timeout in milliseconds.
  */
 void async_timer_set_repeat(struct async_timer_t *self_p,
                             unsigned int repeat);
 
 /**
- * Get the repeat timeout in miliseconds.
+ * Get the repeat timeout in milliseconds.
  */
 unsigned int async_timer_get_repeat(struct async_timer_t *self_p);
 

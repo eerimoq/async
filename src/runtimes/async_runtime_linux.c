@@ -67,9 +67,11 @@ struct async_runtime_linux_t {
         pthread_t pthread;
     } io;
     struct {
+        struct ml_timer_t timer;
         struct ml_queue_t queue;
         pthread_t pthread;
     } async;
+    struct ml_timer_handler_t timer_handler;
     struct ml_worker_pool_t worker_pool;
     struct async_t *async_p;
 };
@@ -131,17 +133,6 @@ static void read_buf(int fd, void *buf_p, size_t size)
     if (res != (ssize_t)size) {
         async_utils_linux_fatal_perror("read");
     }
-}
-
-static void io_handle_timeout(struct async_runtime_linux_t *self_p,
-                              int timer_fd)
-{
-    uint64_t value;
-    void *message_p;
-
-    read_buf(timer_fd, &value, sizeof(value));
-    message_p = ml_message_alloc(&uid_timeout, 0);
-    ml_queue_put(&self_p->async.queue, message_p);
 }
 
 static void io_handle_tcp_client_connect(struct async_runtime_linux_t *self_p,
@@ -256,7 +247,6 @@ static void io_handle_socket(struct async_runtime_linux_t *self_p,
 static void *io_main(struct async_runtime_linux_t *self_p)
 {
     ssize_t res;
-    int timer_fd;
     int nfds;
     int epoll_fd;
     struct epoll_event event;
@@ -264,20 +254,6 @@ static void *io_main(struct async_runtime_linux_t *self_p)
     epoll_fd = epoll_create1(0);
 
     if (epoll_fd == -1) {
-        return (NULL);
-    }
-
-    timer_fd = async_utils_linux_create_periodic_timer(self_p->async_p);
-
-    if (timer_fd == -1) {
-        return (NULL);
-    }
-
-    event.events = EPOLLIN;
-    event.data.fd = timer_fd;
-    res = epoll_ctl(epoll_fd, EPOLL_CTL_ADD, timer_fd, &event);
-
-    if (res == -1) {
         return (NULL);
     }
 
@@ -293,9 +269,7 @@ static void *io_main(struct async_runtime_linux_t *self_p)
         nfds = epoll_wait(epoll_fd, &event, 1, -1);
 
         if (nfds == 1) {
-            if (event.data.fd == timer_fd) {
-                io_handle_timeout(self_p, timer_fd);
-            } else if (event.data.fd == self_p->io.fd) {
+            if (event.data.fd == self_p->io.fd) {
                 io_handle_async(self_p, epoll_fd);
             } else {
                 io_handle_socket(self_p, epoll_fd);
@@ -341,15 +315,22 @@ static void *async_main(struct async_runtime_linux_t *self_p)
 {
     struct ml_uid_t *uid_p;
     void *message_p;
-    int time_advance_ms;
-    
+    int timeout_ms;
+
     while (true) {
-        time_advance_ms = 0;
+        timeout_ms = async_process(self_p->async_p);
+
+        if (timeout_ms >= 0) {
+            ml_timer_handler_timer_start(&self_p->async.timer,
+                                         timeout_ms,
+                                         0);
+        } else if (timeout_ms == -ASYNC_ERROR_TIMER_LAST_STOPPED) {
+            ml_timer_handler_timer_stop(&self_p->async.timer);
+        }
+
         uid_p = ml_queue_get(&self_p->async.queue, &message_p);
-        
-        if (uid_p == &uid_timeout) {
-            time_advance_ms = 100;
-        } else if (uid_p == &uid_tcp_connect_complete) {
+
+        if (uid_p == &uid_tcp_connect_complete) {
             async_handle_tcp_client_connected(message_p);
         } else if (uid_p == &uid_tcp_data) {
             async_handle_tcp_client_input();
@@ -362,7 +343,6 @@ static void *async_main(struct async_runtime_linux_t *self_p)
         }
 
         ml_message_free(message_p);
-        async_process(self_p->async_p, time_advance_ms);
     }
 
     return (NULL);
@@ -566,8 +546,13 @@ struct async_runtime_t *async_runtime_linux_create()
         return (NULL);
     }
 
+    ml_timer_handler_init(&self_p->timer_handler);
     ml_queue_init(&self_p->io.queue, 32);
     ml_queue_set_on_put(&self_p->io.queue, (ml_queue_put_t)on_put, &self_p->io.fd);
+    ml_timer_handler_timer_init(&self_p->timer_handler,
+                                &self_p->async.timer,
+                                &uid_timeout,
+                                &self_p->async.queue);
     ml_queue_init(&self_p->async.queue, 32);
     ml_worker_pool_init(&self_p->worker_pool, 4, 32);
     runtime_p->obj_p = self_p;

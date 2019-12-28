@@ -45,7 +45,7 @@ $(BUILD)/nala_mocks.h: $(TESTS)
 	echo "MOCKGEN $^"
 	mkdir -p $(BUILD)
 	[ -f nala_mocks.h ] || touch $(BUILD)/nala_mocks.h
-	cat $(TESTS) > $(TESTS_C)
+	cat $(TESTS) $(ASYNC_ROOT)/tst/utils/utils.c > $(TESTS_C)
 	$(CC) $(INC:%=-I%) -D_GNU_SOURCE=1 -DNALA_GENERATE_MOCKS -E $(TESTS_C) \
 	    | $(NALA) generate_mocks -o $(BUILD)
 

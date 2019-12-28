@@ -35,10 +35,8 @@
 
 void async_timer_list_init(struct async_timer_list_t *self_p);
 
-void async_timer_list_process(struct async_timer_list_t *self_p,
-                              uint64_t now_ms);
+void async_timer_list_process(struct async_timer_list_t *self_p);
 
-int async_timer_list_next_timeout(struct async_timer_list_t *self_p,
-                                  uint64_t now_ms);
+int async_timer_list_next_timeout(struct async_timer_list_t *self_p);
 
 #endif

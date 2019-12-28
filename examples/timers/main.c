@@ -35,23 +35,15 @@ int main()
 {
     struct async_t async;
     struct timers_t timers;
-    int timer_fd;
-    ssize_t res;
-    uint64_t value;
+    int timeout_ms;
 
     async_init(&async);
     timers_init(&timers, &async);
-
-    timer_fd = async_utils_linux_create_periodic_timer(&async);
-
+    timeout_ms = 0;
+    
     while (true) {
-        res = read(timer_fd, &value, sizeof(value));
-
-        if (res != sizeof(value)) {
-            break;
-        }
-
-        async_process(&async, 100);
+        usleep(1000 * timeout_ms);
+        timeout_ms = async_process(&async);
     }
 
     return (1);

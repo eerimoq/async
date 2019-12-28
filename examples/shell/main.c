@@ -42,26 +42,27 @@ int main()
     struct my_shell_t my_shell;
     struct epoll_event event;
     struct async_channel_t channel;
+    int timeout_ms;
 
     async_init(&async);
     async_utils_linux_channel_stdin_init(&channel, &async);
     my_shell_init(&my_shell, &channel, &async);
     epoll_fd = async_utils_linux_epoll_create();
-    timer_fd = async_utils_linux_init_periodic_timer(&async, epoll_fd);
+    timer_fd = async_utils_linux_init_timer(epoll_fd);
     async_utils_linux_init_stdin(epoll_fd);
     async_utils_linux_make_stdin_unbuffered();
 
     while (true) {
+        timeout_ms = async_process(&async);
+        async_utils_linux_timer_update(timer_fd, timeout_ms);
         nfds = epoll_wait(epoll_fd, &event, 1, -1);
 
         if (nfds == 1) {
             if (event.data.fd == timer_fd) {
-                async_utils_linux_handle_timeout(&async, timer_fd);
+                async_utils_linux_handle_timeout(timer_fd);
             } else if (event.data.fd == fileno(stdin)) {
                 async_utils_linux_channel_stdin_handle(&channel);
             }
-
-            async_process(&async, 0);
         }
     }
 

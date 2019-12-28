@@ -140,8 +140,10 @@ static void input_packet_pingresp(void)
 
 static void assert_on_connected(uint8_t *connack_p,
                                 size_t length_size,
-                                size_t size)
+                                size_t size,
+                                int time_ms)
 {
+    mock_prepare_time_ms(time_ms);
     mqtt_on_connected_mock_once();
     input_packet(connack_p, length_size, size);
 }
@@ -161,7 +163,7 @@ static void assert_start_until_connected(struct async_mqtt_client_t *client_p)
     assert_start_and_on_tcp_connected(client_p,
                                       &connect[0],
                                       sizeof(connect));
-    assert_on_connected(&connack[0], 1, sizeof(connack));
+    assert_on_connected(&connack[0], 1, sizeof(connack), 0);
 }
 
 static void assert_until_connected(struct async_t *async_p,
@@ -255,7 +257,7 @@ TEST(connect_will)
     assert_start_and_on_tcp_connected(&client,
                                       &connect[0],
                                       sizeof(connect));
-    assert_on_connected(&connack[0], 1, sizeof(connack));
+    assert_on_connected(&connack[0], 1, sizeof(connack), 0);
     assert_stop(&client);
 }
 
@@ -492,12 +494,16 @@ TEST(ping)
 
     /* First ping-pong. */
     mock_prepare_pingreq();
-    async_process(&async, 10100);
+    mock_prepare_process(10000, -1);
+    ASSERT_EQ(async_process(&async), -ASYNC_ERROR_TIMER_NO_ACTION);
+    mock_prepare_time_ms(10000);
     input_packet_pingresp();
 
     /* Second ping-pong. */
     mock_prepare_pingreq();
-    async_process(&async, 10100);
+    mock_prepare_process(20000, -1);
+    ASSERT_EQ(async_process(&async), -ASYNC_ERROR_TIMER_NO_ACTION);
+    mock_prepare_time_ms(20000);
     input_packet_pingresp();
 
     assert_stop(&client);
@@ -520,27 +526,33 @@ TEST(reconnect_after_tcp_disconnect)
 
     assert_until_connected(&async, &client);
     mqtt_on_disconnected_mock_once();
+    mock_prepare_time_ms(0);
     tcp_on_disconnected(tcp_p);
 
     /* Reconnects every 1 seconds, make it fail until first ping
        should have been sent (10 seconds, wait 15 to be sure). */
-    for (i = 0; i < 15; i++) {
+    for (i = 1; i < 16; i++) {
         async_tcp_client_connect_mock_once("foo", 1883);
-        async_process(&async, 1100);
+        mock_prepare_process(i * 1000, -1);
+        async_process(&async);
+        mock_prepare_time_ms(i * 1000);
         tcp_on_connected(tcp_p, -1);
     }
 
     /* Reconnects after 1 second, make it successful. */
     async_tcp_client_connect_mock_once("foo", 1883);
-    async_process(&async, 1100);
+    mock_prepare_process(i * 1000, -1);
+    async_process(&async);
     async_tcp_client_write_mock_once(sizeof(connect));
     async_tcp_client_write_mock_set_buf_p_in(&connect[0], sizeof(connect));
     tcp_on_connected(tcp_p, 0);
-    assert_on_connected(&connack[0], 1, sizeof(connack));
+    assert_on_connected(&connack[0], 1, sizeof(connack), i * 1000);
 
     /* ping-pong after 10 seconds. */
     mock_prepare_pingreq();
-    async_process(&async, 10100);
+    mock_prepare_process(i * 1000 + 10000, -1);
+    async_process(&async);
+    mock_prepare_time_ms(i * 1000 + 10000);
     input_packet_pingresp();
 
     assert_stop(&client);

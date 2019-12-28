@@ -65,30 +65,40 @@ static ssize_t stdin_write(struct async_channel_t *self_p,
     return (write(fileno(stdout), buf_p, size));
 }
 
-int async_utils_linux_create_periodic_timer(struct async_t *async_p)
+int async_utils_linux_create_timer()
 {
-    (void)async_p;
-
-    int timer_fd;
-    struct itimerspec timeout;
-
-    timer_fd = timerfd_create(CLOCK_MONOTONIC, 0);
-
-    if (timer_fd == -1) {
-        return (timer_fd);
-    }
-
-    timeout.it_value.tv_sec = 0;
-    timeout.it_value.tv_nsec = 100000000;
-    timeout.it_interval.tv_sec= 0;
-    timeout.it_interval.tv_nsec = 100000000;
-    timerfd_settime(timer_fd, 0, &timeout, NULL);
-
-    return (timer_fd);
+    return (timerfd_create(CLOCK_MONOTONIC, 0));
 }
 
-void async_utils_linux_handle_timeout(struct async_t *async_p,
-                                      int timer_fd)
+void async_utils_linux_timer_update(int timer_fd, int timeout_ms)
+{
+    struct itimerspec timeout;
+
+    if (timeout_ms == -1) {
+        return;
+    }
+
+    if (timeout_ms > 0) {
+        timeout.it_value.tv_sec = timeout_ms / 1000;
+        timeout.it_value.tv_nsec = (timeout_ms % 1000) * 1000000;
+        timeout.it_interval.tv_sec = 0;
+        timeout.it_interval.tv_nsec = 0;
+    } else if (timeout_ms == 0) {
+        timeout.it_value.tv_sec = 0;
+        timeout.it_value.tv_nsec = 1;
+        timeout.it_interval.tv_sec = 0;
+        timeout.it_interval.tv_nsec = 0;
+    } else {
+        timeout.it_value.tv_sec = 0;
+        timeout.it_value.tv_nsec = 0;
+        timeout.it_interval.tv_sec = 0;
+        timeout.it_interval.tv_nsec = 0;
+    }
+
+    timerfd_settime(timer_fd, 0, &timeout, NULL);
+}
+
+void async_utils_linux_handle_timeout(int timer_fd)
 {
     uint64_t value;
     ssize_t res;
@@ -98,16 +108,13 @@ void async_utils_linux_handle_timeout(struct async_t *async_p,
     if (res != sizeof(value)) {
         async_utils_linux_fatal_perror("read timer");
     }
-
-    async_process(async_p, 100);
 }
 
-int async_utils_linux_init_periodic_timer(struct async_t *async_p,
-                                          int epoll_fd)
+int async_utils_linux_init_timer(int epoll_fd)
 {
     int timer_fd;
 
-    timer_fd = async_utils_linux_create_periodic_timer(async_p);
+    timer_fd = async_utils_linux_create_timer();
 
     if (timer_fd == -1) {
         async_utils_linux_fatal_perror("timer");

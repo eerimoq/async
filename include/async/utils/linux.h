@@ -38,11 +38,9 @@
 int async_utils_linux_create_periodic_timer(struct async_t *async_p);
 
 /**
- * Called when the timer expirs. Reads from the timer file descriptor
- * and calls the async tick function.
+ * Called when the timer expirs. Reads from the timer file descriptor.
  */
-void async_utils_linux_handle_timeout(struct async_t *async_p,
-                                      int timer_fd);
+void async_utils_linux_handle_timeout(int timer_fd);
 
 /**
  * Both creates and add the timer file descriptor to given epoll
@@ -50,6 +48,10 @@ void async_utils_linux_handle_timeout(struct async_t *async_p,
  */
 int async_utils_linux_init_periodic_timer(struct async_t *async_p,
                                           int epoll_fd);
+
+int async_utils_linux_init_timer(int epoll_fd);
+
+void async_utils_linux_timer_update(int timer_fd, int timeout_ms);
 
 /**
  * Create an epoll instance and return its handle.

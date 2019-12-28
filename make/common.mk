@@ -20,6 +20,7 @@ SRC += $(ASYNC_ROOT)/3pp/monolinux-c-library/src/ml.c
 SRC += $(ASYNC_ROOT)/3pp/monolinux-c-library/src/ml_libc.c
 SRC += $(ASYNC_ROOT)/3pp/monolinux-c-library/src/ml_message.c
 SRC += $(ASYNC_ROOT)/3pp/monolinux-c-library/src/ml_queue.c
+SRC += $(ASYNC_ROOT)/3pp/monolinux-c-library/src/ml_timer.c
 SRC += $(ASYNC_ROOT)/3pp/monolinux-c-library/src/ml_worker_pool.c
 
 OBJ = $(patsubst %,$(BUILD)%,$(abspath $(SRC:%.c=%.o)))

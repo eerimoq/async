@@ -484,7 +484,7 @@ static bool unpack_publish(struct async_mqtt_client_t *self_p,
 static void on_reconnect_timeout(struct async_timer_t *timer_p)
 {
     struct async_mqtt_client_t *self_p;
-
+    
     self_p = async_container_of(timer_p, typeof(*self_p), reconnect_timer);
     async_tcp_client_connect(&self_p->tcp, self_p->host_p, self_p->port);
 }
