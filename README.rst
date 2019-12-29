@@ -25,7 +25,7 @@ Features
 Wish list
 =========
 
-- Secure TCP communication with TLS (OpenSSL, BearSSL and/or
+- Secure TCP communication with TLS (OpenSSL, Mbed TLS, BearSSL and/or
   WolfSSL?).
 
 - A basic UDP client.
@@ -109,6 +109,21 @@ Typical usage:
    async_set_runtime(&async, async_runtime_create());
    ...
    async_run_forever(&async);
+
+Design
+======
+
+Input
+-----
+
+First ``*_input(self_p)`` is called to signal that data is
+available. Then ``*_read(self_p, buf_p, size)`` is called to read
+data.
+
+Output
+------
+
+Write data with ``*_write(self_p, buf_p, size)``.
 
 Unit testing
 ============
