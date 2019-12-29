@@ -66,7 +66,7 @@ Runtimes
 
 A runtime implements zero or more of the following features:
 
-- Advance time.
+- Timer handling.
 
 - Networking (TCP).
 
@@ -96,8 +96,6 @@ Typical usage:
 
 Native
 ------
-
-NOTE: This runtime is only partly implemented and should not be used!
 
 The native runtime implements all runtime features.
 
