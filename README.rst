@@ -86,14 +86,12 @@ Typical usage:
 .. code-block:: c
 
    async_init(&async);
-   timeout_ms = 0;
    ...
    while (true) {
+       timeout_ms = async_process(&async);
        timer_update(timeout_ms);
        epoll_wait();
        ...
-       time_advance_ms = ...;
-       timeout_ms = async_process(&async, time_advance_ms);
    }
 
 Native

@@ -27,12 +27,14 @@
  */
 
 #include <stdio.h>
-#include <time.h>
 #include "async.h"
 #include "internal.h"
 
 /* Expiry time of the tail timer. Can practically never be reached. */
 #define EXPIRY_TIME_MS_MAX 0xffffffffffffffffull
+
+#ifndef ASYNC_TIME_MS
+#    include <time.h>
 
 static uint64_t time_ms(void)
 {
@@ -42,6 +44,9 @@ static uint64_t time_ms(void)
 
     return ((now.tv_sec * 1000) + (now.tv_nsec / 1000000));
 }
+#else
+ASYNC_TIME_MS
+#endif
 
 static void on_timeout(struct async_timer_t *self_p)
 {
