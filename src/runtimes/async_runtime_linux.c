@@ -88,8 +88,15 @@ struct message_connect_complete_t {
 };
 
 struct message_disconnect_t {
-    struct async_tcp_client_t *tcp_p;
     int sockfd;
+};
+
+struct message_disconnected_t {
+    struct async_tcp_client_t *tcp_p;
+};
+
+struct message_data_t {
+    struct async_tcp_client_t *tcp_p;
 };
 
 struct message_data_complete_t {
@@ -107,8 +114,6 @@ struct tcp_client_t {
     int sockfd;
 };
 
-static struct async_tcp_client_t *tcp_p;
-
 static struct tcp_client_t *tcp_client(struct async_tcp_client_t *self_p)
 {
     return ((struct tcp_client_t *)(self_p->obj_p));
@@ -119,7 +124,8 @@ static struct async_runtime_linux_t *tcp_runtime(struct async_tcp_client_t *self
     return ((struct async_runtime_linux_t *)(self_p->async_p->runtime_p->obj_p));
 }
 
-static void async_tcp_client_set_sockfd(struct async_tcp_client_t *self_p, int sockfd)
+static void async_tcp_client_set_sockfd(struct async_tcp_client_t *self_p,
+                                        int sockfd)
 {
     tcp_client(self_p)->sockfd = sockfd;
 }
@@ -152,7 +158,7 @@ static void io_handle_tcp_client_connect(struct async_runtime_linux_t *self_p,
 
             if (res != -1) {
                 event.events = EPOLLIN;
-                event.data.fd = sockfd;
+                event.data.ptr = req_p->tcp_p;
                 res = epoll_ctl(epoll_fd, EPOLL_CTL_ADD, sockfd, &event);
             }
         }
@@ -165,14 +171,14 @@ static void io_handle_tcp_client_connect(struct async_runtime_linux_t *self_p,
     rsp_p = ml_message_alloc(&uid_tcp_connect_complete, sizeof(*rsp_p));
     rsp_p->tcp_p = req_p->tcp_p;
     rsp_p->sockfd = sockfd;
-    tcp_p = req_p->tcp_p;
     ml_queue_put(&self_p->async.queue, rsp_p);
 }
 
-static void io_handle_tcp_client_disconnect(int epoll_fd)
+static void io_handle_tcp_client_disconnect(int epoll_fd,
+                                            struct message_disconnect_t *ind_p)
 {
-    close(tcp_client(tcp_p)->sockfd);
-    epoll_ctl(epoll_fd, EPOLL_CTL_DEL, tcp_client(tcp_p)->sockfd, NULL);
+    close(ind_p->sockfd);
+    epoll_ctl(epoll_fd, EPOLL_CTL_DEL, ind_p->sockfd, NULL);
 }
 
 static void io_handle_tcp_client_data_complete(struct async_runtime_linux_t *self_p,
@@ -181,18 +187,19 @@ static void io_handle_tcp_client_data_complete(struct async_runtime_linux_t *sel
 {
     int sockfd;
     struct epoll_event event;
-    void *message_p;
+    struct message_disconnected_t *message_p;
 
     sockfd = tcp_client(ind_p->tcp_p)->sockfd;
 
     if (ind_p->closed) {
         close(sockfd);
         epoll_ctl(epoll_fd, EPOLL_CTL_DEL, sockfd, NULL);
-        message_p = ml_message_alloc(&uid_tcp_disconnected, 0);
+        message_p = ml_message_alloc(&uid_tcp_disconnected, sizeof(*message_p));
+        message_p->tcp_p = ind_p->tcp_p;
         ml_queue_put(&self_p->async.queue, message_p);
     } else {
         event.events = EPOLLIN;
-        event.data.fd = sockfd;
+        event.data.ptr = ind_p->tcp_p;
         epoll_ctl(epoll_fd, EPOLL_CTL_MOD, sockfd, &event);
     }
 }
@@ -216,7 +223,7 @@ static void io_handle_async(struct async_runtime_linux_t *self_p,
     if (uid_p == &uid_tcp_connect) {
         io_handle_tcp_client_connect(self_p, epoll_fd, message_p);
     } else if (uid_p == &uid_tcp_disconnect) {
-        io_handle_tcp_client_disconnect(epoll_fd);
+        io_handle_tcp_client_disconnect(epoll_fd, message_p);
     } else if (uid_p == &uid_tcp_data_complete) {
         io_handle_tcp_client_data_complete(self_p, epoll_fd, message_p);
     }
@@ -225,14 +232,16 @@ static void io_handle_async(struct async_runtime_linux_t *self_p,
 }
 
 static void io_handle_socket(struct async_runtime_linux_t *self_p,
+                             struct async_tcp_client_t *tcp_p,
                              int epoll_fd)
 {
     struct epoll_event event;
-    void *message_p;
+    struct message_data_t *message_p;
 
     event.events = 0;
     epoll_ctl(epoll_fd, EPOLL_CTL_MOD, tcp_client(tcp_p)->sockfd, &event);
-    message_p = ml_message_alloc(&uid_tcp_data, 0);
+    message_p = ml_message_alloc(&uid_tcp_data, sizeof(*message_p));
+    message_p->tcp_p = tcp_p;
     ml_queue_put(&self_p->async.queue, message_p);
 }
 
@@ -250,7 +259,7 @@ static void *io_main(struct async_runtime_linux_t *self_p)
     }
 
     event.events = EPOLLIN;
-    event.data.fd = self_p->io.fd;
+    event.data.ptr = &self_p->io.fd;
     res = epoll_ctl(epoll_fd, EPOLL_CTL_ADD, self_p->io.fd, &event);
 
     if (res == -1) {
@@ -261,10 +270,10 @@ static void *io_main(struct async_runtime_linux_t *self_p)
         nfds = epoll_wait(epoll_fd, &event, 1, -1);
 
         if (nfds == 1) {
-            if (event.data.fd == self_p->io.fd) {
+            if (event.data.ptr == &self_p->io.fd) {
                 io_handle_async(self_p, epoll_fd);
             } else {
-                io_handle_socket(self_p, epoll_fd);
+                io_handle_socket(self_p, event.data.ptr, epoll_fd);
             }
         }
     }
@@ -282,15 +291,16 @@ static void async_handle_tcp_client_connected(
     tcp_client(message_p->tcp_p)->on_connected.func(message_p->tcp_p, res);
 }
 
-static void async_handle_tcp_client_input(void)
+static void async_handle_tcp_client_data(struct message_data_t *req_p)
 {
-    tcp_client(tcp_p)->on_input(tcp_p);
+    tcp_client(req_p->tcp_p)->on_input(req_p->tcp_p);
 }
 
-static void async_handle_tcp_client_disconnected(void)
+static void async_handle_tcp_client_disconnected(
+    struct message_disconnected_t *ind_p)
 {
-    async_tcp_client_set_sockfd(tcp_p, -1);
-    tcp_client(tcp_p)->on_disconnected(tcp_p);
+    async_tcp_client_set_sockfd(ind_p->tcp_p, -1);
+    tcp_client(ind_p->tcp_p)->on_disconnected(ind_p->tcp_p);
 }
 
 static void async_handle_worker_job(struct worker_job_t *job_p)
@@ -325,9 +335,9 @@ static void *async_main(struct async_runtime_linux_t *self_p)
         if (uid_p == &uid_tcp_connect_complete) {
             async_handle_tcp_client_connected(message_p);
         } else if (uid_p == &uid_tcp_data) {
-            async_handle_tcp_client_input();
+            async_handle_tcp_client_data(message_p);
         } else if (uid_p == &uid_tcp_disconnected) {
-            async_handle_tcp_client_disconnected();
+            async_handle_tcp_client_disconnected(message_p);
         } else if (uid_p == &uid_worker_job) {
             async_handle_worker_job(message_p);
         } else if (uid_p == &uid_call_threadsafe) {

@@ -32,8 +32,8 @@
 
 static void do_connect(struct echo_client_t *self_p)
 {
-    printf("Connecting to 'localhost:33000'...\n");
-    async_tcp_client_connect(&self_p->tcp, "localhost", 33000);
+    printf("Connecting to 'localhost:%d'...\n", self_p->port);
+    async_tcp_client_connect(&self_p->tcp, "localhost", self_p->port);
 }
 
 static void on_start(struct echo_client_t *self_p)
@@ -97,8 +97,11 @@ static void on_reconnect_timeout(struct async_timer_t *timer_p)
     do_connect(self_p);
 }
 
-void echo_client_init(struct echo_client_t *self_p, struct async_t *async_p)
+void echo_client_init(struct echo_client_t *self_p,
+                      int port,
+                      struct async_t *async_p)
 {
+    self_p->port = port;
     async_tcp_client_init(&self_p->tcp,
                           on_connected,
                           on_disconnected,
