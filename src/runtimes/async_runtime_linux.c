@@ -124,17 +124,6 @@ static void async_tcp_client_set_sockfd(struct async_tcp_client_t *self_p, int s
     tcp_client(self_p)->sockfd = sockfd;
 }
 
-static void read_buf(int fd, void *buf_p, size_t size)
-{
-    ssize_t res;
-
-    res = read(fd, buf_p, size);
-
-    if (res != (ssize_t)size) {
-        async_utils_linux_fatal_perror("read");
-    }
-}
-
 static void io_handle_tcp_client_connect(struct async_runtime_linux_t *self_p,
                                          int epoll_fd,
                                          struct message_connect_t *req_p)
@@ -180,11 +169,8 @@ static void io_handle_tcp_client_connect(struct async_runtime_linux_t *self_p,
     ml_queue_put(&self_p->async.queue, rsp_p);
 }
 
-static void io_handle_tcp_client_disconnect(struct async_runtime_linux_t *self_p,
-                                            int epoll_fd)
+static void io_handle_tcp_client_disconnect(int epoll_fd)
 {
-    (void)self_p;
-
     close(tcp_client(tcp_p)->sockfd);
     epoll_ctl(epoll_fd, EPOLL_CTL_DEL, tcp_client(tcp_p)->sockfd, NULL);
 }
@@ -216,15 +202,21 @@ static void io_handle_async(struct async_runtime_linux_t *self_p,
 {
     struct ml_uid_t *uid_p;
     void *message_p;
-    uint64_t value;
+    uint64_t event;
+    ssize_t res;
 
-    read_buf(self_p->io.fd, &value, sizeof(value));
+    res = read(self_p->io.fd, &event, sizeof(event));
+
+    if (res != (ssize_t)sizeof(event)) {
+        async_utils_linux_fatal_perror("event read");
+    }
+
     uid_p = ml_queue_get(&self_p->io.queue, &message_p);
 
     if (uid_p == &uid_tcp_connect) {
         io_handle_tcp_client_connect(self_p, epoll_fd, message_p);
     } else if (uid_p == &uid_tcp_disconnect) {
-        io_handle_tcp_client_disconnect(self_p, epoll_fd);
+        io_handle_tcp_client_disconnect(epoll_fd);
     } else if (uid_p == &uid_tcp_data_complete) {
         io_handle_tcp_client_data_complete(self_p, epoll_fd, message_p);
     }
@@ -449,7 +441,7 @@ static void tcp_client_init(struct async_tcp_client_t *self_p,
     rself_p = malloc(sizeof(*rself_p));
 
     if (rself_p == NULL) {
-        return;
+        async_utils_linux_fatal_perror("tcp client malloc");
     }
 
     rself_p->on_connected.func = on_connected;

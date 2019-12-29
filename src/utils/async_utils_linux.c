@@ -65,36 +65,42 @@ static ssize_t stdin_write(struct async_channel_t *self_p,
     return (write(fileno(stdout), buf_p, size));
 }
 
-int async_utils_linux_create_timer()
+int async_utils_linux_init_timer(int epoll_fd)
 {
-    return (timerfd_create(CLOCK_MONOTONIC, 0));
+    int timer_fd;
+
+    timer_fd = timerfd_create(CLOCK_MONOTONIC, 0);
+
+    if (timer_fd == -1) {
+        async_utils_linux_fatal_perror("timer");
+    }
+
+    async_utils_linux_epoll_add_in(epoll_fd, timer_fd);
+
+    return (timer_fd);
 }
 
 void async_utils_linux_timer_update(int timer_fd, int timeout_ms)
 {
     struct itimerspec timeout;
 
-    if (timeout_ms == -1) {
+    if (timeout_ms == -ASYNC_ERROR_TIMER_NO_ACTION) {
         return;
     }
 
     if (timeout_ms > 0) {
         timeout.it_value.tv_sec = timeout_ms / 1000;
         timeout.it_value.tv_nsec = (timeout_ms % 1000) * 1000000;
-        timeout.it_interval.tv_sec = 0;
-        timeout.it_interval.tv_nsec = 0;
     } else if (timeout_ms == 0) {
         timeout.it_value.tv_sec = 0;
         timeout.it_value.tv_nsec = 1;
-        timeout.it_interval.tv_sec = 0;
-        timeout.it_interval.tv_nsec = 0;
     } else {
         timeout.it_value.tv_sec = 0;
         timeout.it_value.tv_nsec = 0;
-        timeout.it_interval.tv_sec = 0;
-        timeout.it_interval.tv_nsec = 0;
     }
 
+    timeout.it_interval.tv_sec = 0;
+    timeout.it_interval.tv_nsec = 0;
     timerfd_settime(timer_fd, 0, &timeout, NULL);
 }
 
@@ -108,21 +114,6 @@ void async_utils_linux_handle_timeout(int timer_fd)
     if (res != sizeof(value)) {
         async_utils_linux_fatal_perror("read timer");
     }
-}
-
-int async_utils_linux_init_timer(int epoll_fd)
-{
-    int timer_fd;
-
-    timer_fd = async_utils_linux_create_timer();
-
-    if (timer_fd == -1) {
-        async_utils_linux_fatal_perror("timer");
-    }
-
-    async_utils_linux_epoll_add_in(epoll_fd, timer_fd);
-
-    return (timer_fd);
 }
 
 int async_utils_linux_epoll_create(void)
