@@ -7,8 +7,6 @@
 Asynchronous framework in C for systems where low memory usage is
 important.
 
-See `libuv`_ for a mature library with similar functionality.
-
 Features
 ========
 
@@ -27,8 +25,6 @@ Wish list
 
 - Secure TCP communication with TLS (OpenSSL, Mbed TLS, BearSSL and/or
   WolfSSL?).
-
-- A basic UDP client.
 
 Examples
 ========
@@ -151,7 +147,5 @@ Execute one test suite.
 
 .. |codecov| image:: https://codecov.io/gh/eerimoq/async/branch/master/graph/badge.svg
 .. _codecov: https://codecov.io/gh/eerimoq/async
-
-.. _libuv: https://github.com/libuv/libuv
 
 .. _examples folder: https://github.com/eerimoq/async/tree/master/examples
