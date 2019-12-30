@@ -111,8 +111,7 @@ Input
 -----
 
 First ``*_input(self_p)`` is called to signal that data is
-available. Then ``*_read(self_p, buf_p, size)`` is called to read
-data.
+available. Then read data with ``*_read(self_p, buf_p, size)``.
 
 Output
 ------
