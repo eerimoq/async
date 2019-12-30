@@ -1,5 +1,7 @@
 .PHONY: examples
 
+default: run
+
 all: run examples
 
 run:
@@ -14,10 +16,10 @@ examples:
 	$(MAKE) -C examples/shell build
 	$(MAKE) -C examples/mqtt_client build
 	$(MAKE) -C examples/tcp_echo_client build
+	$(MAKE) -C examples/ssl_tcp_echo_client build
 	$(MAKE) -C examples/hello_world build
 	$(MAKE) -C examples/counter build
 	$(MAKE) -C examples/http_get build
-	$(MAKE) -C examples/https_get build
 	$(MAKE) -C examples/call_worker_pool build
 	$(MAKE) -C examples/call_threadsafe build
 
@@ -28,10 +30,10 @@ clean:
 	$(MAKE) -C examples/shell clean
 	$(MAKE) -C examples/mqtt_client clean
 	$(MAKE) -C examples/tcp_echo_client clean
+	$(MAKE) -C examples/ssl_tcp_echo_client clean
 	$(MAKE) -C examples/hello_world clean
 	$(MAKE) -C examples/counter clean
 	$(MAKE) -C examples/http_get clean
-	$(MAKE) -C examples/https_get clean
 	$(MAKE) -C examples/call_worker_pool clean
 	$(MAKE) -C examples/call_threadsafe clean
 

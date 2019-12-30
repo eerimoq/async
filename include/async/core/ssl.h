@@ -30,6 +30,7 @@
 #define ASYNC_SSL_H
 
 #include <stdlib.h>
+#include "mbedtls/ssl.h"
 
 enum async_ssl_protocol_t {
     async_ssl_protocol_tls_v1_0_t
@@ -64,19 +65,33 @@ typedef void (*async_ssl_connection_transport_write_t)(
 
 struct async_ssl_context_t {
     enum async_ssl_protocol_t protocol;
-    void *conf_p;
+    mbedtls_ssl_config conf;
     int server_side;
     int verify_mode;
 };
 
 struct async_ssl_connection_t {
     struct async_ssl_context_t *context_p;
+    mbedtls_ssl_context ssl;
+    struct {
+        bool complete;
+        int res;
+    } handshake;
     async_ssl_connection_on_connected_t on_connected;
     async_ssl_connection_on_disconnected_t on_disconnected;
     async_ssl_connection_on_input_t on_input;
-    async_ssl_connection_transport_read_t transport_read;
-    async_ssl_connection_transport_write_t transport_write;
+    struct {
+        async_ssl_connection_transport_read_t read;
+        async_ssl_connection_transport_write_t write;
+    } transport;
+    struct async_t *async_p;
 };
+
+/**
+ * Initialize the module. This function must be called before any
+ * other function in this module.
+ */
+int async_ssl_module_init(void);
 
 /**
  * Initialize given SSL context. A SSL context contains settings that
@@ -126,7 +141,8 @@ int async_ssl_connection_open(
     async_ssl_connection_on_disconnected_t on_disconnected,
     async_ssl_connection_on_input_t on_input,
     async_ssl_connection_transport_read_t transport_read,
-    async_ssl_connection_transport_write_t transport_write);
+    async_ssl_connection_transport_write_t transport_write,
+    struct async_t *async_p);
 
 /**
  * Close given SSL connection.
