@@ -27,7 +27,6 @@
  */
 
 #include <stdio.h>
-#include <dbg.h>
 #include "async.h"
 #include "echo_client.h"
 
