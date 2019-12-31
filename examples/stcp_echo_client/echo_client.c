@@ -32,8 +32,8 @@
 
 static void do_connect(struct echo_client_t *self_p)
 {
-    printf("Connecting to 'localhost:%d'...\n", self_p->port);
-    async_tcp_client_connect(&self_p->tcp, "localhost", self_p->port);
+    printf("%s: Connecting to 'localhost:%d'...\n", self_p->name_p, self_p->port);
+    async_stcp_client_connect(&self_p->stcp, "localhost", self_p->port);
 }
 
 static void on_start(struct echo_client_t *self_p)
@@ -41,43 +41,45 @@ static void on_start(struct echo_client_t *self_p)
     do_connect(self_p);
 }
 
-static void on_connected(struct async_tcp_client_t *tcp_p, int res)
+static void on_connected(struct async_stcp_client_t *stcp_p, int res)
 {
     struct echo_client_t *self_p;
 
-    self_p = async_container_of(tcp_p, typeof(*self_p), tcp);
+    self_p = async_container_of(stcp_p, typeof(*self_p), stcp);
 
     if (res == 0) {
-        printf("Connected.\n");
+        printf("%s: Connected.\n", self_p->name_p);
         async_timer_start(&self_p->transmit_timer);
     } else {
-        printf("Connect failed.\n");
+        printf("%s: Connect failed.\n", self_p->name_p);
         async_timer_start(&self_p->reconnect_timer);
     }
 }
 
-static void on_disconnected(struct async_tcp_client_t *tcp_p)
+static void on_disconnected(struct async_stcp_client_t *stcp_p)
 {
     struct echo_client_t *self_p;
 
-    self_p = async_container_of(tcp_p, typeof(*self_p), tcp);
-    printf("Disconnected.\n");
+    self_p = async_container_of(stcp_p, typeof(*self_p), stcp);
+    printf("%s: Disconnected.\n", self_p->name_p);
     async_timer_stop(&self_p->transmit_timer);
     async_timer_start(&self_p->reconnect_timer);
 }
 
-static void on_input(struct async_tcp_client_t *tcp_p)
+static void on_input(struct async_stcp_client_t *stcp_p)
 {
     char buf[8];
     ssize_t size;
     struct echo_client_t *self_p;
 
-    self_p = async_container_of(tcp_p, typeof(*self_p), tcp);
-    size = async_tcp_client_read(&self_p->tcp, &buf[0], sizeof(buf));
+    self_p = async_container_of(stcp_p, typeof(*self_p), stcp);
+    size = async_stcp_client_read(&self_p->stcp, &buf[0], sizeof(buf));
 
-    printf("RX: '");
-    fwrite(&buf[0], 1, size, stdout);
-    printf("'\n");
+    if (size > 0) {
+        printf("%s: RX: '", self_p->name_p);
+        fwrite(&buf[0], 1, size, stdout);
+        printf("'\n");
+    }
 }
 
 static void on_transmit_timeout(struct async_timer_t *timer_p)
@@ -85,8 +87,8 @@ static void on_transmit_timeout(struct async_timer_t *timer_p)
     struct echo_client_t *self_p;
 
     self_p = async_container_of(timer_p, typeof(*self_p), transmit_timer);
-    printf("TX: 'Hello!'\n");
-    async_tcp_client_write(&self_p->tcp, "Hello!", 6);
+    printf("%s: TX: 'Hello!'\n", self_p->name_p);
+    async_stcp_client_write(&self_p->stcp, "Hello!", 6);
 }
 
 static void on_reconnect_timeout(struct async_timer_t *timer_p)
@@ -98,15 +100,19 @@ static void on_reconnect_timeout(struct async_timer_t *timer_p)
 }
 
 void echo_client_init(struct echo_client_t *self_p,
+                      const char *name_p,
                       int port,
+                      struct async_ssl_context_t *ssl_context_p,
                       struct async_t *async_p)
 {
+    self_p->name_p = name_p;
     self_p->port = port;
-    async_tcp_client_init(&self_p->tcp,
-                          on_connected,
-                          on_disconnected,
-                          on_input,
-                          async_p);
+    async_stcp_client_init(&self_p->stcp,
+                           ssl_context_p,
+                           on_connected,
+                           on_disconnected,
+                           on_input,
+                           async_p);
     async_timer_init(&self_p->transmit_timer,
                      on_transmit_timeout,
                      0,

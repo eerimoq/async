@@ -32,14 +32,17 @@
 #include "async.h"
 
 struct echo_client_t {
+    const char *name_p;
     int port;
-    struct async_tcp_client_t tcp;
+    struct async_stcp_client_t stcp;
     struct async_timer_t transmit_timer;
     struct async_timer_t reconnect_timer;
 };
 
 void echo_client_init(struct echo_client_t *self_p,
+                      const char *name_p,
                       int port,
+                      struct async_ssl_context_t *ssl_context_p,
                       struct async_t *async_p);
 
 #endif

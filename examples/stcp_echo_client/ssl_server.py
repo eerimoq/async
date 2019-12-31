@@ -2,12 +2,14 @@
 
 import sys
 import socket
+import ssl
 
-if len(sys.argv) < 2:
-    sys.exit("Usage: server.py <port>")
+context = ssl.SSLContext(ssl.PROTOCOL_TLSv1)
+context.load_cert_chain(certfile="server.crt",
+                        keyfile="server.key")
 
-port = int(sys.argv[1])
-sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM, 0)
+port = 33001
+sock = socket.socket()
 sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 sock.bind(('', port))
 sock.listen()
@@ -15,6 +17,7 @@ sock.listen()
 print(f"Waiting for the client to connect to ':{port}'.")
 client = sock.accept()[0]
 print('Client connected.')
+client = context.wrap_socket(client, server_side=True)
 
 while True:
     client.send(client.recv(1))

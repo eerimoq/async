@@ -27,7 +27,7 @@
  */
 
 #include "async.h"
-#include "publisher.h"
+#include "echo_client.h"
 
 static const char ca_certificate[] = (
     "-----BEGIN CERTIFICATE-----\n"
@@ -53,26 +53,19 @@ static const char ca_certificate[] = (
 int main()
 {
     struct async_t async;
-    struct publisher_t publishers[2];
+    struct echo_client_t echo_clients[2];
     struct async_ssl_context_t ssl_context;
 
     async_ssl_module_init();
     async_init(&async);
     async_set_runtime(&async, async_runtime_create());
-    publisher_init(&publishers[0],
-                   "mqtt-client-example",
-                   1883,
-                   NULL,
-                   &async);
-    async_ssl_context_init(&ssl_context, async_ssl_protocol_tls_v1_0_t);
+    echo_client_init(&echo_clients[0], "tcp", 33000, NULL, &async);
+    async_ssl_context_init(&ssl_context,
+                           async_ssl_protocol_tls_v1_0_t);
     async_ssl_context_load_verify_location(&ssl_context, &ca_certificate[0]);
     async_ssl_context_set_verify_mode(&ssl_context,
                                       async_ssl_verify_mode_cert_none_t);
-    publisher_init(&publishers[1],
-                   "mqtt-client-example-ssl",
-                   8883,
-                   &ssl_context,
-                   &async);
+    echo_client_init(&echo_clients[1], "tls", 33001, &ssl_context, &async);
     async_run_forever(&async);
 
     return (0);
