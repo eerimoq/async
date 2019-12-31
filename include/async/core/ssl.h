@@ -116,7 +116,7 @@ int async_ssl_context_load_cert_chain(struct async_ssl_context_t *self_p,
 /**
  * Load a set of "certification authority" (CA) certificates used to
  * validate other peers’ certificates when ``verify_mode`` is other
- * than `async_ssl_verify_mode_cert_none_t`.
+ * than ``async_ssl_verify_mode_cert_none_t``.
  */
 int async_ssl_context_load_verify_location(struct async_ssl_context_t *self_p,
                                            const char *ca_certs_p);

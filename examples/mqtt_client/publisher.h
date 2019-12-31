@@ -39,6 +39,9 @@ struct publisher_t {
 };
 
 void publisher_init(struct publisher_t *self_p,
+                    const char *client_id_p,
+                    int port,
+                    struct async_ssl_context_t *ssl_context_p,
                     struct async_t *async_p);
 
 #endif

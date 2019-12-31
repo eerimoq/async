@@ -34,6 +34,7 @@
 #include "async/core/core.h"
 #include "async/core/channel.h"
 #include "async/core/tcp_client.h"
+#include "async/core/stcp_client.h"
 #include "async/core/runtime.h"
 
 #endif

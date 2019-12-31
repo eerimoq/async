@@ -70,7 +70,7 @@ struct async_mqtt_client_t {
     struct async_mqtt_client_will_t will;
     bool connected;
     uint16_t next_packet_identifier;
-    struct async_tcp_client_t tcp;
+    struct async_stcp_client_t stcp;
     struct async_mqtt_client_packet_t packet;
     struct async_timer_t keep_alive_timer;
     struct async_timer_t reconnect_timer;
@@ -82,6 +82,7 @@ struct async_mqtt_client_t {
 void async_mqtt_client_init(struct async_mqtt_client_t *self_p,
                             const char *host_p,
                             int port,
+                            struct async_ssl_context_t *ssl_context_p,
                             async_func_t on_connected,
                             async_func_t on_disconnected,
                             async_mqtt_client_on_publish_t on_publish,

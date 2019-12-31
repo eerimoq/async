@@ -30,7 +30,7 @@
 #include "async.h"
 #include "echo_client.h"
 
-const char certificate[] = (
+static const char certificate[] = (
     "-----BEGIN CERTIFICATE-----\n"
     "MIIDCjCCAfICCQCoXfSQydXTczANBgkqhkiG9w0BAQsFADBHMQswCQYDVQQGEwJT\n"
     "RTETMBEGA1UECAwKU29tZS1TdGF0ZTEOMAwGA1UECgwFU2ltYmExEzARBgNVBAMM\n"
