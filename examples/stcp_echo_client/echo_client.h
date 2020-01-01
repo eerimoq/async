@@ -30,6 +30,7 @@
 #define ECHO_CLIENT_H
 
 #include "async.h"
+#include "async/modules/stcp_client.h"
 
 struct echo_client_t {
     const char *name_p;

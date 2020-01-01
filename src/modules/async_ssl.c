@@ -28,8 +28,8 @@
 
 #include <stdbool.h>
 #include <string.h>
-#include "async/core/core.h"
-#include "async/core/ssl.h"
+#include "async.h"
+#include "async/modules/ssl.h"
 
 #include "mbedtls/config.h"
 #include "mbedtls/entropy.h"

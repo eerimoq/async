@@ -26,7 +26,7 @@
  * This file is part of the Async project.
  */
 
-#include "async.h"
+#include "async/modules/stcp_client.h"
 
 static void on_ssl_connected(struct async_ssl_connection_t *connection_p, int res)
 {

@@ -30,7 +30,6 @@
 #define ASYNC_TCP_CLIENT_H
 
 #include "async/core/core.h"
-#include "async/core/ssl.h"
 
 struct async_tcp_client_t {
     struct async_t *async_p;
