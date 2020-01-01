@@ -10,7 +10,8 @@ First of all, start an `MQTT broker`_ in another terminal.
 
 .. code-block:: text
 
-   $ mqttools -l debug broker
+   $ mqttools -l debug broker \
+     --cafile ca.crt --certfile server.crt --keyfile server.key --no-check-hostname
 
 Then build and run the example program.
 

@@ -77,6 +77,7 @@ struct async_ssl_connection_t {
         bool complete;
         int res;
     } handshake;
+    bool input_call_outstanding;
     async_ssl_connection_on_connected_t on_connected;
     async_ssl_connection_on_disconnected_t on_disconnected;
     async_ssl_connection_on_input_t on_input;

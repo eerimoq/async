@@ -53,6 +53,12 @@ struct module_t {
 
 static struct module_t module;
 
+static void on_input_wrapper(struct async_ssl_connection_t *self_p)
+{
+    self_p->input_call_outstanding = false;
+    self_p->on_input(self_p);
+}
+
 static int ssl_send(struct async_ssl_connection_t *self_p,
                     const unsigned char *buf_p,
                     size_t size)
@@ -223,6 +229,7 @@ int async_ssl_connection_open(
 
     self_p->context_p = context_p;
     self_p->handshake.complete = false;
+    self_p->input_call_outstanding = false;
     self_p->on_connected = on_connected;
     self_p->on_disconnected = on_disconnected;
     self_p->on_input = on_input;
@@ -305,6 +312,13 @@ size_t async_ssl_connection_read(struct async_ssl_connection_t *self_p,
         res = 0;
     } else if (res == MBEDTLS_ERR_SSL_CLIENT_RECONNECT) {
         res = 0;
+    }
+
+    if (!self_p->input_call_outstanding) {
+        if (mbedtls_ssl_get_bytes_avail(&self_p->ssl) > 0) {
+            self_p->input_call_outstanding = true;
+            async_call(self_p->async_p, (async_func_t)on_input_wrapper, self_p);
+        }
     }
 
     return (res);

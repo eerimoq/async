@@ -29,25 +29,25 @@
 #include "async.h"
 #include "publisher.h"
 
-static const char ca_certificate[] = (
+static const char server_crt[] = (
     "-----BEGIN CERTIFICATE-----\n"
-    "MIIDCjCCAfICCQCoXfSQydXTczANBgkqhkiG9w0BAQsFADBHMQswCQYDVQQGEwJT\n"
-    "RTETMBEGA1UECAwKU29tZS1TdGF0ZTEOMAwGA1UECgwFU2ltYmExEzARBgNVBAMM\n"
-    "CmZvb2Jhci5vcmcwHhcNMTcwMTA3MTgxOTQ3WhcNMTgwMTA3MTgxOTQ3WjBHMQsw\n"
-    "CQYDVQQGEwJTRTETMBEGA1UECAwKU29tZS1TdGF0ZTEOMAwGA1UECgwFU2ltYmEx\n"
-    "EzARBgNVBAMMCmZvb2Jhci5vcmcwggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEK\n"
-    "AoIBAQDugoc9amynDB/ODJzh2aqB6cnubSJEPlgB87jNG0akcbmUFt6BhPhMPSoP\n"
-    "esHWl5OWscoga0cKrPURmMVVhfaeZLQGmrv5N4/liVlwae1n0gUEruX4d6MqSSDW\n"
-    "3C/WKjCn647udZwyzCvyrvPOq0qAzaxR4EFRdwjSEPO5sDw2zxeTjGW2WxaH9PEu\n"
-    "C8vaNqTsLYl3YBkR3zVCbuQXTQhStsv3gT4Yhz2wJpY0yyWyDiaBkGKpdxJQiNAd\n"
-    "x5JKSqtRshlYZM3+cdKLywNoYUnezp6Wm4mzz09TCFv+esJ0h7/6pMdVjhxLsAg5\n"
-    "ZbZyrtNIapN07AjIJS4qjkJ/HUC3AgMBAAEwDQYJKoZIhvcNAQELBQADggEBAGHS\n"
-    "U5AvDESzTNoak5HHx166bp5+bvECvJg45GMDGhqKeFoOlR34u2b+wyTm/piz3nYJ\n"
-    "12kn+BbG/PwGfndL0kZYRz46fY8Rf+MxCFfcglweDJhA6ULNpera11OC35Q/lKn5\n"
-    "M6w6eQkZMB4VqwigvDGHGpXRTIhJHHoR2VFBFGoPTLrXilChUpiXi9DmuYXJ/19x\n"
-    "sxOVwvvO/m/6g68G+uZYUoCsQsKllM2fgdNLTzbYvnFtsq5QnZS8m7CoZgEy2c3m\n"
-    "VrrPsfwmyhwejDawjz2epSLNXaaDeSz4g1cQes+oehaA1IwFfKhb9tdiWUm48VuU\n"
-    "oaFZ8e1HofYUy+65pws=\n"
+    "MIIDETCCAfkCFFVRo6tydPDAjBCbuF2lBCRPAhrUMA0GCSqGSIb3DQEBCwUAMEUx\n"
+    "CzAJBgNVBAYTAkFVMRMwEQYDVQQIDApTb21lLVN0YXRlMSEwHwYDVQQKDBhJbnRl\n"
+    "cm5ldCBXaWRnaXRzIFB0eSBMdGQwHhcNMjAwMTAxMDkxNjIxWhcNNDcwNTE5MDkx\n"
+    "NjIxWjBFMQswCQYDVQQGEwJBVTETMBEGA1UECAwKU29tZS1TdGF0ZTEhMB8GA1UE\n"
+    "CgwYSW50ZXJuZXQgV2lkZ2l0cyBQdHkgTHRkMIIBIjANBgkqhkiG9w0BAQEFAAOC\n"
+    "AQ8AMIIBCgKCAQEAt2cIM+Vkpkhwcdb3cE/dxyRU1nCodWKyO/YLSqDKfZXGmLEp\n"
+    "FelzuJFA3ZzoCMdEywn1WbzPzWFBLFm6YP95HQQcWT6PQYTs2NmXfsQpU23ECdaf\n"
+    "yf/1QJU9YVeZ/rYXeVReFMxPaAmqdaEe6lRgXXO98q1J9NDArNqETE6gajbVKAEE\n"
+    "Sj7+MYs6iBWIyXHh9rzOHXApRi+zcf7nzHaeolw3LwOpV4MyuY010Qcaww4J6btD\n"
+    "qEPA0zCVLuwgPlMkeKqpwcR5mgv4wW8F4eaNVdT2aDqIbKcCxWT3h/zTfq7fp3oX\n"
+    "ryUUvAhHP4h+IKfX8UTQYKBzPJKfCIMdElwidwIDAQABMA0GCSqGSIb3DQEBCwUA\n"
+    "A4IBAQAD6YyMDh/SaOV+XZoDTpn8+dgaIlSFj41yIrr0kTvvtOFoQhTbfAA/kfRy\n"
+    "uE42i8XDIWw8Euc/mw1ACJtmXJE3KakwtiRHpphZtfWVUR1vmbvinUEbO8Rmi5wI\n"
+    "0q/JBJbitDc1l5/U0bc3VIZ2WOqhkEd4En4YjhAUizicSS5a/eScirNVoZwzXdUY\n"
+    "B/JepoMH4SkL9qvOjf+fBCrgrlslhZ5pKRPDJUy7Slqk4EIYuyE8YGvLQnPgV4/7\n"
+    "l6PymsbuwVsMOvwz6FEdBVR3dNO3pMT667V/rSilLQGnRFpUcHFILyqg35LONFn3\n"
+    "cwT/ciBUfMi/giQyFNpB1RdktfHd\n"
     "-----END CERTIFICATE-----\n");
 
 int main()
@@ -65,7 +65,7 @@ int main()
                    NULL,
                    &async);
     async_ssl_context_init(&ssl_context, async_ssl_protocol_tls_v1_0_t);
-    async_ssl_context_load_verify_location(&ssl_context, &ca_certificate[0]);
+    async_ssl_context_load_verify_location(&ssl_context, &server_crt[0]);
     async_ssl_context_set_verify_mode(&ssl_context,
                                       async_ssl_verify_mode_cert_none_t);
     publisher_init(&publishers[1],
