@@ -34,7 +34,7 @@
 #ifndef ASYNC_STCP_CLIENT_H
 #define ASYNC_STCP_CLIENT_H
 
-#include "async.h"
+#include "async/core.h"
 #include "async/modules/ssl.h"
 
 struct async_stcp_client_t;

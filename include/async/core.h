@@ -26,15 +26,12 @@
  * This file is part of the Async project.
  */
 
-#ifndef ASYNC_H
-#define ASYNC_H
+#ifndef ASYNC_CORE_H
+#define ASYNC_CORE_H
 
-#define ASYNC_VERSION                          "0.1.0"
-
-#include "async/core.h"
-#include "async/modules/ssl.h"
-#include "async/modules/stcp_client.h"
-#include "async/modules/mqtt_client.h"
-#include "async/modules/shell.h"
+#include "async/core/core.h"
+#include "async/core/channel.h"
+#include "async/core/tcp_client.h"
+#include "async/core/runtime.h"
 
 #endif

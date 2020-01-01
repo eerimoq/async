@@ -30,7 +30,6 @@
 #define PUBLISHER_H
 
 #include "async.h"
-#include "async/modules/mqtt_client.h"
 
 struct publisher_t {
     struct async_mqtt_client_t client;

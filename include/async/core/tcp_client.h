@@ -26,8 +26,8 @@
  * This file is part of the Async project.
  */
 
-#ifndef ASYNC_TCP_CLIENT_H
-#define ASYNC_TCP_CLIENT_H
+#ifndef ASYNC_CORE_TCP_CLIENT_H
+#define ASYNC_CORE_TCP_CLIENT_H
 
 #include "async/core/core.h"
 

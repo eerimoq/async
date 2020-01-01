@@ -45,10 +45,10 @@
  * 5. Async code calls async_channel_read() to read the data.
  */
 
-#ifndef ASYNC_CHANNEL_H
-#define ASYNC_CHANNEL_H
+#ifndef ASYNC_CORE_CHANNEL_H
+#define ASYNC_CORE_CHANNEL_H
 
-#include "async.h"
+#include "async/core.h"
 
 struct async_channel_t;
 

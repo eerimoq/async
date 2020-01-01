@@ -26,8 +26,8 @@
  * This file is part of the Async project.
  */
 
-#ifndef ASYNC_RUNTIME_H
-#define ASYNC_RUNTIME_H
+#ifndef ASYNC_CORE_RUNTIME_H
+#define ASYNC_CORE_RUNTIME_H
 
 #include "async/core/core.h"
 #include "async/core/tcp_client.h"

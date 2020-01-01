@@ -26,8 +26,8 @@
  * This file is part of the Async project.
  */
 
-#ifndef ASYNC_CORE_H
-#define ASYNC_CORE_H
+#ifndef ASYNC_CORE_CORE_H
+#define ASYNC_CORE_CORE_H
 
 #include <stdbool.h>
 #include <stdint.h>
