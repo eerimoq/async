@@ -60,16 +60,14 @@ int main()
     async_init(&async);
     async_set_runtime(&async, async_runtime_create());
     publisher_init(&publishers[0],
-                   "mqtt-client-example",
+                   "tcp",
                    1883,
                    NULL,
                    &async);
     async_ssl_context_init(&ssl_context, async_ssl_protocol_tls_v1_0_t);
     async_ssl_context_load_verify_location(&ssl_context, &server_crt[0]);
-    async_ssl_context_set_verify_mode(&ssl_context,
-                                      async_ssl_verify_mode_cert_none_t);
     publisher_init(&publishers[1],
-                   "mqtt-client-example-ssl",
+                   "ssl",
                    8883,
                    &ssl_context,
                    &async);
