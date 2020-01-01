@@ -177,8 +177,8 @@ static void io_handle_tcp_client_connect(struct async_runtime_linux_t *self_p,
 static void io_handle_tcp_client_disconnect(int epoll_fd,
                                             struct message_disconnect_t *ind_p)
 {
-    close(ind_p->sockfd);
     epoll_ctl(epoll_fd, EPOLL_CTL_DEL, ind_p->sockfd, NULL);
+    close(ind_p->sockfd);
 }
 
 static void io_handle_tcp_client_data_complete(struct async_runtime_linux_t *self_p,
@@ -192,8 +192,8 @@ static void io_handle_tcp_client_data_complete(struct async_runtime_linux_t *sel
     sockfd = tcp_client(ind_p->tcp_p)->sockfd;
 
     if (tcp_client(ind_p->tcp_p)->closed) {
-        close(sockfd);
         epoll_ctl(epoll_fd, EPOLL_CTL_DEL, sockfd, NULL);
+        close(sockfd);
         message_p = ml_message_alloc(&uid_tcp_disconnected, sizeof(*message_p));
         message_p->tcp_p = ind_p->tcp_p;
         ml_queue_put(&self_p->async.queue, message_p);
@@ -239,6 +239,7 @@ static void io_handle_socket(struct async_runtime_linux_t *self_p,
     struct message_data_t *message_p;
 
     event.events = 0;
+    event.data.ptr = tcp_p;
     epoll_ctl(epoll_fd, EPOLL_CTL_MOD, tcp_client(tcp_p)->sockfd, &event);
     message_p = ml_message_alloc(&uid_tcp_data, sizeof(*message_p));
     message_p->tcp_p = tcp_p;
@@ -481,8 +482,7 @@ static void tcp_client_write(struct async_tcp_client_t *self_p,
     res = write(tcp_client(self_p)->sockfd, buf_p, size);
 
     if (res != (ssize_t)size) {
-        printf("TCP write failed %d %d.\n", (int)res, (int)size);
-        exit(1);
+        fprintf(stderr, "TCP write failed %d %d.\n", (int)res, (int)size);
     }
 }
 
@@ -497,18 +497,14 @@ static size_t tcp_client_read(struct async_tcp_client_t *self_p,
     }
 
     res = read(tcp_client(self_p)->sockfd, buf_p, size);
-    
+
     if (res == 0) {
         tcp_client(self_p)->closed = true;
-        async_tcp_client_data_complete_write(self_p);
     } else if (res == -1) {
-        async_tcp_client_data_complete_write(self_p);
         res = 0;
-    } else {
-        async_call(self_p->async_p,
-                   (async_func_t)tcp_client(self_p)->on_input,
-                   self_p);
     }
+
+    async_tcp_client_data_complete_write(self_p);
 
     return (res);
 }
