@@ -107,7 +107,8 @@ Input
 -----
 
 First ``*_input(self_p)`` is called to signal that data is
-available. Then read data with ``*_read(self_p, buf_p, size)``.
+available. Then read data with ``*_read(self_p, buf_p, size)``. The
+read function must be called at least once per input call.
 
 Output
 ------
