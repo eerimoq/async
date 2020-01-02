@@ -1,8 +1,5 @@
-#include <sys/eventfd.h>
-#include <arpa/inet.h>
-#include <sys/socket.h>
+#include <pthread.h>
 #include "nala.h"
-#include "nala_mocks.h"
 #include "async.h"
 
 static bool single_shot_timer_expired = false;
@@ -56,12 +53,7 @@ TEST(tcp_client_connect_failure)
 {
     struct async_t async;
     struct async_tcp_client_t tcp;
-    struct sockaddr_in addr;
-    int sockfd;
 
-    sockfd = 6;
-    socket_mock_once(AF_INET, SOCK_STREAM, 0, sockfd);
-    connect_mock_once(sockfd, sizeof(addr), -1);
     async_init(&async);
     async_set_runtime(&async, async_runtime_create());
     async_tcp_client_init(&tcp,
@@ -69,7 +61,7 @@ TEST(tcp_client_connect_failure)
                           NULL,
                           NULL,
                           &async);
-    async_tcp_client_connect(&tcp, "localhost", 9999);
+    async_tcp_client_connect(&tcp, "async-localhost", 9999);
     async_run_forever(&async);
 }
 
@@ -95,5 +87,33 @@ TEST(call_worker_pool)
     async_init(&async);
     async_set_runtime(&async, async_runtime_create());
     async_call_worker_pool(&async, hello, NULL, on_complete);
+    async_run_forever(&async);
+}
+
+static pthread_t threadsafe_caller_pthread;
+
+static void called_in_async_thread(void *obj_p)
+{
+    ASSERT_EQ(obj_p, NULL);
+    exit(0);
+}
+
+static void *threadsafe_caller(struct async_t *async_p)
+{
+    async_call_threadsafe(async_p, called_in_async_thread, NULL);
+
+    return (NULL);
+}
+
+TEST(call_threadsafe)
+{
+    struct async_t async;
+
+    async_init(&async);
+    async_set_runtime(&async, async_runtime_create());
+    pthread_create(&threadsafe_caller_pthread,
+                   NULL,
+                   (void *(*)(void *))threadsafe_caller,
+                   &async);
     async_run_forever(&async);
 }
