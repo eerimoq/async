@@ -42,6 +42,13 @@ static void on_disconnected_default(struct async_tcp_client_t *self_p)
     (void)self_p;
 }
 
+static void on_input_default(struct async_tcp_client_t *self_p)
+{
+    char buf[32];
+
+    async_tcp_client_read(self_p, &buf[0], sizeof(buf));
+}
+
 void async_tcp_client_init(struct async_tcp_client_t *self_p,
                            async_tcp_client_connected_t on_connected,
                            async_tcp_client_disconnected_t on_disconnected,
@@ -54,6 +61,10 @@ void async_tcp_client_init(struct async_tcp_client_t *self_p,
 
     if (on_disconnected == NULL) {
         on_disconnected = on_disconnected_default;
+    }
+
+    if (on_input == NULL) {
+        on_input = on_input_default;
     }
 
     self_p->async_p = async_p;

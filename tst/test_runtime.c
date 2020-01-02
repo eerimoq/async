@@ -1,4 +1,8 @@
 #include <pthread.h>
+#include <string.h>
+#include <unistd.h>
+#include <arpa/inet.h>
+#include <sys/socket.h>
 #include "nala.h"
 #include "async.h"
 
@@ -39,6 +43,87 @@ TEST(timers)
     async_timer_start(&timers[0]);
     async_timer_init(&timers[1], on_periodic_timer_expiry, 0, 1, &async);
     async_timer_start(&timers[1]);
+    async_run_forever(&async);
+}
+
+static void do_connect(struct async_tcp_client_t *tcp_p)
+{
+    async_tcp_client_connect(tcp_p, "localhost", 9999);
+}
+
+static void tcp_client_server_initiated_close_on_connected(
+    struct async_tcp_client_t *tcp_p, int res)
+{
+    if (res == 0) {
+        async_tcp_client_write(tcp_p, "1", 1);
+    } else {
+        usleep(1000);
+        do_connect(tcp_p);
+    }
+}
+
+static void tcp_client_server_initiated_close_on_disconnected(
+    struct async_tcp_client_t *tcp_p)
+{
+    (void)tcp_p;
+    exit(0);
+}
+
+static void tcp_client_server_initiated_close_on_input(
+    struct async_tcp_client_t *self_p)
+{
+    char ch;
+
+    async_tcp_client_read(self_p, &ch, 1);
+    ASSERT_EQ(ch, '1');
+}
+
+static void *tcp_client_server_initiated_close_server_main(void *arg_p)
+{
+    (void)arg_p;
+
+    int sock;
+    struct sockaddr_in addr;
+    char ch;
+    int yes;
+
+    memset(&addr, 0, sizeof(addr));
+    addr.sin_family = AF_INET;
+    addr.sin_port = htons(9999);
+    inet_aton("127.0.0.1", (struct in_addr *)&addr.sin_addr.s_addr);
+
+    sock = socket(AF_INET, SOCK_STREAM, 0);
+    yes = 1;
+    ASSERT_EQ(setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(yes)), 0);
+    ASSERT_EQ(bind(sock, &addr, sizeof(addr)), 0);
+    ASSERT_EQ(listen(sock, 5), 0);
+    sock = accept(sock, NULL, 0);
+    ASSERT_EQ(read(sock, &ch, 1), 1);
+    ASSERT_EQ(write(sock, &ch, 1), 1);
+    ASSERT_EQ(close(sock), 0);
+
+    return (NULL);
+}
+
+TEST(tcp_client_server_initiated_close)
+{
+    struct async_t async;
+    struct async_tcp_client_t tcp;
+    pthread_t server_pthread;
+
+    pthread_create(&server_pthread,
+                   NULL,
+                   tcp_client_server_initiated_close_server_main,
+                   NULL);
+
+    async_init(&async);
+    async_set_runtime(&async, async_runtime_create());
+    async_tcp_client_init(&tcp,
+                          tcp_client_server_initiated_close_on_connected,
+                          tcp_client_server_initiated_close_on_disconnected,
+                          tcp_client_server_initiated_close_on_input,
+                          &async);
+    async_call(&async, (async_func_t)do_connect, &tcp);
     async_run_forever(&async);
 }
 
