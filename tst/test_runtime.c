@@ -1,7 +1,6 @@
 #include <sys/eventfd.h>
 #include <arpa/inet.h>
 #include <sys/socket.h>
-#include <dbg.h>
 #include "nala.h"
 #include "nala_mocks.h"
 #include "async.h"
