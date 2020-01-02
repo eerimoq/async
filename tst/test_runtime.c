@@ -47,15 +47,9 @@ TEST(timers)
 
 static void on_tcp_connected(struct async_tcp_client_t *tcp_p, int res)
 {
-    (void)tcp_p;
-
+    ASSERT_NE(tcp_p, NULL);
     ASSERT_EQ(res, -1);
     exit(0);
-}
-
-static void do_connect(struct async_tcp_client_t *self_p)
-{
-    async_tcp_client_connect(self_p, "localhost", 9999);
 }
 
 TEST(tcp_client_connect_failure)
@@ -75,6 +69,31 @@ TEST(tcp_client_connect_failure)
                           NULL,
                           NULL,
                           &async);
-    async_call(&async, (async_func_t)do_connect, &tcp);
+    async_tcp_client_connect(&tcp, "localhost", 9999);
+    async_run_forever(&async);
+}
+
+static bool hello_called = false;
+
+static void hello(void *obj_p)
+{
+    ASSERT_EQ(obj_p, NULL);
+    hello_called = true;
+}
+
+static void on_complete(void *obj_p)
+{
+    ASSERT_EQ(obj_p, NULL);
+    ASSERT(hello_called);
+    exit(0);
+}
+
+TEST(call_worker_pool)
+{
+    struct async_t async;
+
+    async_init(&async);
+    async_set_runtime(&async, async_runtime_create());
+    async_call_worker_pool(&async, hello, NULL, on_complete);
     async_run_forever(&async);
 }
