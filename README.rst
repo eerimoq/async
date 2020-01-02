@@ -20,11 +20,7 @@ Features
 
 - A basic TCP client.
 
-Wish list
-=========
-
-- Secure TCP communication with TLS (OpenSSL, Mbed TLS, BearSSL and/or
-  WolfSSL?).
+- Secure communication with SSL/TLS.
 
 Examples
 ========

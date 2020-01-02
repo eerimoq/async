@@ -61,6 +61,7 @@ struct worker_job_t {
 };
 
 struct async_runtime_linux_t {
+    struct async_runtime_t runtime;
     struct {
         int fd;
         struct ml_queue_t queue;
@@ -509,7 +510,7 @@ static size_t tcp_client_read(struct async_tcp_client_t *self_p,
     return (res);
 }
 
-static void on_put(int *fd_p)
+static void on_put_signal_event(int *fd_p)
 {
     uint64_t value;
     ssize_t size;
@@ -519,17 +520,11 @@ static void on_put(int *fd_p)
     (void)size;
 }
 
-struct async_runtime_t *async_runtime_linux_create()
+static int init(struct async_runtime_linux_t *self_p)
 {
     struct async_runtime_t *runtime_p;
-    struct async_runtime_linux_t *self_p;
 
-    runtime_p = malloc(sizeof(*runtime_p));
-
-    if (runtime_p == NULL) {
-        return (NULL);
-    }
-
+    runtime_p = &self_p->runtime;
     runtime_p->set_async = (async_runtime_set_async_t)set_async;
     runtime_p->call_threadsafe = (async_runtime_call_threadsafe_t)call_threadsafe;
     runtime_p->call_worker_pool = (async_runtime_call_worker_pool_t)call_worker_pool;
@@ -540,21 +535,17 @@ struct async_runtime_t *async_runtime_linux_create()
     runtime_p->tcp_client.write = tcp_client_write;
     runtime_p->tcp_client.read = tcp_client_read;
 
-    self_p = malloc(sizeof(*self_p));
-
-    if (self_p == NULL) {
-        return (NULL);
-    }
-
     self_p->io.fd = eventfd(0, EFD_SEMAPHORE);
 
     if (self_p->io.fd == -1) {
-        return (NULL);
+        return (-1);
     }
 
     ml_timer_handler_init(&self_p->timer_handler);
     ml_queue_init(&self_p->io.queue, 32);
-    ml_queue_set_on_put(&self_p->io.queue, (ml_queue_put_t)on_put, &self_p->io.fd);
+    ml_queue_set_on_put(&self_p->io.queue,
+                        (ml_queue_put_t)on_put_signal_event,
+                        &self_p->io.fd);
     ml_timer_handler_timer_init(&self_p->timer_handler,
                                 &self_p->async.timer,
                                 &uid_timeout,
@@ -563,5 +554,27 @@ struct async_runtime_t *async_runtime_linux_create()
     ml_worker_pool_init(&self_p->worker_pool, 4, 32);
     runtime_p->obj_p = self_p;
 
-    return (runtime_p);
+    return (0);
+}
+
+struct async_runtime_t *async_runtime_linux_create()
+{
+    struct async_runtime_linux_t *self_p;
+    int res;
+
+    self_p = malloc(sizeof(*self_p));
+
+    if (self_p == NULL) {
+        return (NULL);
+    }
+
+    res = init(self_p);
+
+    if (res != 0) {
+        free(self_p);
+
+        return (NULL);
+    }
+
+    return (&self_p->runtime);
 }

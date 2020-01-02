@@ -27,6 +27,9 @@ SRC += $(TESTS)
 TESTS ?= main
 TESTS_C = $(BUILD)/suites.c
 NALA ?= nala
+LSAN_OPTIONS = \
+	suppressions=$(ASYNC_ROOT)/make/lsan-suppressions.txt \
+	print_suppressions=0
 
 .PHONY: all run build coverage
 
@@ -37,7 +40,7 @@ build:
 	$(MAKE) $(EXE)
 
 run: build
-	$(EXE)
+	LSAN_OPTIONS="$(LSAN_OPTIONS)" $(EXE)
 
 test: run
 	$(MAKE) coverage
