@@ -127,6 +127,74 @@ TEST(tcp_client_server_initiated_close)
     async_run_forever(&async);
 }
 
+static void tcp_client_client_initiated_close_do_connect(
+    struct async_tcp_client_t *tcp_p)
+{
+    async_tcp_client_connect(tcp_p, "localhost", 9998);
+}
+
+static void tcp_client_client_initiated_close_on_connected(
+    struct async_tcp_client_t *tcp_p, int res)
+{
+    if (res == 0) {
+        async_tcp_client_disconnect(tcp_p);
+    } else {
+        usleep(1000);
+        tcp_client_client_initiated_close_do_connect(tcp_p);
+    }
+}
+
+static void *tcp_client_client_initiated_close_server_main(void *arg_p)
+{
+    (void)arg_p;
+
+    int sock;
+    struct sockaddr_in addr;
+    char ch;
+    int yes;
+
+    memset(&addr, 0, sizeof(addr));
+    addr.sin_family = AF_INET;
+    addr.sin_port = htons(9998);
+    inet_aton("127.0.0.1", (struct in_addr *)&addr.sin_addr.s_addr);
+
+    sock = socket(AF_INET, SOCK_STREAM, 0);
+    yes = 1;
+    ASSERT_EQ(setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(yes)), 0);
+    ASSERT_EQ(bind(sock, &addr, sizeof(addr)), 0);
+    ASSERT_EQ(listen(sock, 5), 0);
+    sock = accept(sock, NULL, 0);
+    ASSERT_EQ(read(sock, &ch, 1), 0);
+    ASSERT_EQ(close(sock), 0);
+    exit(0);
+
+    return (NULL);
+}
+
+TEST(tcp_client_client_initiated_close)
+{
+    struct async_t async;
+    struct async_tcp_client_t tcp;
+    pthread_t server_pthread;
+
+    pthread_create(&server_pthread,
+                   NULL,
+                   tcp_client_client_initiated_close_server_main,
+                   NULL);
+
+    async_init(&async);
+    async_set_runtime(&async, async_runtime_create());
+    async_tcp_client_init(&tcp,
+                          tcp_client_client_initiated_close_on_connected,
+                          NULL,
+                          NULL,
+                          &async);
+    async_call(&async,
+               (async_func_t)tcp_client_client_initiated_close_do_connect,
+               &tcp);
+    async_run_forever(&async);
+}
+
 static void on_tcp_connected(struct async_tcp_client_t *tcp_p, int res)
 {
     ASSERT_NE(tcp_p, NULL);
