@@ -540,14 +540,30 @@ static float timeval_to_ms(struct timeval *timeval_p)
     return (res);
 }
 
-static void print_signal_failure(struct nala_test_t *test_p)
+static void print_test_failure_report_begin()
+{
+    printf("-------------------------- "
+           "TEST FAILURE REPORT BEGIN "
+           "--------------------------\n");
+    printf("\n");
+}
+
+static void print_test_failure_report_end()
 {
     printf("\n");
-    printf("%s failed:\n", full_test_name(test_p));
-    printf("\n");
-    printf("  Location: unknown\n");
-    printf("  Error:    " COLOR_BOLD(RED, "Terminated by signal %d.\n"),
+    printf("--------------------------- "
+           "TEST FAILURE REPORT END "
+           "---------------------------\n");
+}
+
+static void print_signal_failure(struct nala_test_t *test_p)
+{
+    print_test_failure_report_begin();
+    printf("  Test name: " COLOR(GREEN, "%s\n"), full_test_name(current_test_p));
+    printf("  Location:  " COLOR(CYAN, "unknown\n"));
+    printf("  Error:     " COLOR_BOLD(RED, "Terminated by signal %d.\n"),
            test_p->signal_number);
+    print_test_failure_report_end();
 }
 
 static void print_location_context(const char *filename_p, size_t line_number)
@@ -1110,14 +1126,13 @@ void nala_test_failure(const char *file_p,
     nala_capture_output_stop();
     capture_output_destroy(&capture_stdout);
     capture_output_destroy(&capture_stderr);
-    printf("\n");
-    printf("%s failed:\n", full_test_name(current_test_p));
-    printf("\n");
-    printf("  Location:  %s:%d\n", file_p, line);
+    print_test_failure_report_begin();
+    printf("  Test name: " COLOR(GREEN, "%s\n"), full_test_name(current_test_p));
+    printf("  Location:  " COLOR(CYAN, "%s:%d\n"), file_p, line);
     printf("  Error:     %s", message_p);
     print_location_context(file_p, (size_t)line);
     nala_traceback_print("  ", traceback_skip_filter, NULL);
-    printf("\n");
+    print_test_failure_report_end();
     exit(1);
 }
 
@@ -1153,8 +1168,62 @@ int nala_run_tests()
     return (run_tests(tests.head_p));
 }
 
-__attribute__((weak)) int main(void)
+static void print_usage_and_exit()
 {
+    printf("usage: ./main [--help] [--version] [<test-pattern>]\n"
+           "\n"
+           "Run tests.\n"
+           "\n"
+           "positional arguments:\n"
+           "  test-pattern          Only run tests containing given pattern.\n"
+           "\n"
+           "optional arguments:\n"
+           "  --help                Show this help message and exit.\n"
+           "  --version             Print version information.\n");
+    exit(0);
+}
+
+static void print_version_and_exit()
+{
+    printf("%s\n", NALA_VERSION);
+    exit(0);
+}
+
+static void filter_tests(const char *test_pattern_p)
+{
+    struct nala_test_t *test_p;
+
+    test_p = tests.head_p;
+    tests.head_p = NULL;
+    tests.tail_p = NULL;
+
+    while (test_p != NULL) {
+        if (strstr(full_test_name(test_p), test_pattern_p) != NULL) {
+            nala_register_test(test_p);
+        }
+
+        test_p = test_p->next_p;
+    }
+
+    if (tests.tail_p != NULL) {
+        tests.tail_p->next_p = NULL;
+    }
+}
+
+__attribute__((weak)) int main(int argc, const char *argv[])
+{
+    if (argc == 2) {
+        if (strcmp(argv[1], "--help") == 0) {
+            print_usage_and_exit();
+        } else if (strcmp(argv[1], "--version") == 0) {
+            print_version_and_exit();
+        } else {
+            filter_tests(argv[1]);
+        }
+    } else if (argc != 1) {
+        print_usage_and_exit();
+    }
+
     return (nala_run_tests());
 }
 /*
@@ -1507,6 +1576,12 @@ void nala_subprocess_result_free(struct nala_subprocess_result_t *self_p)
 
 #define DEPTH_MAX 100
 
+#define ANSI_COLOR_GREEN "\x1b[32m"
+#define ANSI_COLOR_CYAN  "\x1b[36m"
+#define ANSI_RESET       "\x1b[0m"
+
+#define COLOR(color, ...) ANSI_RESET ANSI_COLOR_##color __VA_ARGS__ ANSI_RESET
+
 static void *fixaddr(void *address_p)
 {
     return ((void *)(((uintptr_t)address_p) - 1));
@@ -1537,6 +1612,30 @@ static char *strip_discriminator(char *line_p)
     }
 
     return (line_p);
+}
+
+static void print_line(FILE *stream_p, const char *prefix_p, char *line_p)
+{
+    char *at_p;
+    char *function_p;
+    char *location_p;
+
+    function_p = line_p;
+    at_p = strstr(line_p, " at ");
+
+    if (at_p == NULL) {
+        fprintf(stream_p, "%s  %s", prefix_p, line_p);
+        return;
+    }
+
+    at_p[0] = '\0';
+    location_p = &at_p[4];
+
+    fprintf(stream_p,
+            "%s  " COLOR(GREEN, "%s") " at " COLOR(CYAN, "%s"),
+            prefix_p,
+            function_p,
+            location_p);
 }
 
 char *nala_traceback_format(void **buffer_pp,
@@ -1600,11 +1699,9 @@ char *nala_traceback_format(void **buffer_pp,
             }
         }
 
-        fprintf(stream_p, "%s  ", prefix_p);
-        fwrite(strip_discriminator(result_p->stdout.buf_p),
-               1,
-               strlen(result_p->stdout.buf_p),
-               stream_p);
+        print_line(stream_p,
+                   prefix_p,
+                   strip_discriminator(result_p->stdout.buf_p));
         nala_subprocess_result_free(result_p);
     }
 

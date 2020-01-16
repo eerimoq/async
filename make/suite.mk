@@ -1,10 +1,4 @@
-TEST ?= all
-
-ifneq ($(TEST), all)
-TESTS = $(TEST:%=test_%.c)
-endif
-
-BUILD = build/$(TEST)
+BUILD = build
 EXE = $(BUILD)/suite
 CFLAGS += -fno-omit-frame-pointer
 CFLAGS += -fsanitize=address
@@ -40,7 +34,7 @@ build:
 	$(MAKE) $(EXE)
 
 run: build
-	LSAN_OPTIONS="$(LSAN_OPTIONS)" $(EXE)
+	LSAN_OPTIONS="$(LSAN_OPTIONS)" $(EXE) $(TEST)
 
 test: run
 	$(MAKE) coverage
