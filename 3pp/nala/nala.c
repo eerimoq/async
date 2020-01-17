@@ -8,6 +8,7 @@
 #include <ctype.h>
 #include <errno.h>
 #include <sys/time.h>
+#include <getopt.h>
 // #include "subprocess.h"
 /*
  * The MIT License (MIT)
@@ -370,6 +371,8 @@ __attribute__ ((weak)) void nala_suspend_all_mocks(void)
 __attribute__ ((weak)) void nala_resume_all_mocks(void)
 {
 }
+
+__attribute__ ((weak)) int nala_print_call_mask = 0;
 
 static const char *get_node(void)
 {
@@ -738,9 +741,11 @@ static void test_entry(void *arg_p)
     test_p = (struct nala_test_t *)arg_p;
     capture_output_init(&capture_stdout, stdout);
     capture_output_init(&capture_stderr, stderr);
+    nala_reset_all_mocks();
     test_p->func();
     nala_assert_all_mocks_completed();
     nala_reset_all_mocks();
+    nala_suspend_all_mocks();
     capture_output_destroy(&capture_stdout);
     capture_output_destroy(&capture_stderr);
     exit(0);
@@ -1168,9 +1173,9 @@ int nala_run_tests()
     return (run_tests(tests.head_p));
 }
 
-static void print_usage_and_exit()
+static void print_usage_and_exit(const char *program_name_p, int exit_code)
 {
-    printf("usage: ./main [--help] [--version] [<test-pattern>]\n"
+    printf("usage: %s [-h] [-v] [-a] [<test-pattern>]\n"
            "\n"
            "Run tests.\n"
            "\n"
@@ -1178,9 +1183,11 @@ static void print_usage_and_exit()
            "  test-pattern          Only run tests containing given pattern.\n"
            "\n"
            "optional arguments:\n"
-           "  --help                Show this help message and exit.\n"
-           "  --version             Print version information.\n");
-    exit(0);
+           "  -h, --help                Show this help message and exit.\n"
+           "  -v, --version             Print version information.\n"
+           "  -a, --print-all-calls     Print all calls to ease debugging.\n",
+           program_name_p);
+    exit(exit_code);
 }
 
 static void print_version_and_exit()
@@ -1210,18 +1217,47 @@ static void filter_tests(const char *test_pattern_p)
     }
 }
 
-__attribute__((weak)) int main(int argc, const char *argv[])
+__attribute__((weak)) int main(int argc, char *argv[])
 {
-    if (argc == 2) {
-        if (strcmp(argv[1], "--help") == 0) {
-            print_usage_and_exit();
-        } else if (strcmp(argv[1], "--version") == 0) {
-            print_version_and_exit();
-        } else {
-            filter_tests(argv[1]);
+    static struct option long_options[] = {
+        { "help",            no_argument, NULL, 'h' },
+        { "version",         no_argument, NULL, 'v' },
+        { "print-all-calls", no_argument, NULL, 'a' },
+        { NULL,              no_argument, NULL, 0 }
+    };
+    int option;
+
+    /* Do not print function calls outside tests. */
+    nala_suspend_all_mocks();
+
+    while (1) {
+        option = getopt_long(argc, argv, "hva", &long_options[0], NULL);
+
+        if (option == -1) {
+            break;
         }
-    } else if (argc != 1) {
-        print_usage_and_exit();
+
+        switch (option) {
+
+        case 'h':
+            print_usage_and_exit(argv[0], 0);
+            break;
+
+        case 'v':
+            print_version_and_exit();
+            break;
+
+        case 'a':
+            nala_print_call_mask = 0xff;
+            break;
+
+        default:
+            print_usage_and_exit(argv[0], 1);
+        }
+    }
+
+    if (optind < argc) {
+        filter_tests(argv[optind]);
     }
 
     return (nala_run_tests());

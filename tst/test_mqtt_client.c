@@ -558,3 +558,35 @@ TEST(reconnect_after_tcp_disconnect)
 
     assert_stop(&client);
 }
+
+TEST(reconnect_after_unsuccessful_connack)
+{
+    struct async_t async;
+    struct async_mqtt_client_t client;
+    uint8_t connect[] = {
+        0x10, 0x18, 0x00, 0x04, 0x4d, 0x51, 0x54, 0x54, 0x05, 0x02,
+        0x00, 0x1e, 0x00, 0x00, 0x0b, 0x61, 0x73, 0x79, 0x6e, 0x63,
+        0x2d, 0x31, 0x32, 0x33, 0x34, 0x35
+    };
+    uint8_t connack[] = {
+        0x20, 0x0b, 0x00, 0x05, 0x08, 0x24, 0x00, 0x25, 0x00, 0x28,
+        0x00, 0x2a, 0x00
+    };
+
+    /* Input connack with reason 5 (success is 0). Make sure
+       on_connected() is not called since the connection attempt was
+       unsuccessful. */
+    assert_init(&async, &client);
+    assert_start_and_on_tcp_connected(&client,
+                                      &connect[0],
+                                      sizeof(connect));
+    mqtt_on_connected_mock_none();
+    async_tcp_client_disconnect_mock_once(tcp_p);
+    mock_prepare_time_ms(0);
+    input_packet(&connack[0], 1, sizeof(connack));
+
+    /* Reconnects after 1 second. */
+    async_tcp_client_connect_mock_once("foo", 1883);
+    mock_prepare_process(1000, -1);
+    async_process(&async);
+}

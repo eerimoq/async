@@ -35,7 +35,7 @@ build:
 	$(MAKE) $(EXE)
 
 run: build
-	LSAN_OPTIONS="$(LSAN_OPTIONS)" $(EXE) $(TEST)
+	LSAN_OPTIONS="$(LSAN_OPTIONS)" $(EXE) $(ARGS)
 
 test: run
 	$(MAKE) coverage

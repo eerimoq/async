@@ -67,7 +67,7 @@ enum control_packet_type_t {
 };
 
 enum connect_reason_code_t {
-    connect_reason_code_SUCCESS_t = 0,
+    connect_reason_code_success_t = 0,
     connect_reason_code_v3_1_1_unacceptable_protocol_version_t = 1,
     connect_reason_code_v3_1_1_identifier_rejected_t = 2,
     connect_reason_code_v3_1_1_server_unavailable_t = 3,
@@ -295,6 +295,19 @@ static void reader_seek(struct reader_t *self_p,
     }
 }
 
+static uint8_t reader_read_u8(struct reader_t *self_p)
+{
+    uint8_t value;
+
+    if (reader_available(self_p, 1)) {
+        value = bitstream_reader_read_u8(&self_p->reader);
+    } else {
+        value = 0;
+    }
+
+    return (value);
+}
+
 static uint16_t reader_read_u16(struct reader_t *self_p)
 {
     uint16_t value;
@@ -408,6 +421,18 @@ static size_t pack_connect(struct writer_t *writer_p,
     }
 
     return (writer_written(writer_p));
+}
+
+static bool unpack_connack(struct async_mqtt_client_t *self_p,
+                           bool *success_p)
+{
+    struct reader_t reader;
+
+    reader_init(&reader, &self_p->packet.buf[0], self_p->packet.size);
+    reader_read_u8(&reader);
+    *success_p = (reader_read_u8(&reader) == connect_reason_code_success_t);
+
+    return (reader_ok(&reader));
 }
 
 static size_t pack_disconnect(struct writer_t *writer_p,
@@ -526,9 +551,13 @@ static void on_stcp_disconnected(struct async_stcp_client_t *stcp_p)
     struct async_mqtt_client_t *self_p;
 
     self_p = async_container_of(stcp_p, typeof(*self_p), stcp);
-    self_p->connected = false;
-    async_timer_stop(&self_p->keep_alive_timer);
-    self_p->on_disconnected(self_p);
+
+    if (self_p->connected) {
+        self_p->connected = false;
+        async_timer_stop(&self_p->keep_alive_timer);
+        self_p->on_disconnected(self_p);
+    }
+
     start_reconnect_timer(self_p);
 }
 
@@ -656,9 +685,19 @@ static bool read_packet(struct async_mqtt_client_t *self_p)
 
 static void handle_connack(struct async_mqtt_client_t *self_p)
 {
-    self_p->connected = true;
-    async_timer_start(&self_p->keep_alive_timer);
-    self_p->on_connected(self_p->obj_p);
+    bool ok;
+    bool success;
+
+    ok = unpack_connack(self_p, &success);
+
+    if (ok && success) {
+        self_p->connected = true;
+        async_timer_start(&self_p->keep_alive_timer);
+        self_p->on_connected(self_p->obj_p);
+    } else {
+        async_stcp_client_disconnect(&self_p->stcp);
+        start_reconnect_timer(self_p);
+    }
 }
 
 static void handle_suback(struct async_mqtt_client_t *self_p)
