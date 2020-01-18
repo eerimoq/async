@@ -330,14 +330,14 @@ static void reader_get_string(struct reader_t *self_p,
     if (reader_available(self_p, *size_p)) {
         *string_pp = (char *)&self_p->buf_p[reader_offset(self_p)];
         reader_seek(self_p, *size_p);
+    } else {
+        *string_pp = NULL;
     }
 }
 
-static void reader_null_terminate_string(struct reader_t *self_p,
-                                         char *string_p,
-                                         size_t size)
+static void reader_null_terminate_string(char *string_p, size_t size)
 {
-    if (reader_ok(self_p)) {
+    if (string_p != NULL) {
         string_p[size] = '\0';
     }
 }
@@ -499,7 +499,7 @@ static bool unpack_publish(struct async_mqtt_client_t *self_p,
     reader_init(&reader, &self_p->packet.buf[0], self_p->packet.size);
     reader_get_string(&reader, topic_pp, &topic_size);
     reader_seek(&reader, 1);
-    reader_null_terminate_string(&reader, *topic_pp, topic_size);
+    reader_null_terminate_string(*topic_pp, topic_size);
     *buf_pp = reader_pointer(&reader);
     *size_p = (self_p->packet.size - reader_offset(&reader));
 
