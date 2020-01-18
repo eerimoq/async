@@ -562,61 +562,10 @@ static void print_test_failure_report_end()
 static void print_signal_failure(struct nala_test_t *test_p)
 {
     print_test_failure_report_begin();
-    printf("  Test name: " COLOR(GREEN, "%s\n"), full_test_name(current_test_p));
-    printf("  Location:  " COLOR(CYAN, "unknown\n"));
-    printf("  Error:     " COLOR_BOLD(RED, "Terminated by signal %d.\n"),
+    printf("  Test:  " COLOR(GREEN, "%s\n"), full_test_name(current_test_p));
+    printf("  Error: " COLOR_BOLD(RED, "Terminated by signal %d.\n"),
            test_p->signal_number);
     print_test_failure_report_end();
-}
-
-static void print_location_context(const char *filename_p, size_t line_number)
-{
-    FILE *file_p;
-    char line_prefix[64];
-    char line[256];
-    size_t first_line;
-    size_t i;
-
-    printf("  Location context:\n\n");
-
-    file_p = fopen(filename_p, "r");
-
-    if (file_p == NULL) {
-        return;
-    }
-
-    if (line_number < 2) {
-        first_line = 1;
-    } else {
-        first_line = (line_number - 2);
-    }
-
-    for (i = 1; i < line_number + 3; i++) {
-        if (fgets(&line[0], sizeof(line), file_p) == NULL) {
-            goto out1;
-        }
-
-        if (i < first_line) {
-            continue;
-        }
-
-        if (i == line_number) {
-            snprintf(line_prefix,
-                     sizeof(line_prefix),
-                     "> " COLOR_BOLD(MAGENTA, "%ld"),
-                     i);
-            printf("  %23s", line_prefix);
-            printf(" |  " COLOR_BOLD(CYAN, "%s"), line);
-        } else {
-            printf("  " COLOR(MAGENTA, "%6zu"), i);
-            printf(" |  %s", line);
-        }
-    }
-
- out1:
-
-    printf("\n");
-    fclose(file_p);
 }
 
 static const char *test_result(struct nala_test_t *test_p, bool color)
@@ -819,8 +768,6 @@ const char *nala_format(const char *format_p, ...)
     char *buf_p;
     FILE *file_p;
 
-    /* ToDo: Remove reset when suspend and resume are implemented. */
-    // nala_reset_all_mocks();
     nala_suspend_all_mocks();
     file_p = open_memstream(&buf_p, &size);
     color_start(file_p, ANSI_COLOR_RED);
@@ -1123,21 +1070,19 @@ static bool traceback_skip_filter(void *arg_p, const char *line_p)
     return (false);
 }
 
-void nala_test_failure(const char *file_p,
-                       int line,
-                       const char *message_p)
+void nala_test_failure(const char *message_p)
 {
     nala_suspend_all_mocks();
     nala_capture_output_stop();
     capture_output_destroy(&capture_stdout);
     capture_output_destroy(&capture_stderr);
     print_test_failure_report_begin();
-    printf("  Test name: " COLOR(GREEN, "%s\n"), full_test_name(current_test_p));
-    printf("  Location:  " COLOR(CYAN, "%s:%d\n"), file_p, line);
-    printf("  Error:     %s", message_p);
-    print_location_context(file_p, (size_t)line);
+    printf("  Test:  " COLOR(CYAN, "%s\n"), full_test_name(current_test_p));
+    printf("  Error: %s", message_p);
+    printf("\n");
     nala_traceback_print("  ", traceback_skip_filter, NULL);
     print_test_failure_report_end();
+    free((void *)message_p);
     exit(1);
 }
 
@@ -1261,6 +1206,34 @@ __attribute__((weak)) int main(int argc, char *argv[])
     }
 
     return (nala_run_tests());
+}
+
+static bool mock_traceback_skip_filter(void *arg_p, const char *line_p)
+{
+    (void)arg_p;
+
+    if (strstr(line_p, "nala.c:") != NULL) {
+        return (true);
+    }
+
+    if (strstr(line_p, "nala_mocks.c:") != NULL) {
+        return (true);
+    }
+
+    if (strstr(line_p, "??") != NULL) {
+        return (true);
+    }
+
+    return (false);
+}
+
+char *nala_mock_traceback_format(void **buffer_pp, int depth)
+{
+    return (nala_traceback_format(buffer_pp,
+                                  depth,
+                                  "  ",
+                                  mock_traceback_skip_filter,
+                                  NULL));
 }
 /*
  * The MIT License (MIT)
