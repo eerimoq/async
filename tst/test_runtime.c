@@ -74,8 +74,9 @@ static void tcp_client_server_initiated_close_on_input(
 {
     char ch;
 
-    async_tcp_client_read(self_p, &ch, 1);
-    ASSERT_EQ(ch, '1');
+    if (async_tcp_client_read(self_p, &ch, 1) == 1) {
+        ASSERT_EQ(ch, '1');
+    }
 }
 
 static void *tcp_client_server_initiated_close_server_main(void *arg_p)

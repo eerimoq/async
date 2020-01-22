@@ -301,86 +301,86 @@ TEST(multiple_timers)
     /* 0 ms timers expires. */
     mock_prepare_process(5, 5);
     ASSERT_EQ(async_process(&async), 5);
-    ASSERT_EQ(counters[0].value, 0)
-    ASSERT_EQ(counters[1].value, 1)
-    ASSERT_EQ(counters[2].value, 0)
-    ASSERT_EQ(counters[3].value, 0)
-    ASSERT_EQ(counters[4].value, 0)
-    ASSERT_EQ(counters[5].value, 0)
-    ASSERT_EQ(counters[6].value, 0)
-    ASSERT_EQ(counters[7].value, 0)
-    ASSERT_EQ(counters[8].value, 0)
-    ASSERT_EQ(counters[9].value, 1)
+    ASSERT_EQ(counters[0].value, 0);
+    ASSERT_EQ(counters[1].value, 1);
+    ASSERT_EQ(counters[2].value, 0);
+    ASSERT_EQ(counters[3].value, 0);
+    ASSERT_EQ(counters[4].value, 0);
+    ASSERT_EQ(counters[5].value, 0);
+    ASSERT_EQ(counters[6].value, 0);
+    ASSERT_EQ(counters[7].value, 0);
+    ASSERT_EQ(counters[8].value, 0);
+    ASSERT_EQ(counters[9].value, 1);
 
     /* 10 ms timer expire. */
     mock_prepare_process(10, 10);
     ASSERT_EQ(async_process(&async), 40);
-    ASSERT_EQ(counters[0].value, 0)
-    ASSERT_EQ(counters[1].value, 1)
-    ASSERT_EQ(counters[2].value, 0)
-    ASSERT_EQ(counters[3].value, 0)
-    ASSERT_EQ(counters[4].value, 0)
-    ASSERT_EQ(counters[5].value, 0)
-    ASSERT_EQ(counters[6].value, 0)
-    ASSERT_EQ(counters[7].value, 0)
-    ASSERT_EQ(counters[8].value, 1)
-    ASSERT_EQ(counters[9].value, 1)
+    ASSERT_EQ(counters[0].value, 0);
+    ASSERT_EQ(counters[1].value, 1);
+    ASSERT_EQ(counters[2].value, 0);
+    ASSERT_EQ(counters[3].value, 0);
+    ASSERT_EQ(counters[4].value, 0);
+    ASSERT_EQ(counters[5].value, 0);
+    ASSERT_EQ(counters[6].value, 0);
+    ASSERT_EQ(counters[7].value, 0);
+    ASSERT_EQ(counters[8].value, 1);
+    ASSERT_EQ(counters[9].value, 1);
 
     /* 50 ms timers expires. */
     mock_prepare_process(50, 50);
     ASSERT_EQ(async_process(&async), 25);
-    ASSERT_EQ(counters[0].value, 1)
-    ASSERT_EQ(counters[1].value, 1)
-    ASSERT_EQ(counters[2].value, 0)
-    ASSERT_EQ(counters[3].value, 0)
-    ASSERT_EQ(counters[4].value, 1)
-    ASSERT_EQ(counters[5].value, 1)
-    ASSERT_EQ(counters[6].value, 0)
-    ASSERT_EQ(counters[7].value, 0)
-    ASSERT_EQ(counters[8].value, 1)
-    ASSERT_EQ(counters[9].value, 1)
+    ASSERT_EQ(counters[0].value, 1);
+    ASSERT_EQ(counters[1].value, 1);
+    ASSERT_EQ(counters[2].value, 0);
+    ASSERT_EQ(counters[3].value, 0);
+    ASSERT_EQ(counters[4].value, 1);
+    ASSERT_EQ(counters[5].value, 1);
+    ASSERT_EQ(counters[6].value, 0);
+    ASSERT_EQ(counters[7].value, 0);
+    ASSERT_EQ(counters[8].value, 1);
+    ASSERT_EQ(counters[9].value, 1);
 
     /* 75 ms timer expire. */
     mock_prepare_process(75, 75);
     ASSERT_EQ(async_process(&async), 15);
-    ASSERT_EQ(counters[0].value, 1)
-    ASSERT_EQ(counters[1].value, 1)
-    ASSERT_EQ(counters[2].value, 0)
-    ASSERT_EQ(counters[3].value, 1)
-    ASSERT_EQ(counters[4].value, 1)
-    ASSERT_EQ(counters[5].value, 1)
-    ASSERT_EQ(counters[6].value, 0)
-    ASSERT_EQ(counters[7].value, 0)
-    ASSERT_EQ(counters[8].value, 1)
-    ASSERT_EQ(counters[9].value, 1)
+    ASSERT_EQ(counters[0].value, 1);
+    ASSERT_EQ(counters[1].value, 1);
+    ASSERT_EQ(counters[2].value, 0);
+    ASSERT_EQ(counters[3].value, 1);
+    ASSERT_EQ(counters[4].value, 1);
+    ASSERT_EQ(counters[5].value, 1);
+    ASSERT_EQ(counters[6].value, 0);
+    ASSERT_EQ(counters[7].value, 0);
+    ASSERT_EQ(counters[8].value, 1);
+    ASSERT_EQ(counters[9].value, 1);
 
     /* 90 ms timer expire. */
     mock_prepare_process(90, 90);
     ASSERT_EQ(async_process(&async), 10);
-    ASSERT_EQ(counters[0].value, 1)
-    ASSERT_EQ(counters[1].value, 1)
-    ASSERT_EQ(counters[2].value, 0)
-    ASSERT_EQ(counters[3].value, 1)
-    ASSERT_EQ(counters[4].value, 1)
-    ASSERT_EQ(counters[5].value, 1)
-    ASSERT_EQ(counters[6].value, 0)
-    ASSERT_EQ(counters[7].value, 1)
-    ASSERT_EQ(counters[8].value, 1)
-    ASSERT_EQ(counters[9].value, 1)
+    ASSERT_EQ(counters[0].value, 1);
+    ASSERT_EQ(counters[1].value, 1);
+    ASSERT_EQ(counters[2].value, 0);
+    ASSERT_EQ(counters[3].value, 1);
+    ASSERT_EQ(counters[4].value, 1);
+    ASSERT_EQ(counters[5].value, 1);
+    ASSERT_EQ(counters[6].value, 0);
+    ASSERT_EQ(counters[7].value, 1);
+    ASSERT_EQ(counters[8].value, 1);
+    ASSERT_EQ(counters[9].value, 1);
 
     /* 100 ms timers expires. */
     mock_prepare_process(100, -1);
     ASSERT_EQ(async_process(&async), -ASYNC_ERROR_TIMER_LAST_STOPPED);
-    ASSERT_EQ(counters[0].value, 1)
-    ASSERT_EQ(counters[1].value, 1)
-    ASSERT_EQ(counters[2].value, 1)
-    ASSERT_EQ(counters[3].value, 1)
-    ASSERT_EQ(counters[4].value, 1)
-    ASSERT_EQ(counters[5].value, 1)
-    ASSERT_EQ(counters[6].value, 1)
-    ASSERT_EQ(counters[7].value, 1)
-    ASSERT_EQ(counters[8].value, 1)
-    ASSERT_EQ(counters[9].value, 1)
+    ASSERT_EQ(counters[0].value, 1);
+    ASSERT_EQ(counters[1].value, 1);
+    ASSERT_EQ(counters[2].value, 1);
+    ASSERT_EQ(counters[3].value, 1);
+    ASSERT_EQ(counters[4].value, 1);
+    ASSERT_EQ(counters[5].value, 1);
+    ASSERT_EQ(counters[6].value, 1);
+    ASSERT_EQ(counters[7].value, 1);
+    ASSERT_EQ(counters[8].value, 1);
+    ASSERT_EQ(counters[9].value, 1);
 }
 
 TEST(stop_multiple_timers)
