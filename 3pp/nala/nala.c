@@ -344,6 +344,7 @@ struct capture_output_t {
     int original_fd;
     FILE *temporary_file_p;
     FILE *original_file_p;
+    FILE *stdout_p;
 };
 
 static struct nala_test_t *current_test_p = NULL;
@@ -450,6 +451,7 @@ static void capture_output_init(struct capture_output_t *self_p,
     self_p->output_pp = NULL;
     self_p->length = 0;
     self_p->original_file_p = file_p;
+    self_p->stdout_p = fdopen(dup(fileno(file_p)), "w");
 }
 
 static void capture_output_destroy(struct capture_output_t *self_p)
@@ -461,6 +463,9 @@ static void capture_output_destroy(struct capture_output_t *self_p)
 
         self_p->output_pp = NULL;
     }
+
+    fflush(self_p->stdout_p);
+    fclose(self_p->stdout_p);
 }
 
 static void capture_output_redirect(struct capture_output_t *self_p)
@@ -530,6 +535,15 @@ static void capture_output_stop(struct capture_output_t *self_p)
     fclose(self_p->temporary_file_p);
 
     printf("%s", *self_p->output_pp);
+}
+
+FILE *nala_get_stdout(void)
+{
+    if (capture_stdout.running) {
+        return (capture_stdout.stdout_p);
+    } else {
+        return (stdout);
+    }
 }
 
 static float timeval_to_ms(struct timeval *timeval_p)
@@ -1323,65 +1337,41 @@ char *nala_mock_traceback_format(void **buffer_pp, int depth)
             default: nala_format(format, (actual), (expected))),        \
         default: nala_format(format, (actual), (expected)))
 
-#define PRINT_FORMAT(value)                             \
-    _Generic((value),                                   \
-             char: "%c",                                \
-             const char: "%c",                          \
-             signed char: "%hhd",                       \
-             const signed char: "%hhd",                 \
-             unsigned char: "%hhu",                     \
-             const unsigned char: "%hhu",               \
-             signed short: "%hd",                       \
-             const signed short: "%hd",                 \
-             unsigned short: "%hu",                     \
-             const unsigned short: "%hu",               \
-             signed int: "%d",                          \
-             const signed int: "%d",                    \
-             unsigned int: "%u",                        \
-             const unsigned int: "%u",                  \
-             long int: "%ld",                           \
-             const long int: "%ld",                     \
-             unsigned long int: "%lu",                  \
-             const unsigned long int: "%lu",            \
-             long long int: "%lld",                     \
-             const long long int: "%lld",               \
-             unsigned long long int: "%llu",            \
-             const unsigned long long int: "%llu",      \
-             float: "%f",                               \
-             const float: "%f",                         \
-             double: "%f",                              \
-             const double: "%f",                        \
-             long double: "%Lf",                        \
-             const long double: "%Lf",                  \
-             char *: "\"%s\"",                          \
-             const char *: "\"%s\"",                    \
-             bool: "%d",                                \
-             default: "%p")
+#define PRINT_FORMAT(value)                     \
+    _Generic((value),                           \
+             char: "%c",                        \
+             signed char: "%hhd",               \
+             unsigned char: "%hhu",             \
+             signed short: "%hd",               \
+             unsigned short: "%hu",             \
+             signed int: "%d",                  \
+             unsigned int: "%u",                \
+             long int: "%ld",                   \
+             unsigned long int: "%lu",          \
+             long long int: "%lld",             \
+             unsigned long long int: "%llu",    \
+             float: "%f",                       \
+             double: "%f",                      \
+             long double: "%Lf",                \
+             const char *: "\"%s\"",            \
+             bool: "%d",                        \
+             const void *: "%p")
 
-#define TYPEOF(value)                                   \
-    typeof(_Generic((value),                            \
-                    char *: nala_char_p,                \
-                    const char *: nala_const_char_p,    \
-                    default: (value)))
-
-#define ASSERTION(actual, expected, check, format, formatter)           \
-    do {                                                                \
-        TYPEOF(actual) _nala_assert_actual = actual;                    \
-        TYPEOF(expected) _nala_assert_expected = expected;              \
-                                                                        \
-        if (!check(_nala_assert_actual, _nala_assert_expected)) {       \
-            nala_reset_all_mocks();                                     \
-            char _nala_assert_format[512];                              \
-                                                                        \
-            snprintf(&_nala_assert_format[0],                           \
-                     sizeof(_nala_assert_format),                       \
-                     format,                                            \
-                     PRINT_FORMAT(_nala_assert_actual),                 \
-                     PRINT_FORMAT(_nala_assert_expected));              \
-            nala_test_failure(formatter(_nala_assert_format,            \
-                                        _nala_assert_actual,            \
-                                        _nala_assert_expected));        \
-        }                                                               \
+#define ASSERTION(actual, expected, check, format, formatter)   \
+    do {                                                        \
+        if (!check(actual, expected)) {                         \
+            nala_reset_all_mocks();                             \
+            char _nala_assert_format[512];                      \
+                                                                \
+            snprintf(&_nala_assert_format[0],                   \
+                     sizeof(_nala_assert_format),               \
+                     format,                                    \
+                     PRINT_FORMAT(actual),                      \
+                     PRINT_FORMAT(expected));                   \
+            nala_test_failure(formatter(_nala_assert_format,    \
+                                        actual,                 \
+                                        expected));             \
+        }                                                       \
     } while (0);
 
 #define BINARY_ASSERTION(actual, expected, op)                          \
