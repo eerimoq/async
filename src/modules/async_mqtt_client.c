@@ -540,6 +540,7 @@ static void on_stcp_connected(struct async_stcp_client_t *stcp_p, int res)
                                              &self_p->client_id[0],
                                              &self_p->will,
                                              30));
+        self_p->packet.state = packet_state_read_type_t;
         stop_reconnect_timer(self_p);
     } else {
         start_reconnect_timer(self_p);
@@ -819,7 +820,6 @@ void async_mqtt_client_init(struct async_mqtt_client_t *self_p,
                            on_stcp_disconnected,
                            on_stcp_input,
                            async_p);
-    self_p->packet.state = packet_state_read_type_t;
     async_timer_init(&self_p->keep_alive_timer,
                      on_keep_alive_timeout,
                      1000 * self_p->keep_alive_s,

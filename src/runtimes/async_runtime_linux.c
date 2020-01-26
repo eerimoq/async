@@ -466,6 +466,8 @@ static void tcp_client_connect(struct async_tcp_client_t *self_p,
                                const char *host_p,
                                int port)
 {
+    tcp_client(self_p)->sockfd = -1;
+    tcp_client(self_p)->closed = false;
     async_tcp_client_connect_write(self_p, host_p, port);
 }
 
