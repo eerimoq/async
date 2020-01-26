@@ -156,6 +156,20 @@ int async_call_worker_pool(struct async_t *self_p,
 void async_run_forever(struct async_t *self_p);
 
 /**
+ * Get the runtime file descriptor. To be used in combination with
+ * async_run_once() when embedding an async runtime in another threads
+ * event loop.
+ */
+int async_get_fd(struct async_t *self_p);
+
+/**
+ * Wait for event(s) once on the runtime file descriptor, and process
+ * them. This function is used when embedding an async runtime in
+ * another threads event loop.
+ */
+void async_run_once(struct async_t *self_p);
+
+/**
  * Initialize given timer with given initial and repeat timeouts in
  * milliseconds. Calls on_timeout() on expiry.
  */
