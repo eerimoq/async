@@ -88,12 +88,12 @@ TEST(log_print)
     async_init(&async);
 
     /* First log using default functions. No output. */
-    CAPTURE_OUTPUT(output, errput) {
+    CAPTURE_OUTPUT(output1, errput1) {
         async.log_object.print(&log_print_object, ASYNC_LOG_INFO, "Hello!");
     }
 
-    ASSERT_EQ(output, "");
-    ASSERT_EQ(errput, "");
+    ASSERT_EQ(output1, "");
+    ASSERT_EQ(errput1, "");
 
     /* Now set log callbacks to print to stdout. */
     async_set_log_object_callbacks(&async, log_stdout, NULL);
