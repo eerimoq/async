@@ -100,26 +100,6 @@ Typical usage:
    ...
    async_run_forever(&async);
 
-The native runtime can also be embedded in another threads event loop.
-
-.. code-block:: c
-
-   async_init(&async);
-   async_set_runtime(&async, async_runtime_create());
-   ...
-   async_fd = async_get_fd(&async);
-   async_utils_linux_epoll_add_in(epoll_fd, async_fd);
-
-   while (true) {
-       nfds = epoll_wait(epoll_fd, &event, 1, -1);
-       ...
-       if (event.fd == async_fd) {
-           async_run_once(&async);
-       } else {
-          ...
-       }
-   }
-
 Design
 ======
 
