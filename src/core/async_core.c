@@ -87,13 +87,51 @@ static int async_func_queue_put(struct async_func_queue_t *self_p,
     return (0);
 }
 
+static void log_object_print_null(void *log_object_p,
+                                  int level,
+                                  const char *fmt_p,
+                                  ...)
+{
+    (void)log_object_p;
+    (void)level;
+    (void)fmt_p;
+}
+
+static bool log_object_is_enabled_for_null(void *log_object_p,
+                                           int level)
+{
+    (void)log_object_p;
+    (void)level;
+
+    return (false);
+}
+
 void async_init(struct async_t *self_p)
 {
     async_timer_list_init(&self_p->running_timers);
     async_func_queue_init(&self_p->funcs,
                           &self_p->elems[0],
                           ASYNC_FUNC_QUEUE_MAX);
+    self_p->log_object.print = log_object_print_null;
+    self_p->log_object.is_enabled_for = log_object_is_enabled_for_null;
     self_p->runtime_p = async_runtime_null_create();
+}
+
+void async_set_log_object_callbacks(
+    struct async_t *self_p,
+    async_log_object_print_t log_object_print,
+    async_log_object_is_enabled_for_t log_object_is_enabled_for)
+{
+    if (log_object_print == NULL) {
+        log_object_print = log_object_print_null;
+    }
+
+    if (log_object_is_enabled_for == NULL) {
+        log_object_is_enabled_for = log_object_is_enabled_for_null;
+    }
+
+    self_p->log_object.print = log_object_print;
+    self_p->log_object.is_enabled_for = log_object_is_enabled_for;
 }
 
 void async_set_runtime(struct async_t *self_p,
@@ -116,7 +154,7 @@ int async_process(struct async_t *self_p)
 {
     async_func_t func;
     void *obj_p;
-    
+
     async_timer_list_process(&self_p->running_timers);
 
     while (true) {

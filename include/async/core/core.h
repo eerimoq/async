@@ -39,6 +39,16 @@
 #define ASYNC_ERROR_TIMER_NO_ACTION              3
 #define ASYNC_ERROR_TIMER_LAST_STOPPED           4
 
+/* Log levels. */
+#define ASYNC_LOG_EMERGENCY   0
+#define ASYNC_LOG_ALERT       1
+#define ASYNC_LOG_CRITICAL    2
+#define ASYNC_LOG_ERROR       3
+#define ASYNC_LOG_WARNING     4
+#define ASYNC_LOG_NOTICE      5
+#define ASYNC_LOG_INFO        6
+#define ASYNC_LOG_DEBUG       7
+
 #define ASYNC_FUNC_QUEUE_MAX                     (32 + 1)
 
 #define async_offsetof(type, member) ((size_t) &((type *)0)->member)
@@ -56,6 +66,21 @@ typedef void (*async_func_t)(void *obj_p);
 struct async_timer_t;
 
 typedef void (*async_timer_timeout_t)(struct async_timer_t *self_p);
+
+/**
+ * Check if given log level is enabled in given log object. If so,
+ * format a log entry and print it.
+ */
+typedef void (*async_log_object_print_t)(void *log_object_p,
+                                         int level,
+                                         const char *fmt_p,
+                                         ...);
+
+/**
+ * Check if given log level is enabled in given log object.
+ */
+typedef bool (*async_log_object_is_enabled_for_t)(void *log_object_p,
+                                                  int level);
 
 struct async_timer_t {
     struct async_t *async_p;
@@ -90,6 +115,10 @@ struct async_t {
     struct async_timer_list_t running_timers;
     struct async_func_queue_t funcs;
     struct async_func_queue_elem_t elems[ASYNC_FUNC_QUEUE_MAX];
+    struct {
+        async_log_object_print_t print;
+        async_log_object_is_enabled_for_t is_enabled_for;
+    } log_object;
     struct async_runtime_t *runtime_p;
 };
 
@@ -98,6 +127,14 @@ struct async_t {
  * with async_set_runtime() if needed.
  */
 void async_init(struct async_t *self_p);
+
+/**
+ * Set the log object callbacks.
+ */
+void async_set_log_object_callbacks(
+    struct async_t *self_p,
+    async_log_object_print_t log_object_print,
+    async_log_object_is_enabled_for_t log_object_is_enabled_for);
 
 /**
  * Set the runtime for given async object. The default runtime exits
