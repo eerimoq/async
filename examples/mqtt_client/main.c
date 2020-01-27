@@ -26,6 +26,7 @@
  * This file is part of the Async project.
  */
 
+#include <stdarg.h>
 #include "async.h"
 #include "publisher.h"
 
@@ -50,6 +51,23 @@ static const char server_crt[] = (
     "cwT/ciBUfMi/giQyFNpB1RdktfHd\n"
     "-----END CERTIFICATE-----\n");
 
+static void log_stdout(void *log_object_p,
+                       int level,
+                       const char *fmt_p,
+                       ...)
+{
+    (void)log_object_p;
+    (void)level;
+
+    va_list vlist;
+
+    va_start(vlist, fmt_p);
+    printf("DEBUG ");
+    vprintf(fmt_p, vlist);
+    printf("\n");
+    va_end(vlist);
+}
+
 int main()
 {
     struct async_t async;
@@ -58,6 +76,7 @@ int main()
 
     async_ssl_module_init();
     async_init(&async);
+    async_set_log_object_callbacks(&async, log_stdout, NULL);
     async_set_runtime(&async, async_runtime_create());
     publisher_init(&publishers[0],
                    "tcp",

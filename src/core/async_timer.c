@@ -33,6 +33,8 @@
 /* Expiry time of the tail timer. Can practically never be reached. */
 #define EXPIRY_TIME_MS_MAX 0xffffffffffffffffull
 
+#define ROUNDING_ERROR 2
+
 #ifndef ASYNC_TIME_MS
 #    include <time.h>
 
@@ -221,6 +223,7 @@ int async_timer_list_next_timeout(struct async_timer_list_t *self_p)
             }
 
             time_until_next_timeout = (int)(expiry_time_ms - now_ms);
+            time_until_next_timeout += ROUNDING_ERROR;
         }
 
         self_p->latest_expiry_time_ms = expiry_time_ms;

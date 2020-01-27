@@ -64,6 +64,7 @@ struct async_mqtt_client_t {
     async_mqtt_client_on_publish_t on_publish;
     async_mqtt_client_on_subscribe_complete_t on_subscribe_complete;
     void *obj_p;
+    void *log_object_p;
     struct async_t *async_p;
     char client_id[64];
     int keep_alive_s;

@@ -32,6 +32,13 @@
 #include "async/modules/mqtt_client.h"
 #include "bitstream.h"
 
+#define DEBUG(format, ...)                                      \
+    self_p->async_p->log_object.print(self_p->log_object_p,     \
+                                      ASYNC_LOG_DEBUG,          \
+                                      "%s: " format,            \
+                                      &self_p->client_id[0],    \
+                                      ##__VA_ARGS__)
+
 /* Connection flags. */
 #define CLEAN_START     0x02
 #define WILL_FLAG       0x04
@@ -511,6 +518,7 @@ static void on_reconnect_timeout(struct async_timer_t *timer_p)
     struct async_mqtt_client_t *self_p;
 
     self_p = async_container_of(timer_p, typeof(*self_p), reconnect_timer);
+    DEBUG("Connecting to %s:%d.", self_p->host_p, self_p->port);
     async_stcp_client_connect(&self_p->stcp, self_p->host_p, self_p->port);
 }
 
@@ -532,6 +540,8 @@ static void on_stcp_connected(struct async_stcp_client_t *stcp_p, int res)
 
     self_p = async_container_of(stcp_p, typeof(*self_p), stcp);
 
+    DEBUG("Transport connected with result %d.", res);
+
     if (res == 0) {
         writer_init(&writer, &buf[0], sizeof(buf));
         async_stcp_client_write(&self_p->stcp,
@@ -552,6 +562,8 @@ static void on_stcp_disconnected(struct async_stcp_client_t *stcp_p)
     struct async_mqtt_client_t *self_p;
 
     self_p = async_container_of(stcp_p, typeof(*self_p), stcp);
+
+    DEBUG("Transport disconnected.");
 
     if (self_p->connected) {
         self_p->connected = false;
@@ -808,6 +820,7 @@ void async_mqtt_client_init(struct async_mqtt_client_t *self_p,
     self_p->on_publish = on_publish;
     self_p->on_subscribe_complete = on_subscribe_complete_null;
     self_p->obj_p = obj_p;
+    self_p->log_object_p = NULL;
     self_p->async_p = async_p;
     sprintf(&self_p->client_id[0], "async-12345");
     self_p->keep_alive_s = 10;
