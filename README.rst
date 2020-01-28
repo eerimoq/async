@@ -80,10 +80,12 @@ Typical usage:
    async_init(&async);
    ...
    while (true) {
-       timeout_ms = async_process(&async);
-       timer_update(timeout_ms);
-       epoll_wait();
+       epoll_wait(...);
        ...
+       if (timeout) {
+           async_tick(&async);
+       }
+       async_process(&async);
    }
 
 Native

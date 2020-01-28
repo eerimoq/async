@@ -32,19 +32,24 @@
 #include "async.h"
 
 /**
- * Create a timer and add it to given epoll instance.
+ * Create a periodic timer and start it with the async period. Returns
+ * the timer file descriptor.
  */
-int async_utils_linux_init_timer(int epoll_fd);
+int async_utils_linux_create_periodic_timer(struct async_t *async_p);
 
 /**
- * Update given timer with timeout from async_process().
+ * Called when the timer expirs. Reads from the timer file descriptor
+ * and calls the async tick function.
  */
-void async_utils_linux_timer_update(int timer_fd, int timeout_ms);
+void async_utils_linux_handle_timeout(struct async_t *async_p,
+                                      int timer_fd);
 
 /**
- * Called when the timer expirs. Reads from the timer file descriptor.
+ * Both creates and add the timer file descriptor to given epoll
+ * instance. Returns the timer file descriptor.
  */
-void async_utils_linux_handle_timeout(int timer_fd);
+int async_utils_linux_init_periodic_timer(struct async_t *async_p,
+                                          int epoll_fd);
 
 /**
  * Create an epoll instance and return its handle.

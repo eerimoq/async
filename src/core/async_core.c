@@ -108,6 +108,7 @@ static bool log_object_is_enabled_for_null(void *log_object_p,
 
 void async_init(struct async_t *self_p)
 {
+    self_p->tick_in_ms = 100;
     async_timer_list_init(&self_p->running_timers);
     async_func_queue_init(&self_p->funcs,
                           &self_p->elems[0],
@@ -134,6 +135,12 @@ void async_set_log_object_callbacks(
     self_p->log_object.is_enabled_for = log_object_is_enabled_for;
 }
 
+void async_set_tick_in_ms(struct async_t *self_p,
+                          int tick_in_ms)
+{
+    self_p->tick_in_ms = tick_in_ms;
+}
+
 void async_set_runtime(struct async_t *self_p,
                        struct async_runtime_t *runtime_p)
 {
@@ -150,12 +157,15 @@ void async_destroy(struct async_t *self_p)
     async_func_queue_destroy(&self_p->funcs);
 }
 
-int async_process(struct async_t *self_p)
+void async_tick(struct async_t *self_p)
+{
+    async_timer_list_tick(&self_p->running_timers);
+}
+
+void async_process(struct async_t *self_p)
 {
     async_func_t func;
     void *obj_p;
-
-    async_timer_list_process(&self_p->running_timers);
 
     while (true) {
         func = async_func_queue_get(&self_p->funcs, &obj_p);
@@ -166,8 +176,6 @@ int async_process(struct async_t *self_p)
 
         func(obj_p);
     }
-
-    return (async_timer_list_next_timeout(&self_p->running_timers));
 }
 
 int async_call(struct async_t *self_p, async_func_t func, void *obj_p)

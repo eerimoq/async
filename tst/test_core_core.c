@@ -7,7 +7,7 @@ TEST(process_empty)
     struct async_t async;
 
     async_init(&async);
-    ASSERT_EQ(async_process(&async), -ASYNC_ERROR_TIMER_NO_ACTION);
+    async_process(&async);
     async_destroy(&async);
 }
 
@@ -24,7 +24,7 @@ TEST(call_once)
     async_init(&async);
     arg = 0;
     ASSERT_EQ(async_call(&async, (async_func_t)increment, &arg), 0);
-    ASSERT_EQ(async_process(&async), -ASYNC_ERROR_TIMER_NO_ACTION);
+    async_process(&async);
     ASSERT_EQ(arg, 1);
     async_destroy(&async);
 }
@@ -38,7 +38,7 @@ TEST(call_twice)
     arg = 0;
     ASSERT_EQ(async_call(&async, (async_func_t)increment, &arg), 0);
     ASSERT_EQ(async_call(&async, (async_func_t)increment, &arg), 0);
-    ASSERT_EQ(async_process(&async), -ASYNC_ERROR_TIMER_NO_ACTION);
+    async_process(&async);
     ASSERT_EQ(arg, 2);
     async_destroy(&async);
 }
@@ -58,7 +58,7 @@ TEST(call_queue_full)
 
     ASSERT_EQ(async_call(&async, (async_func_t)increment, &arg),
               -ASYNC_ERROR_QUEUE_FULL);
-    ASSERT_EQ(async_process(&async), -ASYNC_ERROR_TIMER_NO_ACTION);
+    async_process(&async);
     ASSERT_EQ(arg, 32);
     async_destroy(&async);
 }

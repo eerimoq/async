@@ -298,6 +298,11 @@ static void async_handle_tcp_client_data(struct message_data_t *req_p)
     tcp_client(req_p->tcp_p)->on_input(req_p->tcp_p);
 }
 
+static void async_handle_timeout(struct async_runtime_linux_t *self_p)
+{
+    async_tick(self_p->async_p);
+}
+
 static void async_handle_tcp_client_disconnected(
     struct message_disconnected_t *ind_p)
 {
@@ -319,22 +324,17 @@ static void *async_main(struct async_runtime_linux_t *self_p)
 {
     struct ml_uid_t *uid_p;
     void *message_p;
-    int timeout_ms;
+
+    ml_timer_handler_timer_start(&self_p->async.timer,
+                                 0,
+                                 self_p->async_p->tick_in_ms);
 
     while (true) {
-        timeout_ms = async_process(self_p->async_p);
-
-        if (timeout_ms >= 0) {
-            ml_timer_handler_timer_start(&self_p->async.timer,
-                                         timeout_ms,
-                                         0);
-        } else if (timeout_ms == -ASYNC_ERROR_TIMER_LAST_STOPPED) {
-            ml_timer_handler_timer_stop(&self_p->async.timer);
-        }
-
         uid_p = ml_queue_get(&self_p->async.queue, &message_p);
 
-        if (uid_p == &uid_tcp_connect_complete) {
+        if (uid_p == &uid_timeout) {
+            async_handle_timeout(self_p);
+        } else if (uid_p == &uid_tcp_connect_complete) {
             async_handle_tcp_client_connected(message_p);
         } else if (uid_p == &uid_tcp_data) {
             async_handle_tcp_client_data(message_p);
@@ -347,6 +347,7 @@ static void *async_main(struct async_runtime_linux_t *self_p)
         }
 
         ml_message_free(message_p);
+        async_process(self_p->async_p);
     }
 
     return (NULL);

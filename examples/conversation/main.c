@@ -41,27 +41,26 @@ int main()
     int nfds;
     struct bob_t bob;
     struct async_channel_t channel;
-    int timeout_ms;
 
     async_init(&async);
     async_utils_linux_channel_stdin_init(&channel, &async);
     bob_init(&bob, &channel, &async);
     epoll_fd = async_utils_linux_epoll_create();
-    timer_fd = async_utils_linux_init_timer(epoll_fd);
+    timer_fd = async_utils_linux_init_periodic_timer(&async, epoll_fd);
     async_utils_linux_init_stdin(epoll_fd);
 
     while (true) {
-        timeout_ms = async_process(&async);
-        async_utils_linux_timer_update(timer_fd, timeout_ms);
         nfds = epoll_wait(epoll_fd, &event, 1, -1);
 
         if (nfds == 1) {
             if (event.data.fd == timer_fd) {
-                async_utils_linux_handle_timeout(timer_fd);
+                async_utils_linux_handle_timeout(&async, timer_fd);
             } else if (event.data.fd == fileno(stdin)) {
                 async_utils_linux_channel_stdin_handle(&channel);
             }
         }
+
+        async_process(&async);
     }
 
     return (1);

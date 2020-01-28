@@ -36,8 +36,6 @@
 /* Error codes. */
 #define ASYNC_ERROR_NOT_IMPLMENETED              1
 #define ASYNC_ERROR_QUEUE_FULL                   2
-#define ASYNC_ERROR_TIMER_NO_ACTION              3
-#define ASYNC_ERROR_TIMER_LAST_STOPPED           4
 
 /* Log levels. */
 #define ASYNC_LOG_EMERGENCY   0
@@ -84,9 +82,11 @@ typedef bool (*async_log_object_is_enabled_for_t)(void *log_object_p,
 
 struct async_timer_t {
     struct async_t *async_p;
-    unsigned int initial_ms;
-    unsigned int repeat_ms;
-    uint64_t expiry_time_ms;
+    unsigned int initial;
+    unsigned int repeat;
+    unsigned int initial_ticks;
+    unsigned int repeat_ticks;
+    unsigned int delta;
     async_timer_timeout_t on_timeout;
     int number_of_outstanding_timeouts;
     int number_of_timeouts_to_ignore;
@@ -96,7 +96,6 @@ struct async_timer_t {
 struct async_timer_list_t {
     struct async_timer_t *head_p;
     struct async_timer_t tail;
-    uint64_t latest_expiry_time_ms;
 };
 
 struct async_func_queue_elem_t {
@@ -112,6 +111,7 @@ struct async_func_queue_t {
 };
 
 struct async_t {
+    int tick_in_ms;
     struct async_timer_list_t running_timers;
     struct async_func_queue_t funcs;
     struct async_func_queue_elem_t elems[ASYNC_FUNC_QUEUE_MAX];
@@ -137,6 +137,11 @@ void async_set_log_object_callbacks(
     async_log_object_is_enabled_for_t log_object_is_enabled_for);
 
 /**
+ * Set the tick duration in milliseconds for given async object.
+ */
+void async_set_tick_in_ms(struct async_t *self_p, int tick_in_ms);
+
+/**
  * Set the runtime for given async object. The default runtime exits
  * the program if used.
  */
@@ -149,12 +154,14 @@ void async_set_runtime(struct async_t *self_p,
 void async_destroy(struct async_t *self_p);
 
 /**
- * Evaluates timers and calls all async functions. Returns the time in
- * milliseconds until the next timer expires,
- * -ASYNC_ERROR_TIMER_NO_ACTION if no action is required, or
- * -ASYNC_ERROR_TIMER_LAST_STOPPED if the last timer was stopped.
+ * Advance the async time one tick. Should be called periodically.
  */
-int async_process(struct async_t *self_p);
+void async_tick(struct async_t *self_p);
+
+/**
+ * Returns once all async functions have been called.
+ */
+void async_process(struct async_t *self_p);
 
 /**
  * Call given function with given argument later.

@@ -26,8 +26,4 @@ void mqtt_on_publish(void *obj_p,
                      const uint8_t *buf_p,
                      size_t size);
 
-void mock_prepare_time_ms(int now_ms);
-
-void mock_prepare_process(int evaluate_ms, int next_ms);
-
 #endif

@@ -35,15 +35,14 @@ int main()
 {
     struct async_t async;
     struct timers_t timers;
-    int timeout_ms;
 
     async_init(&async);
     timers_init(&timers, &async);
-    timeout_ms = 0;
     
     while (true) {
-        usleep(1000 * timeout_ms);
-        timeout_ms = async_process(&async);
+        usleep(100 * 1000);
+        async_tick(&async);
+        async_process(&async);
     }
 
     return (1);
