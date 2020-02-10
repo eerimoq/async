@@ -44,9 +44,9 @@ static void null_close(struct async_channel_t *self_p)
     async_call(self_p->async_p, self_p->on.closed, self_p->on.obj_p);
 }
 
-static ssize_t null_read(struct async_channel_t *self_p,
-                         void *buf_p,
-                         size_t size)
+static size_t null_read(struct async_channel_t *self_p,
+                        void *buf_p,
+                        size_t size)
 {
     (void)self_p;
     (void)buf_p;
@@ -54,14 +54,13 @@ static ssize_t null_read(struct async_channel_t *self_p,
     return (size);
 }
 
-static ssize_t null_write(struct async_channel_t *self_p,
-                          const void *buf_p,
-                          size_t size)
+static void null_write(struct async_channel_t *self_p,
+                       const void *buf_p,
+                       size_t size)
 {
     (void)self_p;
     (void)buf_p;
-
-    return (size);
+    (void)size;
 }
 
 static void null_on()
@@ -143,11 +142,11 @@ size_t async_channel_read(struct async_channel_t *self_p,
     return (self_p->read(self_p, buf_p, size));
 }
 
-ssize_t async_channel_write(struct async_channel_t *self_p,
-                            const void *buf_p,
-                            size_t size)
+void async_channel_write(struct async_channel_t *self_p,
+                         const void *buf_p,
+                         size_t size)
 {
-    return (self_p->write(self_p, buf_p, size));
+    self_p->write(self_p, buf_p, size);
 }
 
 void async_channel_opened(struct async_channel_t *self_p, int res)

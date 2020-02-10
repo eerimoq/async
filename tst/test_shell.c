@@ -8,7 +8,7 @@
 
 static void mock_prepare_output(const char *output_p)
 {
-    channel_write_mock_once(strlen(output_p), strlen(output_p));
+    channel_write_mock_once(strlen(output_p));
     channel_write_mock_set_buf_p_in(output_p, strlen(output_p));
 }
 
@@ -33,7 +33,7 @@ static void mock_prepare_command(const char *input_p,
     }
 
     while (*output_p != '\0') {
-        channel_write_mock_once(1, 1);
+        channel_write_mock_once(1);
         channel_write_mock_set_buf_p_in(output_p, 1);
         output_p++;
     }

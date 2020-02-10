@@ -54,12 +54,12 @@ struct async_channel_t;
 
 typedef void (*async_channel_open_t)(struct async_channel_t *self_p);
 typedef void (*async_channel_close_t)(struct async_channel_t *self_p);
-typedef ssize_t (*async_channel_read_t)(struct async_channel_t *self_p,
-                                        void *buf_p,
-                                        size_t size);
-typedef ssize_t (*async_channel_write_t)(struct async_channel_t *self_p,
-                                         const void *buf_p,
-                                         size_t size);
+typedef size_t (*async_channel_read_t)(struct async_channel_t *self_p,
+                                       void *buf_p,
+                                       size_t size);
+typedef void (*async_channel_write_t)(struct async_channel_t *self_p,
+                                      const void *buf_p,
+                                      size_t size);
 
 typedef void (*async_channel_opened_t)(void *obj_p, int res);
 
@@ -112,7 +112,7 @@ void async_channel_open(struct async_channel_t *self_p);
 void async_channel_close(struct async_channel_t *self_p);
 
 /**
- * Read data from given channel.
+ * Read data from given channel. Returns number of read bytes.
  */
 size_t async_channel_read(struct async_channel_t *self_p,
                           void *buf_p,
@@ -121,9 +121,9 @@ size_t async_channel_read(struct async_channel_t *self_p,
 /**
  * Write data to given channel.
  */
-ssize_t async_channel_write(struct async_channel_t *self_p,
-                            const void *buf_p,
-                            size_t size);
+void async_channel_write(struct async_channel_t *self_p,
+                         const void *buf_p,
+                         size_t size);
 
 /**
  * Call when opened, or when open failed. res should be 0 if
@@ -138,7 +138,8 @@ void async_channel_opened(struct async_channel_t *self_p,
 void async_channel_closed(struct async_channel_t *self_p);
 
 /**
- * Call when input is available.
+ * Call when input is available. Call async_channel_read() to read
+ * data.
  */
 void async_channel_input(struct async_channel_t *self_p);
 

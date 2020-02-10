@@ -35,9 +35,9 @@
 #include <sys/timerfd.h>
 #include "async/utils/linux.h"
 
-static ssize_t stdin_read(struct async_channel_t *self_p,
-                          void *buf_p,
-                          size_t size)
+static size_t stdin_read(struct async_channel_t *self_p,
+                         void *buf_p,
+                         size_t size)
 {
     (void)self_p;
 
@@ -56,13 +56,16 @@ static ssize_t stdin_read(struct async_channel_t *self_p,
     return (res);
 }
 
-static ssize_t stdin_write(struct async_channel_t *self_p,
-                           const void *buf_p,
-                           size_t size)
+static void stdin_write(struct async_channel_t *self_p,
+                        const void *buf_p,
+                        size_t size)
 {
     (void)self_p;
 
-    return (write(fileno(stdout), buf_p, size));
+    ssize_t res;
+
+    res = write(fileno(stdout), buf_p, size);
+    (void)res;
 }
 
 int async_utils_linux_create_periodic_timer(struct async_t *async_p)
