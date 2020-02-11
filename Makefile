@@ -1,5 +1,7 @@
 .PHONY: examples
 
+VERSION = $(shell grep ASYNC_VERSION include/async.h | awk '{print $$3}' | tr -d '"')
+
 default: run
 
 all: run examples
@@ -34,6 +36,18 @@ clean:
 	$(MAKE) -C examples/http_get clean
 	$(MAKE) -C examples/call_worker_pool clean
 	$(MAKE) -C examples/call_threadsafe clean
+
+release:
+	rm -rf async-core-$(VERSION)
+	mkdir async-core-$(VERSION)
+	cp -r --parents include/async/core* async-core-$(VERSION)
+	cp -r --parents src/core async-core-$(VERSION)
+
+release-compile:
+	cd async-core-$(VERSION) && \
+	    for f in $$(find -name "*.c") ; do \
+	        gcc -c -Iinclude $$f ; \
+	    done
 
 help:
 	@echo "TARGET     DESCRIPTION"

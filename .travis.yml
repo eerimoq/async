@@ -9,6 +9,8 @@ install:
 script:
   - source setup.sh
   - make -s -j $(cat /proc/cpuinfo | grep processor | wc -l) all
+  - make release
+  - make release-compile
 
 after_success:
   - bash <(curl -s https://codecov.io/bash) -X coveragepy

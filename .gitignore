@@ -3,3 +3,4 @@ nala_*
 report.json
 *.gcno
 tests.pp.c
+async-core-*

@@ -28,7 +28,6 @@
 
 #include <stdio.h>
 #include "async/core/runtime.h"
-#include "async/runtimes/linux.h"
 
 static void set_async(void *self_p, struct async_t *async_p)
 {
