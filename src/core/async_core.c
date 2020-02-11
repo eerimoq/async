@@ -26,7 +26,7 @@
  * This file is part of the Async project.
  */
 
-#include "async.h"
+#include "async/core.h"
 #include "internal.h"
 
 static bool is_empty(struct async_func_queue_t *self_p)

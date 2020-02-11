@@ -28,7 +28,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include "async.h"
+#include "async/core.h"
 #include "async/core/runtime.h"
 
 static void on_connected_default(struct async_tcp_client_t *self_p, int res)

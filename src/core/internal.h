@@ -29,7 +29,7 @@
 #ifndef ASYNC_INTERNAL_H
 #define ASYNC_INTERNAL_H
 
-#include "async.h"
+#include "async/core.h"
 
 #define DIV_CEIL(a, b) (((a) + (b) - 1) / (b))
 

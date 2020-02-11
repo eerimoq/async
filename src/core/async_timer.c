@@ -27,7 +27,7 @@
  */
 
 #include <stdio.h>
-#include "async.h"
+#include "async/core.h"
 #include "internal.h"
 
 static bool is_any_timer_running(struct async_timer_list_t *self_p)
