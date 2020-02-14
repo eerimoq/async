@@ -29,7 +29,7 @@
 #ifndef ASYNC_H
 #define ASYNC_H
 
-#define ASYNC_VERSION                          "0.2.0"
+#define ASYNC_VERSION                          "0.3.0"
 
 #include "async/core.h"
 #include "async/modules/ssl.h"

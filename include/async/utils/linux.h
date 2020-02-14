@@ -29,7 +29,7 @@
 #ifndef ASYNC_UTILS_LINUX_H
 #define ASYNC_UTILS_LINUX_H
 
-#include "async.h"
+#include "async/core.h"
 
 /**
  * Create a periodic timer and start it with the async period. Returns

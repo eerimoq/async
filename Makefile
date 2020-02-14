@@ -41,7 +41,9 @@ release:
 	rm -rf async-core-$(VERSION)
 	mkdir async-core-$(VERSION)
 	cp -r --parents include/async/core* async-core-$(VERSION)
+	cp -r --parents include/async/utils* async-core-$(VERSION)
 	cp -r --parents src/core async-core-$(VERSION)
+	cp -r --parents src/utils async-core-$(VERSION)
 
 release-compile:
 	cd async-core-$(VERSION) && \
