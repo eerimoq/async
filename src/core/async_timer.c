@@ -51,7 +51,7 @@ static void on_timeout(struct async_timer_t *self_p)
         return;
     }
 
-    self_p->on_timeout(self_p);
+    self_p->on_timeout(self_p->obj_p);
 }
 
 static void timer_list_insert(struct async_timer_list_t *self_p,
@@ -125,12 +125,14 @@ static void timer_list_remove(struct async_timer_list_t *self_p,
 
 void async_timer_init(struct async_timer_t *self_p,
                       async_timer_timeout_t on_timeout,
+                      void *obj_p,
                       unsigned int initial,
                       unsigned int repeat,
                       struct async_t *async_p)
 {
     self_p->async_p = async_p;
     self_p->on_timeout = on_timeout;
+    self_p->obj_p = obj_p;
     async_timer_set_initial(self_p, initial);
     async_timer_set_repeat(self_p, repeat);
     self_p->number_of_outstanding_timeouts = 0;

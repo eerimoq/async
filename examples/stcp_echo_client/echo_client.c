@@ -82,20 +82,14 @@ static void on_input(struct async_stcp_client_t *stcp_p)
     }
 }
 
-static void on_transmit_timeout(struct async_timer_t *timer_p)
+static void on_transmit_timeout(struct echo_client_t *self_p)
 {
-    struct echo_client_t *self_p;
-
-    self_p = async_container_of(timer_p, typeof(*self_p), transmit_timer);
     printf("%s: TX: 'Hello!'\n", self_p->name_p);
     async_stcp_client_write(&self_p->stcp, "Hello!", 6);
 }
 
-static void on_reconnect_timeout(struct async_timer_t *timer_p)
+static void on_reconnect_timeout(struct echo_client_t *self_p)
 {
-    struct echo_client_t *self_p;
-
-    self_p = async_container_of(timer_p, typeof(*self_p), reconnect_timer);
     do_connect(self_p);
 }
 
@@ -114,12 +108,14 @@ void echo_client_init(struct echo_client_t *self_p,
                            on_input,
                            async_p);
     async_timer_init(&self_p->transmit_timer,
-                     on_transmit_timeout,
+                     (async_timer_timeout_t)on_transmit_timeout,
+                     self_p,
                      0,
                      1000,
                      async_p);
     async_timer_init(&self_p->reconnect_timer,
-                     on_reconnect_timeout,
+                     (async_timer_timeout_t)on_reconnect_timeout,
+                     self_p,
                      1000,
                      0,
                      async_p);

@@ -63,7 +63,7 @@ typedef void (*async_func_t)(void *obj_p);
 
 struct async_timer_t;
 
-typedef void (*async_timer_timeout_t)(struct async_timer_t *self_p);
+typedef void (*async_timer_timeout_t)(void *obj_p);
 
 /**
  * Check if given log level is enabled in given log object. If so,
@@ -82,6 +82,7 @@ typedef bool (*async_log_object_is_enabled_for_t)(void *log_object_p,
 
 struct async_timer_t {
     struct async_t *async_p;
+    void *obj_p;
     unsigned int initial;
     unsigned int repeat;
     unsigned int initial_ticks;
@@ -205,6 +206,7 @@ void async_run_forever(struct async_t *self_p);
  */
 void async_timer_init(struct async_timer_t *self_p,
                       async_timer_timeout_t on_timeout,
+                      void *obj_p,
                       unsigned int initial,
                       unsigned int repeat,
                       struct async_t *async_p);

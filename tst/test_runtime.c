@@ -39,9 +39,19 @@ TEST(timers)
 
     async_init(&async);
     async_set_runtime(&async, async_runtime_create());
-    async_timer_init(&timers[0], on_single_shot_timer_expiry, 1, 0, &async);
+    async_timer_init(&timers[0],
+                     on_single_shot_timer_expiry,
+                     NULL,
+                     1,
+                     0,
+                     &async);
     async_timer_start(&timers[0]);
-    async_timer_init(&timers[1], on_periodic_timer_expiry, 0, 1, &async);
+    async_timer_init(&timers[1],
+                     on_periodic_timer_expiry,
+                     NULL,
+                     0,
+                     1,
+                     &async);
     async_timer_start(&timers[1]);
     async_run_forever(&async);
 }

@@ -29,11 +29,8 @@
 #include <stdio.h>
 #include "timers.h"
 
-static void on_timeout_1(struct async_timer_t *timer_p)
+static void on_timeout_1()
 {
-    struct timers_t *self_p;
-
-    self_p = async_container_of(timer_p, typeof(*self_p), timer_1);
     printf("Timer 1 expired.\n");
 }
 
@@ -42,11 +39,8 @@ static void on_timeout_2()
     printf("Timer 2 expired.\n");
 }
 
-static void on_timeout_3(struct async_timer_t *timer_p)
+static void on_timeout_3(struct timers_t *self_p)
 {
-    struct timers_t *self_p;
-
-    self_p = async_container_of(timer_p, typeof(*self_p), timer_3);
     printf("Timer 3 expired. Stopping timer 1.\n");
     async_timer_stop(&self_p->timer_1);
 }
@@ -55,16 +49,19 @@ void timers_init(struct timers_t *self_p, struct async_t *async_p)
 {
     async_timer_init(&self_p->timer_1,
                      on_timeout_1,
+                     self_p,
                      1000,
                      1000,
                      async_p);
     async_timer_init(&self_p->timer_2,
                      on_timeout_2,
+                     self_p,
                      3000,
                      3000,
                      async_p);
     async_timer_init(&self_p->timer_3,
-                     on_timeout_3,
+                     (async_timer_timeout_t)on_timeout_3,
+                     self_p,
                      5000,
                      5000,
                      async_p);

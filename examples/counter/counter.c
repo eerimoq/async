@@ -29,11 +29,8 @@
 #include <stdio.h>
 #include "counter.h"
 
-static void on_print_timeout(struct async_timer_t *timer_p)
+static void on_print_timeout(struct counter_t *self_p)
 {
-    struct counter_t *self_p;
-
-    self_p = async_container_of(timer_p, typeof(*self_p), print_timer);
     printf("Count: %d\n", self_p->count);
 }
 
@@ -41,7 +38,8 @@ void counter_init(struct counter_t *self_p, struct async_t *async_p)
 {
     self_p->count = 0;
     async_timer_init(&self_p->print_timer,
-                     on_print_timeout,
+                     (async_timer_timeout_t)on_print_timeout,
+                     self_p,
                      0,
                      300,
                      async_p);

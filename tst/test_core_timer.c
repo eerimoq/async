@@ -8,11 +8,8 @@ struct counter_t {
     int value;
 };
 
-static void on_timeout(struct async_timer_t *timer_p)
+static void on_timeout(struct counter_t *self_p)
 {
-    struct counter_t *self_p;
-
-    self_p = async_container_of(timer_p, typeof(*self_p), timer);
     self_p->value++;
 }
 
@@ -23,7 +20,8 @@ TEST(single_shot_timer)
 
     async_init(&async);
     async_timer_init(&counter.timer,
-                     on_timeout,
+                     (async_timer_timeout_t)on_timeout,
+                     &counter,
                      0,
                      0,
                      &async);
@@ -42,7 +40,8 @@ TEST(single_shot_timer_stop_running)
 
     async_init(&async);
     async_timer_init(&counter.timer,
-                     on_timeout,
+                     (async_timer_timeout_t)on_timeout,
+                     &counter,
                      0,
                      0,
                      &async);
@@ -59,7 +58,8 @@ TEST(single_shot_timer_stop_expired_before_handled)
 
     async_init(&async);
     async_timer_init(&counter.timer,
-                     on_timeout,
+                     (async_timer_timeout_t)on_timeout,
+                     &counter,
                      0,
                      0,
                      &async);
@@ -79,7 +79,8 @@ TEST(timer_get_and_set_initial_and_repeat)
 
     async_init(&async);
     async_timer_init(&timer,
-                     on_timeout,
+                     NULL,
+                     NULL,
                      1,
                      2,
                      &async);
@@ -98,7 +99,8 @@ TEST(initial_and_repeat)
 
     async_init(&async);
     async_timer_init(&counter.timer,
-                     on_timeout,
+                     (async_timer_timeout_t)on_timeout,
+                     &counter,
                      300,
                      100,
                      &async);
@@ -179,7 +181,8 @@ TEST(restart_with_outstanding_timeout)
 
     async_init(&async);
     async_timer_init(&counter.timer,
-                     on_timeout,
+                     (async_timer_timeout_t)on_timeout,
+                     &counter,
                      0,
                      0,
                      &async);
@@ -200,7 +203,8 @@ TEST(restart_with_outstanding_timeouts)
 
     async_init(&async);
     async_timer_init(&counter.timer,
-                     on_timeout,
+                     (async_timer_timeout_t)on_timeout,
+                     &counter,
                      0,
                      100,
                      &async);
@@ -242,7 +246,8 @@ TEST(multiple_timers)
     for (i = 0; i < 10; i++) {
         counters[i].value = 0;
         async_timer_init(&counters[i].timer,
-                         on_timeout,
+                         (async_timer_timeout_t)on_timeout,
+                         &counters[i],
                          timeouts[i],
                          0,
                          &async);
@@ -364,7 +369,8 @@ TEST(stop_multiple_timers)
     for (i = 0; i < 10; i++) {
         counters[i].value = 0;
         async_timer_init(&counters[i].timer,
-                         on_timeout,
+                         (async_timer_timeout_t)on_timeout,
+                         &counters[i],
                          timeouts[i],
                          0,
                          &async);

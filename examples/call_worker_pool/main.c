@@ -46,10 +46,8 @@ static void on_complete(void *obj_p)
     printf("Completed!\n");
 }
 
-static void on_timeout(struct async_timer_t *timer_p)
+static void on_timeout()
 {
-    (void)timer_p;
-
     printf("Timeout!\n");
 }
 
@@ -60,7 +58,7 @@ int main()
 
     async_init(&async);
     async_set_runtime(&async, async_runtime_create());
-    async_timer_init(&timer, on_timeout, 0, 1000, &async);
+    async_timer_init(&timer, on_timeout, NULL, 0, 1000, &async);
     async_timer_start(&timer);
     async_call_worker_pool(&async, hello, NULL, on_complete);
     async_run_forever(&async);

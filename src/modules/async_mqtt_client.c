@@ -513,11 +513,8 @@ static bool unpack_publish(struct async_mqtt_client_t *self_p,
     return (reader_ok(&reader));
 }
 
-static void on_reconnect_timeout(struct async_timer_t *timer_p)
+static void on_reconnect_timeout(struct async_mqtt_client_t *self_p)
 {
-    struct async_mqtt_client_t *self_p;
-
-    self_p = async_container_of(timer_p, typeof(*self_p), reconnect_timer);
     DEBUG("Connecting to %s:%d.", self_p->host_p, self_p->port);
     async_stcp_client_connect(&self_p->stcp, self_p->host_p, self_p->port);
 }
@@ -792,13 +789,11 @@ static size_t pack_pingreq(struct writer_t *writer_p)
     return (writer_written(writer_p));
 }
 
-static void on_keep_alive_timeout(struct async_timer_t *timer_p)
+static void on_keep_alive_timeout(struct async_mqtt_client_t *self_p)
 {
     struct writer_t writer;
     uint8_t buf[8];
-    struct async_mqtt_client_t *self_p;
 
-    self_p = async_container_of(timer_p, typeof(*self_p), keep_alive_timer);
     writer_init(&writer, &buf[0], sizeof(buf));
     async_stcp_client_write(&self_p->stcp, &buf[0], pack_pingreq(&writer));
 }
@@ -834,12 +829,14 @@ void async_mqtt_client_init(struct async_mqtt_client_t *self_p,
                            on_stcp_input,
                            async_p);
     async_timer_init(&self_p->keep_alive_timer,
-                     on_keep_alive_timeout,
+                     (async_timer_timeout_t)on_keep_alive_timeout,
+                     self_p,
                      1000 * self_p->keep_alive_s,
                      0,
                      async_p);
     async_timer_init(&self_p->reconnect_timer,
-                     on_reconnect_timeout,
+                     (async_timer_timeout_t)on_reconnect_timeout,
+                     self_p,
                      1000,
                      0,
                      async_p);

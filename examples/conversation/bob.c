@@ -94,11 +94,8 @@ static void say_hello(struct bob_t *self_p)
     expect_response(self_p);
 }
 
-static void on_response_timeout(struct async_timer_t *timer_p)
+static void on_response_timeout(struct bob_t *self_p)
 {
-    struct bob_t *self_p;
-
-    self_p = async_container_of(timer_p, typeof(*self_p), response_timer);
     self_p->no_response_count++;
     async_channel_write(self_p->channel_p, "\n", 1);
 
@@ -220,7 +217,8 @@ void bob_init(struct bob_t *self_p,
               struct async_t *async_p)
 {
     async_timer_init(&self_p->response_timer,
-                     on_response_timeout,
+                     (async_timer_timeout_t)on_response_timeout,
+                     self_p,
                      10000,
                      0,
                      async_p);

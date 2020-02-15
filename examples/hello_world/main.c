@@ -41,7 +41,7 @@ int main()
 
     async_init(&async);
     async_set_runtime(&async, async_runtime_create());
-    async_timer_init(&timer, on_timeout, 0, 1000, &async);
+    async_timer_init(&timer, on_timeout, NULL, 0, 1000, &async);
     async_timer_start(&timer);
     async_run_forever(&async);
 
