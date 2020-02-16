@@ -133,11 +133,11 @@ Execute all unit tests.
    $ make -s -j4 test
    ...
 
-Execute one test suite.
+Execute tests matching given pattern.
 
 .. code-block:: shell
 
-   $ make -s -j4 TEST=core_timer test
+   $ make -s -j4 ARGS=core_timer test
    ...
 
 .. |buildstatus| image:: https://travis-ci.org/eerimoq/async.svg?branch=master

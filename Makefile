@@ -44,6 +44,7 @@ release:
 	cp -r --parents include/async/utils* async-core-$(VERSION)
 	cp -r --parents src/core async-core-$(VERSION)
 	cp -r --parents src/utils async-core-$(VERSION)
+	tar czf async-core-$(VERSION).tar.gz async-core-$(VERSION)
 
 release-compile:
 	cd async-core-$(VERSION) && \
@@ -59,3 +60,4 @@ help:
 	@echo "test       run + coverage report."
 	@echo "examples   Build all examples."
 	@echo "clean      Remove build and run files."
+	@echo "release    Create a release."
