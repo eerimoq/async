@@ -56,7 +56,11 @@ static void setup(void)
     async_shell_init(&shell, &channel, &async);
     async_process(&async);
 
-    channel_open_mock_once();
+    channel_open_mock_once(0);
+    channel_write_mock_once(30);
+    channel_write_mock_set_buf_p_in("\nWelcome to the async shell!\n\n", 30);
+    channel_write_mock_once(2);
+    channel_write_mock_set_buf_p_in("$ ", 2);
     async_shell_start(&shell);
     async_process(&async);
 }

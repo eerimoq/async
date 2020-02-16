@@ -1062,16 +1062,6 @@ static int read_command(struct async_shell_t *self_p)
     return (res);
 }
 
-static void on_opened(struct async_shell_t *self_p, int res)
-{
-    if (res == 0) {
-        output(self_p, "\nWelcome to the async shell!\n\n");
-        print_prompt(self_p);
-    } else {
-        printf("Failed to open the shell channel.\n");
-    }
-}
-
 static void on_closed(struct async_shell_t *self_p)
 {
     (void)self_p;
@@ -1115,7 +1105,6 @@ void async_shell_init(struct async_shell_t *self_p,
     self_p->commands_p = NULL;
     self_p->async_p = async_p;
     async_channel_set_on(channel_p,
-                         (async_channel_opened_t)on_opened,
                          (async_func_t)on_closed,
                          (async_func_t)on_input,
                          self_p);
@@ -1137,7 +1126,16 @@ void async_shell_init(struct async_shell_t *self_p,
 
 void async_shell_start(struct async_shell_t *self_p)
 {
-    async_channel_open(self_p->channel_p);
+    int res;
+
+    res = async_channel_open(self_p->channel_p);
+
+    if (res == 0) {
+        output(self_p, "\nWelcome to the async shell!\n\n");
+        print_prompt(self_p);
+    } else {
+        printf("Failed to open the shell channel.\n");
+    }
 }
 
 void async_shell_stop(struct async_shell_t *self_p)

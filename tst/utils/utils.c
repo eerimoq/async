@@ -3,11 +3,13 @@
 #include "nala.h"
 #include "nala_mocks.h"
 
-void channel_open(struct async_channel_t *self_p)
+int channel_open(struct async_channel_t *self_p)
 {
     (void)self_p;
 
     FAIL();
+
+    return (-1);
 }
 
 void channel_close(struct async_channel_t *self_p)

@@ -36,13 +36,10 @@
  *
  * 2. Main code opens a device.
  *
- * 3. Once opened, main code calls async_channel_opened(), which calls
- *    on_opened() in async code.
- *
- * 4. Once data is available, main code calls async_channel_input(),
+ * 3. Once data is available, main code calls async_channel_input(),
  *    which calls on_input() in async code.
  *
- * 5. Async code calls async_channel_read() to read the data.
+ * 4. Async code calls async_channel_read() to read the data.
  */
 
 #ifndef ASYNC_CORE_CHANNEL_H
@@ -52,7 +49,7 @@
 
 struct async_channel_t;
 
-typedef void (*async_channel_open_t)(struct async_channel_t *self_p);
+typedef int (*async_channel_open_t)(struct async_channel_t *self_p);
 typedef void (*async_channel_close_t)(struct async_channel_t *self_p);
 typedef size_t (*async_channel_read_t)(struct async_channel_t *self_p,
                                        void *buf_p,
@@ -61,18 +58,12 @@ typedef void (*async_channel_write_t)(struct async_channel_t *self_p,
                                       const void *buf_p,
                                       size_t size);
 
-typedef void (*async_channel_opened_t)(void *obj_p, int res);
-
 struct async_channel_t {
     async_channel_open_t open;
     async_channel_close_t close;
     async_channel_read_t read;
     async_channel_write_t write;
     struct {
-        struct {
-            async_channel_opened_t func;
-            int res;
-        } opened;
         async_func_t closed;
         async_func_t input;
         void *obj_p;
@@ -96,15 +87,14 @@ void async_channel_init(struct async_channel_t *self_p,
  * to the channel.
  */
 void async_channel_set_on(struct async_channel_t *self_p,
-                          async_channel_opened_t on_opened,
                           async_func_t on_closed,
                           async_func_t on_input,
                           void *obj_p);
 
 /**
- * Open the channel. on_opened() is called on completion.
+ * Open the channel. Returns 0 on success.
  */
-void async_channel_open(struct async_channel_t *self_p);
+int async_channel_open(struct async_channel_t *self_p);
 
 /**
  * Close the channel.
@@ -125,13 +115,6 @@ size_t async_channel_read(struct async_channel_t *self_p,
 void async_channel_write(struct async_channel_t *self_p,
                          const void *buf_p,
                          size_t size);
-
-/**
- * Call when opened, or when open failed. res should be 0 if
- * successful.
- */
-void async_channel_opened(struct async_channel_t *self_p,
-                          int res);
 
 /**
  * Call when closed be the peer.

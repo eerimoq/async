@@ -3,7 +3,7 @@
 
 #include "async.h"
 
-void channel_open(struct async_channel_t *self_p);
+int channel_open(struct async_channel_t *self_p);
 
 void channel_close(struct async_channel_t *self_p);
 

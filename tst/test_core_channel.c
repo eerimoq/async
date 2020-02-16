@@ -9,12 +9,11 @@ TEST(init_all_null)
 
     async_init(&async);
     async_channel_init(&channel, NULL, NULL, NULL, NULL, &async);
-    async_channel_open(&channel);
+    ASSERT_EQ(async_channel_open(&channel), 0);
     async_channel_read(&channel, &ch, 1);
     ch = 1;
     async_channel_write(&channel, &ch, 1);
     async_channel_close(&channel);
-    async_channel_opened(&channel, 0);
     async_channel_closed(&channel);
     async_channel_input(&channel);
     async_process(&async);
@@ -28,13 +27,12 @@ TEST(set_on_null)
 
     async_init(&async);
     async_channel_init(&channel, NULL, NULL, NULL, NULL, &async);
-    async_channel_set_on(&channel, NULL, NULL, NULL, NULL);
-    async_channel_open(&channel);
+    async_channel_set_on(&channel, NULL, NULL, NULL);
+    ASSERT_EQ(async_channel_open(&channel), 0);
     async_channel_read(&channel, &ch, 1);
     ch = 1;
     async_channel_write(&channel, &ch, 1);
     async_channel_close(&channel);
-    async_channel_opened(&channel, 0);
     async_channel_closed(&channel);
     async_channel_input(&channel);
     async_process(&async);

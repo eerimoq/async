@@ -136,15 +136,6 @@ static void ask_for_age(struct bob_t *self_p)
     expect_response(self_p);
 }
 
-static void on_opened(struct bob_t *self_p, int res)
-{
-    if (res == 0) {
-        say_hello(self_p);
-    } else {
-        say(self_p, "Open failed!");
-    }
-}
-
 static int on_stdin_name(struct bob_t *self_p)
 {
     if (got_response(self_p)) {
@@ -216,6 +207,8 @@ void bob_init(struct bob_t *self_p,
               struct async_channel_t *channel_p,
               struct async_t *async_p)
 {
+    int res;
+
     async_timer_init(&self_p->response_timer,
                      (async_timer_timeout_t)on_response_timeout,
                      self_p,
@@ -225,10 +218,16 @@ void bob_init(struct bob_t *self_p,
     strcpy(&self_p->name[0], "You");
     line_reset(self_p);
     async_channel_set_on(channel_p,
-                         (async_channel_opened_t)on_opened,
                          NULL,
                          (async_func_t)on_input,
                          self_p);
-    async_channel_open(channel_p);
     self_p->channel_p = channel_p;
+
+    res = async_channel_open(channel_p);
+
+    if (res == 0) {
+        say_hello(self_p);
+    } else {
+        say(self_p, "Open failed!");
+    }
 }
