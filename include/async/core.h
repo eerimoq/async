@@ -29,7 +29,7 @@
 #ifndef ASYNC_CORE_H
 #define ASYNC_CORE_H
 
-#define ASYNC_VERSION                          "0.4.0"
+#define ASYNC_VERSION                          "0.5.0"
 
 #include "async/core/core.h"
 #include "async/core/channel.h"
