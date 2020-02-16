@@ -22,6 +22,10 @@ Features
 
 - Secure communication with SSL/TLS.
 
+Project homepage: https://github.com/eerimoq/async
+
+Releases: https://github.com/eerimoq/async/releases
+
 Examples
 ========
 
