@@ -92,7 +92,7 @@ void async_channel_init(struct async_channel_t *self_p,
 
 /**
  * Set the on event callbacks. on_closed() is called when the peer
- * closes the channel. on_input() in salled the the peer writes data
+ * closes the channel. on_input() in called when the peer writes data
  * to the channel.
  */
 void async_channel_set_on(struct async_channel_t *self_p,
@@ -112,7 +112,8 @@ void async_channel_open(struct async_channel_t *self_p);
 void async_channel_close(struct async_channel_t *self_p);
 
 /**
- * Read data from given channel. Returns number of read bytes.
+ * Read data from given channel. Returns number of read bytes. Must
+ * only be called from the on_input() function.
  */
 size_t async_channel_read(struct async_channel_t *self_p,
                           void *buf_p,
@@ -138,8 +139,7 @@ void async_channel_opened(struct async_channel_t *self_p,
 void async_channel_closed(struct async_channel_t *self_p);
 
 /**
- * Call when input is available. Call async_channel_read() to read
- * data.
+ * Call when input is available.
  */
 void async_channel_input(struct async_channel_t *self_p);
 
