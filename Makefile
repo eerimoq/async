@@ -1,6 +1,6 @@
 .PHONY: examples
 
-VERSION = $(shell grep ASYNC_VERSION include/async.h | awk '{print $$3}' | tr -d '"')
+VERSION = $(shell grep ASYNC_VERSION include/async/core.h | awk '{print $$3}' | tr -d '"')
 
 default: run
 
