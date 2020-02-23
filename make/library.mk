@@ -1,9 +1,4 @@
 INC += $(ASYNC_ROOT)/include
-INC += $(ASYNC_ROOT)/3pp/bitstream
-INC += $(ASYNC_ROOT)/3pp/humanfriendly/include
-INC += $(ASYNC_ROOT)/3pp/monolinux-c-library/include
-INC += $(ASYNC_ROOT)/3pp/mbedtls/include
-INC += $(ASYNC_ROOT)/3pp/mbedtls/crypto/include
 
 SRC += $(ASYNC_ROOT)/src/core/async_core.c
 SRC += $(ASYNC_ROOT)/src/core/async_timer.c
@@ -23,6 +18,7 @@ OBJ = $(patsubst %,$(BUILD)%,$(abspath $(SRC:%.c=%.o)))
 CFLAGS += $(INC:%=-I%)
 CFLAGS += -ffunction-sections -fdata-sections
 CFLAGS += -D_GNU_SOURCE=1
+CFLAGS += $(CFLAGS_EXTRA)
 
 LDFLAGS += -Wl,--gc-sections
 
