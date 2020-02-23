@@ -1,5 +1,8 @@
-.PHONY: examples
+.PHONY: examples library install
 
+BUILD ?= build
+LIBRARY = $(BUILD)/libasync.a
+PREFIX ?= /usr/local
 VERSION = $(shell grep ASYNC_VERSION include/async/core.h | awk '{print $$3}' | tr -d '"')
 
 default: run
@@ -25,6 +28,7 @@ examples:
 	$(MAKE) -C examples/call_threadsafe build
 
 clean:
+	rm -rf $(BUILD)
 	$(MAKE) -C tst clean
 	$(MAKE) -C examples/timers clean
 	$(MAKE) -C examples/conversation clean
@@ -49,8 +53,21 @@ release:
 release-compile:
 	cd async-core-$(VERSION) && \
 	    for f in $$(find -name "*.c") ; do \
-	        gcc -c -Iinclude $$f ; \
+		gcc -c -Iinclude $$f ; \
 	    done
+
+library: $(LIBRARY)
+
+install:
+	find include -type f -exec install -Dm 644 "{}" "$(PREFIX)/{}" \;
+	mkdir -p $(PREFIX)/lib
+	install -m 644 $(LIBRARY) $(PREFIX)/lib
+
+include make/library.mk
+
+$(LIBRARY): $(OBJ)
+	mkdir -p $(BUILD)
+	$(AR) cr $(LIBRARY) $^
 
 help:
 	@echo "TARGET     DESCRIPTION"

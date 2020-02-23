@@ -28,7 +28,7 @@ LSAN_OPTIONS = \
 	suppressions=$(ASYNC_ROOT)/make/lsan-suppressions.txt \
 	print_suppressions=0
 
-.PHONY: all run build coverage
+.PHONY: all run build coverage clean
 
 all: run
 
@@ -60,5 +60,8 @@ coverage:
 	@echo
 	@echo "Code coverage report: $$(readlink -f $(BUILD)/coverage/index.html)"
 	@echo
+
+clean:
+	rm -rf $(BUILD) $(CLEAN)
 
 include $(ASYNC_ROOT)/make/common.mk
