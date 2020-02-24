@@ -34,6 +34,7 @@
 #include <sys/epoll.h>
 #include <sys/eventfd.h>
 #include <stdio.h>
+#include <sys/types.h>
 #include "async.h"
 #include "async/utils/linux.h"
 #include "ml/ml.h"

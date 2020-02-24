@@ -28,6 +28,7 @@
 
 #include <stdbool.h>
 #include <string.h>
+#include <sys/types.h>
 #include "async.h"
 #include "async/modules/ssl.h"
 

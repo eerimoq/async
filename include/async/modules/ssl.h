@@ -30,6 +30,7 @@
 #define ASYNC_SSL_H
 
 #include <stdlib.h>
+#include <sys/types.h>
 #include "mbedtls/ssl.h"
 
 enum async_ssl_protocol_t {

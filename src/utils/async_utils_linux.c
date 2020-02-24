@@ -33,6 +33,7 @@
 #include <errno.h>
 #include <stdio.h>
 #include <sys/timerfd.h>
+#include <sys/types.h>
 #include "async/utils/linux.h"
 
 static size_t stdin_read(struct async_channel_t *self_p,
