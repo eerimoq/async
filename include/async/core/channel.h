@@ -97,7 +97,7 @@ void async_channel_set_on(struct async_channel_t *self_p,
 int async_channel_open(struct async_channel_t *self_p);
 
 /**
- * Close the channel.
+ * Close the channel. May be called even if the channel is not open.
  */
 void async_channel_close(struct async_channel_t *self_p);
 
@@ -122,7 +122,7 @@ void async_channel_write(struct async_channel_t *self_p,
 void async_channel_closed(struct async_channel_t *self_p);
 
 /**
- * Call when input is available.
+ * Call when input is available from the peer.
  */
 void async_channel_input(struct async_channel_t *self_p);
 
