@@ -19,7 +19,7 @@ static void check_timers_test_done()
 static void on_single_shot_timer_expiry()
 {
     if (single_shot_timer_expired) {
-        FAIL();
+        FAIL("The single shot timer expired.");
     }
 
     single_shot_timer_expired = true;

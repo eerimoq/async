@@ -7,7 +7,7 @@ int channel_open(struct async_channel_t *self_p)
 {
     (void)self_p;
 
-    FAIL();
+    FAIL("This function must be mocked.");
 
     return (-1);
 }
@@ -16,7 +16,7 @@ void channel_close(struct async_channel_t *self_p)
 {
     (void)self_p;
 
-    FAIL();
+    FAIL("This function must be mocked.");
 }
 
 size_t channel_read(struct async_channel_t *self_p,
@@ -26,7 +26,7 @@ size_t channel_read(struct async_channel_t *self_p,
     (void)self_p;
     (void)buf_p;
 
-    FAIL();
+    FAIL("This function must be mocked.");
 
     return (size);
 }
@@ -39,21 +39,21 @@ void channel_write(struct async_channel_t *self_p,
     (void)buf_p;
     (void)size;
 
-    FAIL();
+    FAIL("This function must be mocked.");
 }
 
 void mqtt_on_connected(void *obj_p)
 {
     (void)obj_p;
 
-    FAIL();
+    FAIL("This function must be mocked.");
 }
 
 void mqtt_on_disconnected(void *obj_p)
 {
     (void)obj_p;
 
-    FAIL();
+    FAIL("This function must be mocked.");
 }
 
 void mqtt_on_subscribe_complete(void *obj_p, uint16_t transaction_id)
@@ -61,7 +61,7 @@ void mqtt_on_subscribe_complete(void *obj_p, uint16_t transaction_id)
     (void)obj_p;
     (void)transaction_id;
 
-    FAIL();
+    FAIL("This function must be mocked.");
 }
 
 void mqtt_on_publish(void *obj_p,
@@ -74,5 +74,5 @@ void mqtt_on_publish(void *obj_p,
     (void)buf_p;
     (void)size;
 
-    FAIL();
+    FAIL("This function must be mocked.");
 }

@@ -98,7 +98,7 @@ static void input_packet(uint8_t *buf_p,
         async_tcp_client_read_mock_set_buf_p_out(&buf_p[2], 1);
         tcp_on_input(tcp_p);
     } else {
-        FAIL();
+        FAIL("Bad length.");
     }
 
     /* Data. */

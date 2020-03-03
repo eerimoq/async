@@ -36,14 +36,14 @@ void runtime_test_set_async(void *self_p, struct async_t *async_p)
     (void)self_p;
     (void)async_p;
 
-    FAIL();
+    FAIL("This function must be mocked.");
 }
 
 void runtime_test_run_forever(void *self_p)
 {
     (void)self_p;
 
-    FAIL();
+    FAIL("This function must be mocked.");
 }
 
 void runtime_test_tcp_client_init(struct async_tcp_client_t *self_p,
@@ -56,7 +56,7 @@ void runtime_test_tcp_client_init(struct async_tcp_client_t *self_p,
     (void)on_disconnected;
     (void)on_input;
 
-    FAIL();
+    FAIL("This function must be mocked.");
 }
 
 void runtime_test_tcp_client_connect(struct async_tcp_client_t *self_p,
@@ -67,14 +67,14 @@ void runtime_test_tcp_client_connect(struct async_tcp_client_t *self_p,
     (void)host_p;
     (void)port;
 
-    FAIL();
+    FAIL("This function must be mocked.");
 }
 
 void runtime_test_tcp_client_disconnect(struct async_tcp_client_t *self_p)
 {
     (void)self_p;
 
-    FAIL();
+    FAIL("This function must be mocked.");
 }
 
 void runtime_test_tcp_client_write(struct async_tcp_client_t *self_p,
@@ -85,7 +85,7 @@ void runtime_test_tcp_client_write(struct async_tcp_client_t *self_p,
     (void)buf_p;
     (void)size;
 
-    FAIL();
+    FAIL("This function must be mocked.");
 }
 
 size_t runtime_test_tcp_client_read(struct async_tcp_client_t *self_p,
@@ -96,7 +96,7 @@ size_t runtime_test_tcp_client_read(struct async_tcp_client_t *self_p,
     (void)buf_p;
     (void)size;
 
-    FAIL();
+    FAIL("This function must be mocked.");
 
     return (0);
 }
