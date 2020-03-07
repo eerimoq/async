@@ -255,6 +255,8 @@ static void *io_main(struct async_runtime_monolinux_t *self_p)
     int epoll_fd;
     struct epoll_event event;
 
+    pthread_setname_np(pthread_self(), "async_io");
+
     epoll_fd = epoll_create1(0);
 
     if (epoll_fd == -1) {
@@ -325,6 +327,8 @@ static void *async_main(struct async_runtime_monolinux_t *self_p)
 {
     struct ml_uid_t *uid_p;
     void *message_p;
+
+    pthread_setname_np(pthread_self(), "async_async");
 
     ml_timer_start(&self_p->async.timer,
                    0,
