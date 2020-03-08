@@ -165,6 +165,7 @@ static void io_handle_tcp_client_connect(struct async_runtime_monolinux_t *self_
         }
 
         if (res == -1) {
+            close(sockfd);
             sockfd = -1;
         }
     }
