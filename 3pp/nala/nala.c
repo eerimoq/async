@@ -1034,7 +1034,7 @@ const char *nala_format_string(const char *format_p, ...)
     file_p = open_memstream(&buf_p, &size);
     color_start(file_p, ANSI_COLOR_RED);
     fprintf(file_p, format_p, left_p, right_p);
-    fprintf(file_p, "             See diff for details.\n");
+    fprintf(file_p, " See diff for details.\n");
     color_reset(file_p);
 
     if (right_p == NULL) {
@@ -1084,7 +1084,7 @@ const char *nala_format_substring(const char *format_p,
     file_p = open_memstream(&buf_p, &size);
     color_start(file_p, ANSI_COLOR_RED);
     fprintf(file_p, "%s", format_p);
-    fprintf(file_p, "             See below for details.\n");
+    fprintf(file_p, " See below for details.\n");
     color_reset(file_p);
 
     if (haystack_p == NULL) {
@@ -1095,10 +1095,10 @@ const char *nala_format_substring(const char *format_p,
         needle_p = "<null>";
     }
 
-    fprintf(file_p, "  Haystack:\n");
+    fprintf(file_p, "  Haystack:\n\n");
     print_with_line_prefix(file_p, "    ", haystack_p);
     fprintf(file_p, "\n");
-    fprintf(file_p, "  Needle:\n");
+    fprintf(file_p, "  Needle:\n\n");
     print_with_line_prefix(file_p, "    ", needle_p);
     fprintf(file_p, "\n");
     fputc('\0', file_p);
@@ -1515,6 +1515,339 @@ void nala_assert_ptr(const void *actual_p, const void *expected_p, int op)
     BINARY_ASSERTION(actual_p, expected_p, op);
 }
 
+typedef void (*format_array_item_t)(FILE *file_p, const void *value_p);
+
+static char *format_array(const void *actual_p,
+                          size_t item_size,
+                          size_t size,
+                          int i,
+                          format_array_item_t format_item)
+{
+    size_t file_size;
+    char *buf_p;
+    FILE *file_p;
+    int length;
+    int begin;
+    int end;
+    const char *c_actual_p;
+    const char *delim_p;
+
+    c_actual_p = (const char *)actual_p;
+    length = (int)(size / item_size);
+    begin = (i - 3);
+
+    if (begin < 0) {
+        begin = 0;
+    }
+
+    end = (i + 4);
+
+    if (end > length) {
+        end = length;
+    }
+
+    file_p = open_memstream(&buf_p, &file_size);
+    fprintf(file_p, "{ ");
+
+    if (begin != 0) {
+        fprintf(file_p, "..., ");
+    }
+
+    delim_p = "";
+
+    for (i = begin; i < end; i++) {
+        fprintf(file_p, "%s", delim_p);
+        format_item(file_p, &c_actual_p[i * (int)item_size]);
+        delim_p = ", ";
+    }
+
+    if (end != length) {
+        fprintf(file_p, ", ...");
+    }
+
+    fprintf(file_p, " }");
+    fputc('\0', file_p);
+    fclose(file_p);
+
+    return (buf_p);
+}
+
+static void assert_array_failure(const void *actual_p,
+                                 const void *expected_p,
+                                 size_t item_size,
+                                 size_t size,
+                                 int i,
+                                 format_array_item_t format_item)
+{
+    size_t file_size;
+    char *buf_p;
+    FILE *file_p;
+    char *actual_string_p;
+    char *expected_string_p;
+
+    nala_suspend_all_mocks();
+
+    file_p = open_memstream(&buf_p, &file_size);
+    fprintf(file_p,
+            COLOR_BOLD(RED, "The arrays differ at index %u. See diff for details.\n"),
+            (unsigned)i);
+    actual_string_p = format_array(actual_p,
+                                   item_size,
+                                   size,
+                                   i,
+                                   format_item);
+    expected_string_p = format_array(expected_p,
+                                     item_size,
+                                     size,
+                                     i,
+                                     format_item);
+    print_string_diff(file_p, actual_string_p, expected_string_p);
+    free(actual_string_p);
+    free(expected_string_p);
+    fputc('\0', file_p);
+    fclose(file_p);
+
+    nala_resume_all_mocks();
+
+    nala_test_failure(buf_p);
+}
+
+static void format_array_item_char(FILE *file_p, const void *value_p)
+{
+    fprintf(file_p, "%hhd", (int)*(char *)value_p);
+}
+
+static void format_array_item_schar(FILE *file_p, const void *value_p)
+{
+    fprintf(file_p, "%hhd", *(signed char *)value_p);
+}
+
+static void format_array_item_uchar(FILE *file_p, const void *value_p)
+{
+    fprintf(file_p, "%hhu", *(unsigned char *)value_p);
+}
+
+static void format_array_item_short(FILE *file_p, const void *value_p)
+{
+    fprintf(file_p, "%hd", *(short *)value_p);
+}
+
+static void format_array_item_ushort(FILE *file_p, const void *value_p)
+{
+    fprintf(file_p, "%hu", *(unsigned short *)value_p);
+}
+
+static void format_array_item_int(FILE *file_p, const void *value_p)
+{
+    fprintf(file_p, "%d", *(int *)value_p);
+}
+
+static void format_array_item_uint(FILE *file_p, const void *value_p)
+{
+    fprintf(file_p, "%u", *(unsigned *)value_p);
+}
+
+static void format_array_item_long(FILE *file_p, const void *value_p)
+{
+    fprintf(file_p, "%ld", *(long *)value_p);
+}
+
+static void format_array_item_ulong(FILE *file_p, const void *value_p)
+{
+    fprintf(file_p, "%lu", *(unsigned long *)value_p);
+}
+
+static void format_array_item_llong(FILE *file_p, const void *value_p)
+{
+    fprintf(file_p, "%lld", *(long long *)value_p);
+}
+
+static void format_array_item_ullong(FILE *file_p, const void *value_p)
+{
+    fprintf(file_p, "%llu", *(unsigned long long *)value_p);
+}
+
+static void format_array_item_float(FILE *file_p, const void *value_p)
+{
+    fprintf(file_p, "%f", *(float *)value_p);
+}
+
+static void format_array_item_double(FILE *file_p, const void *value_p)
+{
+    fprintf(file_p, "%f", *(double *)value_p);
+}
+
+static void format_array_item_ldouble(FILE *file_p, const void *value_p)
+{
+    fprintf(file_p, "%Lf", *(long double *)value_p);
+}
+
+static void format_array_item_bool(FILE *file_p, const void *value_p)
+{
+    fprintf(file_p, "%d", *(bool *)value_p);
+}
+
+#define ASSERT_ARRAY_TYPE(type, actual_p, expected_p, item_size, size)  \
+    size_t i;                                                           \
+                                                                        \
+    for (i = 0; i < size / item_size; i++) {                            \
+        if (actual_p[i] != expected_p[i]) {                             \
+            assert_array_failure(actual_p,                              \
+                                 expected_p,                            \
+                                 item_size,                             \
+                                 size,                                  \
+                                 (int)i,                                \
+                                 format_array_item_ ## type);           \
+        }                                                               \
+    }                                                                   \
+
+void nala_assert_array_char(const char *actual_p,
+                            const char *expected_p,
+                            size_t item_size,
+                            size_t size)
+{
+    ASSERT_ARRAY_TYPE(char, actual_p, expected_p, item_size, size);
+}
+
+void nala_assert_array_schar(const signed char *actual_p,
+                             const signed char *expected_p,
+                             size_t item_size,
+                             size_t size)
+{
+    ASSERT_ARRAY_TYPE(schar, actual_p, expected_p, item_size, size);
+}
+
+void nala_assert_array_uchar(const unsigned char *actual_p,
+                             const unsigned char *expected_p,
+                             size_t item_size,
+                             size_t size)
+{
+    ASSERT_ARRAY_TYPE(uchar, actual_p, expected_p, item_size, size);
+}
+
+void nala_assert_array_short(const short *actual_p,
+                             const short *expected_p,
+                             size_t item_size,
+                             size_t size)
+{
+    ASSERT_ARRAY_TYPE(short, actual_p, expected_p, item_size, size);
+}
+
+void nala_assert_array_ushort(const unsigned short *actual_p,
+                              const unsigned short *expected_p,
+                              size_t item_size,
+                              size_t size)
+{
+    ASSERT_ARRAY_TYPE(ushort, actual_p, expected_p, item_size, size);
+}
+
+void nala_assert_array_int(const int *actual_p,
+                           const int *expected_p,
+                           size_t item_size,
+                           size_t size)
+{
+    ASSERT_ARRAY_TYPE(int, actual_p, expected_p, item_size, size);
+}
+
+void nala_assert_array_uint(const unsigned int *actual_p,
+                            const unsigned int *expected_p,
+                            size_t item_size,
+                            size_t size)
+{
+    ASSERT_ARRAY_TYPE(uint, actual_p, expected_p, item_size, size);
+}
+
+void nala_assert_array_long(const long *actual_p,
+                            const long *expected_p,
+                            size_t item_size,
+                            size_t size)
+{
+    ASSERT_ARRAY_TYPE(long, actual_p, expected_p, item_size, size);
+}
+
+void nala_assert_array_ulong(const unsigned long *actual_p,
+                             const unsigned long *expected_p,
+                             size_t item_size,
+                             size_t size)
+{
+    ASSERT_ARRAY_TYPE(ulong, actual_p, expected_p, item_size, size);
+}
+
+void nala_assert_array_llong(const long long *actual_p,
+                             const long long *expected_p,
+                             size_t item_size,
+                             size_t size)
+{
+    ASSERT_ARRAY_TYPE(llong, actual_p, expected_p, item_size, size);
+}
+
+void nala_assert_array_ullong(const unsigned long long *actual_p,
+                              const unsigned long long *expected_p,
+                              size_t item_size,
+                              size_t size)
+{
+    ASSERT_ARRAY_TYPE(ullong, actual_p, expected_p, item_size, size);
+}
+
+void nala_assert_array_float(const float *actual_p,
+                             const float *expected_p,
+                             size_t item_size,
+                             size_t size)
+{
+    ASSERT_ARRAY_TYPE(float, actual_p, expected_p, item_size, size);
+}
+
+void nala_assert_array_double(const double *actual_p,
+                              const double *expected_p,
+                              size_t item_size,
+                              size_t size)
+{
+    ASSERT_ARRAY_TYPE(double, actual_p, expected_p, item_size, size);
+}
+
+void nala_assert_array_ldouble(const long double *actual_p,
+                               const long double *expected_p,
+                               size_t item_size,
+                               size_t size)
+{
+    ASSERT_ARRAY_TYPE(ldouble, actual_p, expected_p, item_size, size);
+}
+
+void nala_assert_array_bool(const bool *actual_p,
+                            const bool *expected_p,
+                            size_t item_size,
+                            size_t size)
+{
+    ASSERT_ARRAY_TYPE(bool, actual_p, expected_p, item_size, size);
+}
+
+void nala_assert_array(const void *actual_p,
+                       const void *expected_p,
+                       size_t item_size,
+                       size_t size)
+{
+    const char *c_actual_p;
+    const char *c_expected_p;
+    size_t i;
+    char buf[512];
+
+    c_actual_p = (const char *)actual_p;
+    c_expected_p = (const char *)expected_p;
+
+    for (i = 0; i < size; i += item_size) {
+        if (memcmp(&c_actual_p[i], &c_expected_p[i], item_size) != 0) {
+            snprintf(&buf[0],
+                     sizeof(buf),
+                     "The arrays differ at index %u. ",
+                     (unsigned)(i / item_size));
+            nala_test_failure(nala_format_memory(&buf[0],
+                                                 &c_actual_p[i],
+                                                 &c_expected_p[i],
+                                                 item_size));
+        }
+    }
+}
+
 void nala_assert_string(const char *actual_p, const char *expected_p, int op)
 {
     switch (op) {
@@ -1522,7 +1855,7 @@ void nala_assert_string(const char *actual_p, const char *expected_p, int op)
     case NALA_CHECK_EQ:
         if (!nala_check_string_equal(actual_p, expected_p)) {
             nala_reset_all_mocks();
-            nala_test_failure(nala_format_string("The strings are not equal.\n",
+            nala_test_failure(nala_format_string("The strings are not equal.",
                                                  actual_p,
                                                  expected_p));
         }
@@ -1551,7 +1884,7 @@ void nala_assert_substring(const char *haystack_p, const char *needle_p)
         nala_reset_all_mocks();
         nala_test_failure(
             nala_format_substring(
-                "The haystack doesn't contain the needle.\n",
+                "The haystack doesn't contain the needle.",
                 haystack_p,
                 needle_p));
     }
