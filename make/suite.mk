@@ -10,7 +10,7 @@ CFLAGS += -Wall -Wextra -std=gnu11
 CFLAGS += -g -Og
 CFLAGS += -DUNIT_TEST
 CFLAGS += -no-pie
-LDFLAGS_MOCKS = $(shell cat $(BUILD)/nala_mocks.ld)
+LDFLAGS_MOCKS = $(shell cat $(BUILD)/nala_mocks.ldflags)
 COVERAGE_FILTERS +=
 INC += $(ASYNC_ROOT)/tst/utils
 INC += $(ASYNC_ROOT)/3pp/nala
@@ -33,7 +33,7 @@ LSAN_OPTIONS = \
 all: run
 
 build:
-	$(MAKE) $(BUILD)/nala_mocks.ld
+	$(MAKE) $(BUILD)/nala_mocks.ldflags
 	$(MAKE) $(EXE)
 
 run: build
@@ -42,7 +42,7 @@ run: build
 test: run
 	$(MAKE) coverage
 
-$(BUILD)/nala_mocks.ld: $(TESTS)
+$(BUILD)/nala_mocks.ldflags: $(TESTS)
 	echo "MOCKGEN $^"
 	mkdir -p $(BUILD)
 	[ -f $(BUILD)/nala_mocks.h ] || touch $(BUILD)/nala_mocks.h
