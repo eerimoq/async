@@ -142,7 +142,7 @@ void nala_subprocess_result_free(struct nala_subprocess_result_t *self_p);
 
 #include <stdbool.h>
 
-#define NALA_TRACEBACK_VERSION "0.7.0"
+#define NALA_TRACEBACK_VERSION "0.8.0"
 
 typedef bool (*nala_traceback_skip_filter_t)(void *arg_p, const char *line_p);
 
@@ -153,20 +153,23 @@ typedef bool (*nala_traceback_skip_filter_t)(void *arg_p, const char *line_p);
 char *nala_traceback_format(void **buffer_pp,
                        int depth,
                        const char *prefix_p,
+                       const char *header_p,
                        nala_traceback_skip_filter_t skip_filter,
                        void *arg_p);
 
 /**
  * Create a traceback string.
  */
-char *nala_traceback_string(const char *prefix_pp,
+char *nala_traceback_string(const char *prefix_p,
+                       const char *header_p,
                        nala_traceback_skip_filter_t skip_filter,
                        void *arg_p);
 
 /**
  * Print a traceback.
  */
-void nala_traceback_print(const char *prefix_pp,
+void nala_traceback_print(const char *prefix_p,
+                     const char *header_p,
                      nala_traceback_skip_filter_t skip_filter,
                      void *arg_p);
 
@@ -392,7 +395,7 @@ __attribute__ ((weak)) int nala_print_call_mask = 0;
 
 static bool continue_on_failure = false;
 static const char *report_json_file_p = "report.json";
-static int number_of_jobs = -1;
+static int number_of_jobs = 1;
 
 static const char *get_node(void)
 {
@@ -749,12 +752,7 @@ static void test_entry(void *arg_p)
     capture_output_init(&capture_stderr, stderr);
     nala_reset_all_mocks();
     test_p->func();
-    nala_assert_all_mocks_completed();
-    nala_reset_all_mocks();
-    nala_suspend_all_mocks();
-    capture_output_destroy(&capture_stdout);
-    capture_output_destroy(&capture_stderr);
-    exit(0);
+    nala_exit(0);
 }
 
 static int run_test(struct nala_test_t *test_p)
@@ -875,6 +873,51 @@ static int run_tests_in_parallel_child(struct nala_test_t *test_p,
     return (exit_code);
 }
 
+static void write_job_request(int fd,
+                              struct nala_test_t *test_p,
+                              int number)
+{
+    struct job_request_t request;
+    ssize_t size;
+
+    request.test_p = test_p;
+    request.number = number;
+
+    size = write(fd, &request, sizeof(request));
+
+    if (size != sizeof(request)) {
+        perror("request write");
+        exit(1);
+    }
+}
+
+static int read_job_response(int fd)
+{
+    struct job_response_t response;
+    ssize_t size;
+    struct nala_test_t *test_p;
+
+    size = read(fd, &response, sizeof(response));
+
+    if (size == 0) {
+        return (1);
+    }
+
+    if (size != sizeof(response)) {
+        perror("response read");
+        exit(1);
+    }
+
+    /* Copy test result to this process's list. */
+    test_p = response.test_p;
+    test_p->executed = response.test.executed;
+    test_p->exit_code = response.test.exit_code;
+    test_p->signal_number = response.test.signal_number;
+    test_p->elapsed_time_ms = response.test.elapsed_time_ms;
+
+    return (test_p->exit_code);
+}
+
 static int run_tests_in_parallel(struct nala_test_t *test_p)
 {
     int res;
@@ -882,11 +925,10 @@ static int run_tests_in_parallel(struct nala_test_t *test_p)
     int response_fds[2];
     int i;
     pid_t *pids_p;
-    ssize_t size;
     int status;
     int exit_code;
-    struct job_request_t request;
-    struct job_response_t response;
+    int number_of_outstanding_requests;
+    int number;
 
     res = pipe(&request_fds[0]);
 
@@ -918,45 +960,38 @@ static int run_tests_in_parallel(struct nala_test_t *test_p)
         }
     }
 
-    /* Write tests to workers. */
-    request.test_p = test_p;
-    request.number = 0;
+    close(response_fds[1]);
 
-    while (request.test_p != NULL) {
-        size = write(request_fds[1], &request, sizeof(request));
+    /* Keep the workers busy. */
+    number_of_outstanding_requests = 0;
+    number = 0;
 
-        if (size != sizeof(request)) {
-            perror("request write");
-            exit(1);
+    while (test_p != NULL) {
+        if (number_of_outstanding_requests == number_of_jobs) {
+            res = read_job_response(response_fds[0]);
+            number_of_outstanding_requests--;
+
+            if ((res != 0) && !continue_on_failure) {
+                break;
+            }
         }
 
-        request.number++;
-        request.test_p = request.test_p->next_p;
+        write_job_request(request_fds[1], test_p, number);
+        number_of_outstanding_requests++;
+        number++;
+        test_p = test_p->next_p;
     }
 
     close(request_fds[1]);
-    close(response_fds[1]);
 
-    /* Read all responses. */
-    while (true) {
-        size = read(response_fds[0], &response, sizeof(response));
-
-        if (size == 0) {
-            break;
-        }
-
-        if (size != sizeof(response)) {
-            perror("response read");
-            exit(1);
-        }
-
-        /* Copy test result to this process's list. */
-        test_p = response.test_p;
-        test_p->executed = response.test.executed;
-        test_p->exit_code = response.test.exit_code;
-        test_p->signal_number = response.test.signal_number;
-        test_p->elapsed_time_ms = response.test.elapsed_time_ms;
+    /* Read remaining responses. */
+    while (number_of_outstanding_requests > 0) {
+        (void)read_job_response(response_fds[0]);
+        number_of_outstanding_requests--;
     }
+
+    close(request_fds[0]);
+    close(response_fds[0]);
 
     /* Wait for all workers to exit. */
     exit_code = 0;
@@ -974,9 +1009,6 @@ static int run_tests_in_parallel(struct nala_test_t *test_p)
             exit_code = 1;
         }
     }
-
-    close(request_fds[0]);
-    close(response_fds[0]);
 
     return (exit_code);
 }
@@ -999,7 +1031,7 @@ static int run_tests(struct nala_test_t *tests_p)
     test_p = tests_p;
     gettimeofday(&start_time, NULL);
 
-    if (number_of_jobs == -1) {
+    if (number_of_jobs == 1) {
         exit_code = run_tests_sequentially(test_p);
     } else {
         exit_code = run_tests_in_parallel(test_p);
@@ -1008,6 +1040,7 @@ static int run_tests(struct nala_test_t *tests_p)
     gettimeofday(&end_time, NULL);
     timersub(&end_time, &start_time, &elapsed_time);
     print_summary(tests_p, timeval_to_ms(&elapsed_time));
+    fflush(stdout);
     write_report_json(tests_p);
 
     return (exit_code);
@@ -1398,7 +1431,10 @@ void nala_test_failure(const char *message_p)
     printf("  Test:  " COLOR_BOLD(CYAN, "%s\n"), full_test_name(current_test_p));
     printf("  Error: %s", message_p);
     printf("\n");
-    nala_traceback_print("  ", traceback_skip_filter, NULL);
+    nala_traceback_print("  ",
+                         "Assert traceback (most recent call last):",
+                         traceback_skip_filter,
+                         NULL);
     print_test_failure_report_end();
     free((void *)message_p);
     exit(1);
@@ -1443,21 +1479,24 @@ static void print_usage_and_exit(const char *program_name_p, int exit_code)
            "Run tests.\n"
            "\n"
            "positional arguments:\n"
-           "  test-pattern                  Only run tests containing given "
-           "pattern.\n"
+           "  test-pattern                  Only run tests matching given pattern. "
+           "'^' matches\n"
+           "                                the beginning and '$' matches the end "
+           "of the test\n"
+           "                                name.\n"
            "\n"
            "optional arguments:\n"
            "  -h, --help                    Show this help message and exit.\n"
            "  -v, --version                 Print version information.\n"
-           "  -c, --continue-on-failure     Always run all tests.\n"
+           "  -c, --continue-on-failure     Continue on test failure.\n"
            "  -a, --print-all-calls         Print all calls to ease debugging.\n"
            "  -r, --report-json-file        JSON test report file (default: "
            "report.json).\n"
            "  -f, --print-test-file-func    Print file:function for exactly "
            "one test.\n"
            "  -j, --jobs                    Run given number of tests in "
-           "parallel. Always\n"
-           "                                runs all tests.\n",
+           "parallel\n"
+           "                                (default: 1).\n",
            program_name_p);
     exit(exit_code);
 }
@@ -1466,6 +1505,70 @@ static void print_version_and_exit(void)
 {
     printf("%s\n", NALA_VERSION);
     exit(0);
+}
+
+static bool is_test_match(struct nala_test_t *test_p, const char *full_pattern_p)
+{
+    const char *full_test_name_p;
+    size_t full_test_name_length;
+    size_t pattern_length;
+    size_t offset;
+    bool match_beginning;
+    bool match_end;
+    char *pattern_p;
+
+    pattern_length = strlen(full_pattern_p);
+
+    if (pattern_length == 0) {
+        return (true);
+    }
+
+    match_beginning = (full_pattern_p[0] == '^');
+    match_end = (full_pattern_p[pattern_length - 1] == '$');
+    pattern_p = alloca(pattern_length + 1);
+    strcpy(pattern_p, full_pattern_p);
+
+    if (match_beginning) {
+        pattern_p++;
+        pattern_length--;
+    }
+
+    if (match_end) {
+        pattern_length--;
+    }
+
+    full_test_name_p = full_test_name(test_p);
+    full_test_name_length = strlen(full_test_name_p);
+
+    if (pattern_length > full_test_name_length) {
+        return (false);
+    }
+
+    if (match_beginning || match_end) {
+        if ((pattern_length == 0) && match_beginning && match_end) {
+            return (false);
+        }
+
+        if (match_beginning) {
+            if (strncmp(full_test_name_p, pattern_p, pattern_length) != 0) {
+                return (false);
+            }
+        }
+
+        if (match_end) {
+            offset = (full_test_name_length - pattern_length);
+
+            if (strncmp(&full_test_name_p[offset],
+                        pattern_p,
+                        pattern_length) != 0) {
+                return (false);
+            }
+        }
+    } else if (strstr(full_test_name_p, pattern_p) == NULL) {
+        return (false);
+    }
+
+    return (true);
 }
 
 static void filter_tests(const char *test_pattern_p)
@@ -1477,7 +1580,7 @@ static void filter_tests(const char *test_pattern_p)
     tests.tail_p = NULL;
 
     while (test_p != NULL) {
-        if (strstr(full_test_name(test_p), test_pattern_p) != NULL) {
+        if (is_test_match(test_p, test_pattern_p)) {
             nala_register_test(test_p);
         }
 
@@ -1498,7 +1601,7 @@ static struct nala_test_t *find_test(const char *test_pattern_p)
     found_p = NULL;
 
     while (test_p != NULL) {
-        if (strstr(full_test_name(test_p), test_pattern_p) != NULL) {
+        if (is_test_match(test_p, test_pattern_p)) {
             if (found_p == NULL) {
                 found_p = test_p;
             } else {
@@ -1591,8 +1694,9 @@ __attribute__((weak)) int main(int argc, char *argv[])
         case 'j':
             number_of_jobs = atoi(optarg);
 
-            if (number_of_jobs <= 0) {
-                printf("More than zero jobs required.\n");
+            if (number_of_jobs < 1) {
+                printf("error: At least one job is required, %d given.\n",
+                       number_of_jobs);
                 exit(1);
             }
 
@@ -1634,6 +1738,7 @@ char *nala_mock_traceback_format(void **buffer_pp, int depth)
     return (nala_traceback_format(buffer_pp,
                                   depth,
                                   "  ",
+                                  "Mock traceback (most recent call last):",
                                   mock_traceback_skip_filter,
                                   NULL));
 }
@@ -2267,6 +2372,18 @@ void nala_fail(const char *message_p)
     strcat(&message[0], "\n");
     nala_test_failure(nala_format(&message[0]));
 }
+
+void nala_exit(int status)
+{
+    (void)status;
+
+    nala_assert_all_mocks_completed();
+    nala_reset_all_mocks();
+    nala_suspend_all_mocks();
+    capture_output_destroy(&capture_stdout);
+    capture_output_destroy(&capture_stderr);
+    exit(0);
+}
 /*
  * The MIT License (MIT)
  *
@@ -2684,13 +2801,13 @@ static void *fixaddr(void *address_p)
     return ((void *)(((uintptr_t)address_p) - 1));
 }
 
-static bool is_nala_traceback_line(const char *line_p)
+static bool is_traceback_line(const char *line_p)
 {
-    if (strncmp(line_p, "nala_traceback_print at ", 19) == 0) {
+    if (strncmp(line_p, "traceback_print at ", 19) == 0) {
         return (true);
     }
 
-    if (strncmp(line_p, "nala_traceback_string at ", 20) == 0) {
+    if (strncmp(line_p, "traceback_string at ", 20) == 0) {
         return (true);
     }
 
@@ -2738,6 +2855,7 @@ static void print_line(FILE *stream_p, const char *prefix_p, char *line_p)
 char *nala_traceback_format(void **buffer_pp,
                        int depth,
                        const char *prefix_p,
+                       const char *header_p,
                        nala_traceback_skip_filter_t skip_filter,
                        void *arg_p)
 {
@@ -2754,6 +2872,10 @@ char *nala_traceback_format(void **buffer_pp,
         prefix_p = "";
     }
 
+    if (header_p == NULL) {
+        header_p = "Traceback (most recent call last):";
+    }
+
     size = readlink("/proc/self/exe", &exe[0], sizeof(exe) - 1);
 
     if (size == -1) {
@@ -2768,7 +2890,7 @@ char *nala_traceback_format(void **buffer_pp,
         return (NULL);
     }
 
-    fprintf(stream_p, "%sTraceback (most recent call last):\n", prefix_p);
+    fprintf(stream_p, "%s%s\n", prefix_p, header_p);
 
     for (i = (depth - 1); i >= 0; i--) {
         snprintf(&command[0],
@@ -2784,7 +2906,7 @@ char *nala_traceback_format(void **buffer_pp,
             continue;
         }
 
-        if (is_nala_traceback_line(result_p->stdout.buf_p)) {
+        if (is_traceback_line(result_p->stdout.buf_p)) {
             nala_subprocess_result_free(result_p);
             continue;
         }
@@ -2808,6 +2930,7 @@ char *nala_traceback_format(void **buffer_pp,
 }
 
 char *nala_traceback_string(const char *prefix_p,
+                       const char *header_p,
                        nala_traceback_skip_filter_t skip_filter,
                        void *arg_p)
 {
@@ -2819,17 +2942,19 @@ char *nala_traceback_string(const char *prefix_p,
     return (nala_traceback_format(addresses,
                              depth,
                              prefix_p,
+                             header_p,
                              skip_filter,
                              arg_p));
 }
 
 void nala_traceback_print(const char *prefix_p,
+                       const char *header_p,
                      nala_traceback_skip_filter_t skip_filter,
                      void *arg_p)
 {
     char *string_p;
 
-    string_p = nala_traceback_string(prefix_p, skip_filter, arg_p);
+    string_p = nala_traceback_string(prefix_p, header_p, skip_filter, arg_p);
     printf("%s", string_p);
     free(string_p);
 }
