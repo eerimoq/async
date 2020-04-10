@@ -12,7 +12,7 @@ static void mock_prepare_output(const char *output_p)
     channel_write_mock_set_buf_p_in(output_p, strlen(output_p));
 }
 
-static void mock_prepare_input(const char *input_p)
+static void mock_prepare_input(char *input_p)
 {
     channel_read_mock_once(strlen(input_p), strlen(input_p));
     channel_read_mock_set_buf_p_out(input_p, strlen(input_p));
@@ -23,7 +23,7 @@ static void mock_prepare_input_zero(void)
     channel_read_mock_once(1, 0);
 }
 
-static void mock_prepare_command(const char *input_p,
+static void mock_prepare_command(char *input_p,
                                  const char *output_p)
 {
     while (*input_p != '\0') {
