@@ -1,5 +1,6 @@
 |buildstatus|_
 |codecov|_
+|nala|_
 
 🔀 Async
 =======
@@ -149,5 +150,8 @@ Execute tests matching given pattern.
 
 .. |codecov| image:: https://codecov.io/gh/eerimoq/async/branch/master/graph/badge.svg
 .. _codecov: https://codecov.io/gh/eerimoq/async
+
+.. |nala| image:: https://img.shields.io/badge/nala-test-blue.svg
+.. _nala: https://github.com/eerimoq/nala
 
 .. _examples folder: https://github.com/eerimoq/async/tree/master/examples
