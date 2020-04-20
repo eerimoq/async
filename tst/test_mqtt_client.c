@@ -180,7 +180,8 @@ static void mock_prepare_stop(void)
 
     async_tcp_client_write_mock_once(sizeof(disconnect));
     async_tcp_client_write_mock_set_buf_p_in(&disconnect[0], sizeof(disconnect));
-    async_tcp_client_disconnect_mock_once(tcp_p);
+    async_tcp_client_disconnect_mock_once();
+    async_tcp_client_disconnect_mock_set_self_p_in_pointer(tcp_p);
 }
 
 static void assert_stop(struct async_mqtt_client_t *client_p)
@@ -583,7 +584,8 @@ TEST(reconnect_after_unsuccessful_connack)
                                       &connect[0],
                                       sizeof(connect));
     mqtt_on_connected_mock_none();
-    async_tcp_client_disconnect_mock_once(tcp_p);
+    async_tcp_client_disconnect_mock_once();
+    async_tcp_client_disconnect_mock_set_self_p_in_pointer(tcp_p);
     input_packet(&connack[0], 1, sizeof(connack));
 
     /* Reconnects after 1 second. */
