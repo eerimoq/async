@@ -1,7 +1,6 @@
 #include <time.h>
 #include "utils.h"
 #include "nala.h"
-#include "nala_mocks.h"
 
 int channel_open(struct async_channel_t *self_p)
 {
