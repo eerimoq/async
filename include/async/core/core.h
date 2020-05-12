@@ -55,11 +55,17 @@
     ((type *) ((char *)(ptr) - async_offsetof(type, member)))
 
 struct async_runtime_t;
+union async_threadsafe_data_t;
 
 /**
  * Async function.
  */
 typedef void (*async_func_t)(void *obj_p);
+
+/**
+ * Async thread safe function.
+ */
+typedef void (*async_threadsafe_func_t)(union async_threadsafe_data_t *data_p);
 
 struct async_timer_t;
 
@@ -79,6 +85,13 @@ typedef void (*async_log_object_print_t)(void *log_object_p,
  */
 typedef bool (*async_log_object_is_enabled_for_t)(void *log_object_p,
                                                   int level);
+
+union async_threadsafe_data_t {
+    void *buf_p;
+    int value;
+    uint32_t u32;
+    uint64_t u64;
+};
 
 struct async_timer_t {
     struct async_t *async_p;
@@ -172,12 +185,12 @@ int async_call(struct async_t *self_p,
                void *obj_p);
 
 /**
- * Call given function with given argument later. This function may be
+ * Call given function with given data later. This function may be
  * called from any thread except given async thread.
  */
 void async_call_threadsafe(struct async_t *self_p,
-                           async_func_t func,
-                           void *obj_p);
+                           async_threadsafe_func_t func,
+                           union async_threadsafe_data_t *data_p);
 
 /**
  * Call given function `entry` in the worker pool. Once the entry

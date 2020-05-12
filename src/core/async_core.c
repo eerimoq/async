@@ -184,12 +184,12 @@ int async_call(struct async_t *self_p, async_func_t func, void *obj_p)
 }
 
 void async_call_threadsafe(struct async_t *self_p,
-                           async_func_t func,
-                           void *obj_p)
+                           async_threadsafe_func_t func,
+                           union async_threadsafe_data_t *data_p)
 {
     self_p->runtime_p->call_threadsafe(self_p->runtime_p->obj_p,
                                        func,
-                                       obj_p);
+                                       data_p);
 }
 
 static void on_complete_default(void *obj_p)

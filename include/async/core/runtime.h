@@ -34,9 +34,10 @@
 
 typedef void (*async_runtime_set_async_t)(void *self_p, struct async_t *async_p);
 
-typedef void (*async_runtime_call_threadsafe_t)(void *self_p,
-                                                async_func_t func,
-                                                void *obj_p);
+typedef void (*async_runtime_call_threadsafe_t)(
+    void *self_p,
+    async_threadsafe_func_t func,
+    union async_threadsafe_data_t *data_p);
 
 typedef int (*async_runtime_call_worker_pool_t)(void *self_p,
                                                 async_func_t entry,

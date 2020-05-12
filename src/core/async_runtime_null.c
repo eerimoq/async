@@ -39,12 +39,12 @@ static void set_async(void *self_p, struct async_t *async_p)
 }
 
 static void call_threadsafe(void *self_p,
-                            async_func_t func,
-                            void *obj_p)
+                            async_threadsafe_func_t func,
+                            union async_threadsafe_data_t *data_p)
 {
     (void)self_p;
     (void)func;
-    (void)obj_p;
+    (void)data_p;
 
     fprintf(stderr, "async_call_threadsafe() not implemented.\n");
     exit(1);

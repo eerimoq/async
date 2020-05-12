@@ -50,8 +50,8 @@ static ML_UID(uid_worker_job);
 static ML_UID(uid_call_threadsafe);
 
 struct call_threadsafe_t {
-    async_func_t func;
-    void *obj_p;
+    async_threadsafe_func_t func;
+    union async_threadsafe_data_t data;
 };
 
 struct worker_job_t {
@@ -321,7 +321,7 @@ static void async_handle_worker_job(struct worker_job_t *job_p)
 
 static void async_handle_call_threadsafe(struct call_threadsafe_t *message_p)
 {
-    message_p->func(message_p->obj_p);
+    message_p->func(&message_p->data);
 }
 
 static void *async_main(struct async_runtime_linux_t *self_p)
@@ -366,14 +366,18 @@ static void set_async(struct async_runtime_linux_t *self_p,
 }
 
 static void call_threadsafe(struct async_runtime_linux_t *self_p,
-                            async_func_t func,
-                            void *obj_p)
+                            async_threadsafe_func_t func,
+                            union async_threadsafe_data_t *data_p)
 {
     struct call_threadsafe_t *message_p;
 
     message_p = ml_message_alloc(&uid_call_threadsafe, sizeof(*message_p));
     message_p->func = func;
-    message_p->obj_p = obj_p;
+
+    if (data_p != NULL) {
+        message_p->data = *data_p;
+    }
+
     ml_queue_put(&self_p->async.queue, message_p);
 
 }
