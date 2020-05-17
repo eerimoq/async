@@ -256,17 +256,19 @@ TEST(call_worker_pool)
 
 static pthread_t threadsafe_caller_pthread;
 
-static void called_in_async_thread(union async_threadsafe_data_t *data_p)
+static void called_in_async_thread(struct async_threadsafe_data_t *data_p)
 {
-    ASSERT_EQ(data_p->value, 3);
+    ASSERT_EQ(data_p->obj_p, NULL);
+    ASSERT_EQ(data_p->data.value, 3);
     exit(0);
 }
 
 static void *threadsafe_caller(struct async_t *async_p)
 {
-    union async_threadsafe_data_t data;
+    struct async_threadsafe_data_t data;
 
-    data.value = 3;
+    data.obj_p = NULL;
+    data.data.value = 3;
     async_call_threadsafe(async_p, called_in_async_thread, &data);
 
     return (NULL);
