@@ -51,7 +51,7 @@ static ML_UID(uid_call_threadsafe);
 
 struct call_threadsafe_t {
     async_threadsafe_func_t func;
-    union async_threadsafe_data_t data;
+    struct async_threadsafe_data_t data;
 };
 
 struct worker_job_t {
@@ -151,7 +151,7 @@ static void io_handle_tcp_client_connect(struct async_runtime_linux_t *self_p,
     sockfd = socket(AF_INET, SOCK_STREAM, 0);
 
     if (sockfd != -1) {
-        res = connect(sockfd, &addr, sizeof(addr));
+        res = connect(sockfd, (struct sockaddr *)&addr, sizeof(addr));
 
         if (res != -1) {
             res = fcntl(sockfd,
@@ -367,7 +367,7 @@ static void set_async(struct async_runtime_linux_t *self_p,
 
 static void call_threadsafe(struct async_runtime_linux_t *self_p,
                             async_threadsafe_func_t func,
-                            union async_threadsafe_data_t *data_p)
+                            struct async_threadsafe_data_t *data_p)
 {
     struct call_threadsafe_t *message_p;
 

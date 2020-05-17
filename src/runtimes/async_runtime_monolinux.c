@@ -51,7 +51,7 @@ static ML_UID(uid_call_threadsafe);
 
 struct call_threadsafe_t {
     async_threadsafe_func_t func;
-    union async_threadsafe_data_t data;
+    struct async_threadsafe_data_t data;
 };
 
 struct worker_job_t {
@@ -367,7 +367,7 @@ static void set_async(struct async_runtime_monolinux_t *self_p,
 
 static void call_threadsafe(struct async_runtime_monolinux_t *self_p,
                             async_threadsafe_func_t func,
-                            union async_threadsafe_data_t *data_p)
+                            struct async_threadsafe_data_t *data_p)
 {
     struct call_threadsafe_t *message_p;
 
