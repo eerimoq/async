@@ -89,6 +89,7 @@ typedef bool (*async_log_object_is_enabled_for_t)(void *log_object_p,
 union async_threadsafe_data_t {
     void *buf_p;
     int value;
+    char buf[8];
     uint32_t u32;
     uint64_t u64;
 };
