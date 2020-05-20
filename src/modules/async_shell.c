@@ -1105,8 +1105,8 @@ void async_shell_init(struct async_shell_t *self_p,
     self_p->commands_p = NULL;
     self_p->async_p = async_p;
     async_channel_set_on(channel_p,
-                         (async_func_t)on_closed,
-                         (async_func_t)on_input,
+                         (async_channel_on_closed_t)on_closed,
+                         (async_channel_on_input_t)on_input,
                          self_p);
     self_p->channel_p = channel_p;
     history_init(self_p);

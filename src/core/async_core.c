@@ -55,7 +55,8 @@ static void async_func_queue_destroy(struct async_func_queue_t *self_p)
 }
 
 static async_func_t async_func_queue_get(struct async_func_queue_t *self_p,
-                                         void **obj_pp)
+                                         void **obj_pp,
+                                         void **arg_pp)
 {
     async_func_t func;
 
@@ -65,6 +66,7 @@ static async_func_t async_func_queue_get(struct async_func_queue_t *self_p,
 
     func = self_p->list_p[self_p->rdpos].func;
     *obj_pp = self_p->list_p[self_p->rdpos].obj_p;
+    *arg_pp = self_p->list_p[self_p->rdpos].arg_p;
     self_p->rdpos++;
     self_p->rdpos %= self_p->length;
 
@@ -73,7 +75,8 @@ static async_func_t async_func_queue_get(struct async_func_queue_t *self_p,
 
 static int async_func_queue_put(struct async_func_queue_t *self_p,
                                 async_func_t func,
-                                void *obj_p)
+                                void *obj_p,
+                                void *arg_p)
 {
     if (is_full(self_p)) {
         return (-ASYNC_ERROR_QUEUE_FULL);
@@ -81,6 +84,7 @@ static int async_func_queue_put(struct async_func_queue_t *self_p,
 
     self_p->list_p[self_p->wrpos].func = func;
     self_p->list_p[self_p->wrpos].obj_p = obj_p;
+    self_p->list_p[self_p->wrpos].arg_p = arg_p;
     self_p->wrpos++;
     self_p->wrpos %= self_p->length;
 
@@ -166,40 +170,45 @@ void async_process(struct async_t *self_p)
 {
     async_func_t func;
     void *obj_p;
+    void *arg_p;
 
     while (true) {
-        func = async_func_queue_get(&self_p->funcs, &obj_p);
+        func = async_func_queue_get(&self_p->funcs, &obj_p, &arg_p);
 
         if (func == NULL) {
             break;
         }
 
-        func(obj_p);
+        func(obj_p, arg_p);
     }
 }
 
-int async_call(struct async_t *self_p, async_func_t func, void *obj_p)
+int async_call(struct async_t *self_p, async_func_t func, void *obj_p, void *arg_p)
 {
-    return (async_func_queue_put(&self_p->funcs, func, obj_p));
+    return (async_func_queue_put(&self_p->funcs, func, obj_p, arg_p));
 }
 
 void async_call_threadsafe(struct async_t *self_p,
-                           async_threadsafe_func_t func,
-                           struct async_threadsafe_data_t *data_p)
+                           async_func_t func,
+                           void *obj_p,
+                           void *arg_p)
 {
     self_p->runtime_p->call_threadsafe(self_p->runtime_p->obj_p,
                                        func,
-                                       data_p);
+                                       obj_p,
+                                       arg_p);
 }
 
-static void on_complete_default(void *obj_p)
+static void on_complete_default(void *obj_p, void *arg_p)
 {
     (void)obj_p;
+    (void)arg_p;
 }
 
 int async_call_worker_pool(struct async_t *self_p,
                            async_func_t entry,
                            void *obj_p,
+                           void *arg_p,
                            async_func_t on_complete)
 {
     if (on_complete == NULL) {
@@ -209,6 +218,7 @@ int async_call_worker_pool(struct async_t *self_p,
     return (self_p->runtime_p->call_worker_pool(self_p->runtime_p->obj_p,
                                                 entry,
                                                 obj_p,
+                                                arg_p,
                                                 on_complete));
 }
 

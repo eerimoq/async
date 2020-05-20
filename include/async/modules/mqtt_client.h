@@ -31,6 +31,10 @@
 
 #include "async.h"
 
+typedef void (*async_mqtt_client_on_connected_t)(void *obj_p);
+
+typedef void (*async_mqtt_client_on_disconnected_t)(void *obj_p);
+
 typedef void (*async_mqtt_client_on_publish_t)(void *obj_p,
                                                const char *topic_p,
                                                const uint8_t *buf_p,
@@ -59,8 +63,8 @@ struct async_mqtt_client_will_t {
 struct async_mqtt_client_t {
     const char *host_p;
     int port;
-    async_func_t on_connected;
-    async_func_t on_disconnected;
+    async_mqtt_client_on_connected_t on_connected;
+    async_mqtt_client_on_disconnected_t on_disconnected;
     async_mqtt_client_on_publish_t on_publish;
     async_mqtt_client_on_subscribe_complete_t on_subscribe_complete;
     void *obj_p;
@@ -84,8 +88,8 @@ void async_mqtt_client_init(struct async_mqtt_client_t *self_p,
                             const char *host_p,
                             int port,
                             struct async_ssl_context_t *ssl_context_p,
-                            async_func_t on_connected,
-                            async_func_t on_disconnected,
+                            async_mqtt_client_on_connected_t on_connected,
+                            async_mqtt_client_on_disconnected_t on_disconnected,
                             async_mqtt_client_on_publish_t on_publish,
                             void *obj_p,
                             struct async_t *async_p);

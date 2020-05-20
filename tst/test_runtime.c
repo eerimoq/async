@@ -56,8 +56,10 @@ TEST(timers)
     async_run_forever(&async);
 }
 
-static void do_connect(struct async_tcp_client_t *tcp_p)
+static void do_connect(struct async_tcp_client_t *tcp_p, void *arg_p)
 {
+    (void)arg_p;
+
     async_tcp_client_connect(tcp_p, "localhost", 9999);
 }
 
@@ -68,7 +70,7 @@ static void tcp_client_server_initiated_close_on_connected(
         async_tcp_client_write(tcp_p, "1", 1);
     } else {
         usleep(1000);
-        do_connect(tcp_p);
+        do_connect(tcp_p, NULL);
     }
 }
 
@@ -134,13 +136,16 @@ TEST(tcp_client_server_initiated_close)
                           tcp_client_server_initiated_close_on_disconnected,
                           tcp_client_server_initiated_close_on_input,
                           &async);
-    async_call(&async, (async_func_t)do_connect, &tcp);
+    async_call(&async, (async_func_t)do_connect, &tcp, NULL);
     async_run_forever(&async);
 }
 
 static void tcp_client_client_initiated_close_do_connect(
-    struct async_tcp_client_t *tcp_p)
+    struct async_tcp_client_t *tcp_p,
+    void *arg_p)
 {
+    (void)arg_p;
+
     async_tcp_client_connect(tcp_p, "localhost", 9998);
 }
 
@@ -151,7 +156,7 @@ static void tcp_client_client_initiated_close_on_connected(
         async_tcp_client_disconnect(tcp_p);
     } else {
         usleep(1000);
-        tcp_client_client_initiated_close_do_connect(tcp_p);
+        tcp_client_client_initiated_close_do_connect(tcp_p, NULL);
     }
 }
 
@@ -202,7 +207,8 @@ TEST(tcp_client_client_initiated_close)
                           &async);
     async_call(&async,
                (async_func_t)tcp_client_client_initiated_close_do_connect,
-               &tcp);
+               &tcp,
+               NULL);
     async_run_forever(&async);
 }
 
@@ -231,15 +237,17 @@ TEST(tcp_client_connect_failure)
 
 static bool hello_called = false;
 
-static void hello(void *obj_p)
+static void hello(void *obj_p, void *arg_p)
 {
     ASSERT_EQ(obj_p, NULL);
+    ASSERT_EQ(arg_p, NULL);
     hello_called = true;
 }
 
-static void on_complete(void *obj_p)
+static void on_complete(void *obj_p, void *arg_p)
 {
     ASSERT_EQ(obj_p, NULL);
+    ASSERT_EQ(arg_p, NULL);
     ASSERT(hello_called);
     exit(0);
 }
@@ -250,26 +258,26 @@ TEST(call_worker_pool)
 
     async_init(&async);
     async_set_runtime(&async, async_runtime_create());
-    async_call_worker_pool(&async, hello, NULL, on_complete);
+    async_call_worker_pool(&async, hello, NULL, NULL, on_complete);
     async_run_forever(&async);
 }
 
 static pthread_t threadsafe_caller_pthread;
+static int value = 3;
 
-static void called_in_async_thread(struct async_threadsafe_data_t *data_p)
+static void called_in_async_thread(void *obj_p, int *arg_p)
 {
-    ASSERT_EQ(data_p->obj_p, NULL);
-    ASSERT_EQ(data_p->data.value, 3);
+    ASSERT_EQ(obj_p, NULL);
+    ASSERT_EQ(*arg_p, 3);
     exit(0);
 }
 
 static void *threadsafe_caller(struct async_t *async_p)
 {
-    struct async_threadsafe_data_t data;
-
-    data.obj_p = NULL;
-    data.data.value = 3;
-    async_call_threadsafe(async_p, called_in_async_thread, &data);
+    async_call_threadsafe(async_p,
+                          (async_func_t)called_in_async_thread,
+                          NULL,
+                          &value);
 
     return (NULL);
 }

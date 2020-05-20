@@ -35,9 +35,16 @@ static int null_open(struct async_channel_t *self_p)
     return (0);
 }
 
+static void null_close_call(struct async_channel_t *self_p, void *arg_p)
+{
+    (void)arg_p;
+
+    self_p->on.closed(self_p->on.obj_p);
+}
+
 static void null_close(struct async_channel_t *self_p)
 {
-    async_call(self_p->async_p, self_p->on.closed, self_p->on.obj_p);
+    async_call(self_p->async_p, (async_func_t)null_close_call, self_p, NULL);
 }
 
 static size_t null_read(struct async_channel_t *self_p,
@@ -97,8 +104,8 @@ void async_channel_init(struct async_channel_t *self_p,
 }
 
 void async_channel_set_on(struct async_channel_t *self_p,
-                          async_func_t on_closed,
-                          async_func_t on_input,
+                          async_channel_on_closed_t on_closed,
+                          async_channel_on_input_t on_input,
                           void *obj_p)
 {
     if (on_closed == NULL) {

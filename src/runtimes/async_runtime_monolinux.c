@@ -50,13 +50,15 @@ static ML_UID(uid_worker_job);
 static ML_UID(uid_call_threadsafe);
 
 struct call_threadsafe_t {
-    async_threadsafe_func_t func;
-    struct async_threadsafe_data_t data;
+    async_func_t func;
+    void *obj_p;
+    void *arg_p;
 };
 
 struct worker_job_t {
     async_func_t entry;
     void *obj_p;
+    void *arg_p;
     async_func_t on_complete;
     struct ml_queue_t *async_queue_p;
 };
@@ -316,12 +318,12 @@ static void async_handle_tcp_client_disconnected(
 
 static void async_handle_worker_job(struct worker_job_t *job_p)
 {
-    job_p->on_complete(job_p->obj_p);
+    job_p->on_complete(job_p->obj_p, job_p->arg_p);
 }
 
 static void async_handle_call_threadsafe(struct call_threadsafe_t *message_p)
 {
-    message_p->func(&message_p->data);
+    message_p->func(message_p->obj_p, message_p->arg_p);
 }
 
 static void *async_main(struct async_runtime_monolinux_t *self_p)
@@ -366,31 +368,30 @@ static void set_async(struct async_runtime_monolinux_t *self_p,
 }
 
 static void call_threadsafe(struct async_runtime_monolinux_t *self_p,
-                            async_threadsafe_func_t func,
-                            struct async_threadsafe_data_t *data_p)
+                            async_func_t func,
+                            void *obj_p,
+                            void *arg_p)
 {
     struct call_threadsafe_t *message_p;
 
     message_p = ml_message_alloc(&uid_call_threadsafe, sizeof(*message_p));
     message_p->func = func;
-
-    if (data_p != NULL) {
-        message_p->data = *data_p;
-    }
-
+    message_p->obj_p = obj_p;
+    message_p->arg_p = arg_p;
     ml_queue_put(&self_p->async.queue, message_p);
 
 }
 
 static void job(struct worker_job_t *job_p)
 {
-    job_p->entry(job_p->obj_p);
+    job_p->entry(job_p->obj_p, job_p->arg_p);
     ml_queue_put(job_p->async_queue_p, job_p);
 }
 
 static int call_worker_pool(struct async_runtime_monolinux_t *self_p,
                             async_func_t entry,
                             void *obj_p,
+                            void *arg_p,
                             async_func_t on_complete)
 {
     struct worker_job_t *job_p;
@@ -398,6 +399,7 @@ static int call_worker_pool(struct async_runtime_monolinux_t *self_p,
     job_p = ml_message_alloc(&uid_worker_job, sizeof(*job_p));
     job_p->entry = entry;
     job_p->obj_p = obj_p;
+    job_p->arg_p = arg_p;
     job_p->on_complete = on_complete;
     job_p->async_queue_p = &self_p->async.queue;
     ml_spawn((ml_worker_pool_job_entry_t)job, job_p);
