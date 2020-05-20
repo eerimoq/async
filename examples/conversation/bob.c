@@ -219,7 +219,7 @@ void bob_init(struct bob_t *self_p,
     line_reset(self_p);
     async_channel_set_on(channel_p,
                          NULL,
-                         (async_func_t)on_input,
+                         (async_channel_on_input_t)on_input,
                          self_p);
     self_p->channel_p = channel_p;
 

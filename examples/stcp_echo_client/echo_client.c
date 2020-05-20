@@ -36,8 +36,10 @@ static void do_connect(struct echo_client_t *self_p)
     async_stcp_client_connect(&self_p->stcp, "localhost", self_p->port);
 }
 
-static void on_start(struct echo_client_t *self_p)
+static void on_start(struct echo_client_t *self_p, void *arg_p)
 {
+    (void)arg_p;
+
     do_connect(self_p);
 }
 
@@ -119,5 +121,5 @@ void echo_client_init(struct echo_client_t *self_p,
                      1000,
                      0,
                      async_p);
-    async_call(async_p, (async_func_t)on_start, self_p);
+    async_call(async_p, (async_func_t)on_start, self_p, NULL);
 }
