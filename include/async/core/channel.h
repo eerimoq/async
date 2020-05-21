@@ -57,6 +57,8 @@ typedef size_t (*async_channel_read_t)(struct async_channel_t *self_p,
 typedef void (*async_channel_write_t)(struct async_channel_t *self_p,
                                       const void *buf_p,
                                       size_t size);
+typedef void (*async_channel_on_closed_t)(void *obj_p);
+typedef void (*async_channel_on_input_t)(void *obj_p);
 
 struct async_channel_t {
     async_channel_open_t open;
@@ -64,8 +66,8 @@ struct async_channel_t {
     async_channel_read_t read;
     async_channel_write_t write;
     struct {
-        async_func_t closed;
-        async_func_t input;
+        async_channel_on_closed_t closed;
+        async_channel_on_input_t input;
         void *obj_p;
     } on;
     struct async_t *async_p;
@@ -87,8 +89,8 @@ void async_channel_init(struct async_channel_t *self_p,
  * to the channel.
  */
 void async_channel_set_on(struct async_channel_t *self_p,
-                          async_func_t on_closed,
-                          async_func_t on_input,
+                          async_channel_on_closed_t on_closed,
+                          async_channel_on_input_t on_input,
                           void *obj_p);
 
 /**

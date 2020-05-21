@@ -39,12 +39,14 @@ static void set_async(void *self_p, struct async_t *async_p)
 }
 
 static void call_threadsafe(void *self_p,
-                            async_threadsafe_func_t func,
-                            struct async_threadsafe_data_t *data_p)
+                            async_func_t func,
+                            void *obj_p,
+                            void *arg_p)
 {
     (void)self_p;
     (void)func;
-    (void)data_p;
+    (void)obj_p;
+    (void)arg_p;
 
     fprintf(stderr, "async_call_threadsafe() not implemented.\n");
     exit(1);
@@ -53,11 +55,13 @@ static void call_threadsafe(void *self_p,
 static int call_worker_pool(void *self_p,
                             async_func_t entry,
                             void *obj_p,
+                            void *arg_p,
                             async_func_t on_complete)
 {
     (void)self_p;
     (void)entry;
     (void)obj_p;
+    (void)arg_p;
     (void)on_complete;
 
     fprintf(stderr, "async_call_worker_pool() not implemented.\n");

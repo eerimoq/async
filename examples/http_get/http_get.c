@@ -30,8 +30,10 @@
 #include "async.h"
 #include "http_get.h"
 
-static void do_get(struct http_get_t *self_p)
+static void do_get(struct http_get_t *self_p, void *arg_p)
 {
+    (void)arg_p;
+
     printf("Getting 'http://localhost:8080/main.c'...\n");
     async_tcp_client_connect(&self_p->tcp, "localhost", 8080);
 }
@@ -79,5 +81,5 @@ void http_get_init(struct http_get_t *self_p, struct async_t *async_p)
                           on_disconnected,
                           on_input,
                           async_p);
-    async_call(async_p, (async_func_t)do_get, self_p);
+    async_call(async_p, (async_func_t)do_get, self_p, NULL);
 }

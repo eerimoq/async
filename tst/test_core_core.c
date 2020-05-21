@@ -10,8 +10,10 @@ TEST(process_empty)
     async_destroy(&async);
 }
 
-static void increment(int *arg_p)
+static void increment(void *obj_p, int *arg_p)
 {
+    (void)obj_p;
+
     (*arg_p)++;
 }
 
@@ -22,7 +24,7 @@ TEST(call_once)
 
     async_init(&async);
     arg = 0;
-    ASSERT_EQ(async_call(&async, (async_func_t)increment, &arg), 0);
+    ASSERT_EQ(async_call(&async, (async_func_t)increment, NULL, &arg), 0);
     async_process(&async);
     ASSERT_EQ(arg, 1);
     async_destroy(&async);
@@ -35,8 +37,8 @@ TEST(call_twice)
 
     async_init(&async);
     arg = 0;
-    ASSERT_EQ(async_call(&async, (async_func_t)increment, &arg), 0);
-    ASSERT_EQ(async_call(&async, (async_func_t)increment, &arg), 0);
+    ASSERT_EQ(async_call(&async, (async_func_t)increment, NULL, &arg), 0);
+    ASSERT_EQ(async_call(&async, (async_func_t)increment, NULL, &arg), 0);
     async_process(&async);
     ASSERT_EQ(arg, 2);
     async_destroy(&async);
@@ -52,10 +54,10 @@ TEST(call_queue_full)
     arg = 0;
 
     for (i = 0; i < 32; i++) {
-        ASSERT_EQ(async_call(&async, (async_func_t)increment, &arg), 0);
+        ASSERT_EQ(async_call(&async, (async_func_t)increment, NULL, &arg), 0);
     }
 
-    ASSERT_EQ(async_call(&async, (async_func_t)increment, &arg),
+    ASSERT_EQ(async_call(&async, (async_func_t)increment, NULL, &arg),
               -ASYNC_ERROR_QUEUE_FULL);
     async_process(&async);
     ASSERT_EQ(arg, 32);

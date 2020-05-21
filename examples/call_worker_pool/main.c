@@ -30,18 +30,20 @@
 #include <unistd.h>
 #include "async.h"
 
-static void hello(void *obj_p)
+static void hello(void *obj_p, void *arg_p)
 {
     (void)obj_p;
+    (void)arg_p;
 
     printf("Sleeping for 5 seconds...\n");
     sleep(5);
     printf("Woke up!\n");
 }
 
-static void on_complete(void *obj_p)
+static void on_complete(void *obj_p, void *arg_p)
 {
     (void)obj_p;
+    (void)arg_p;
 
     printf("Completed!\n");
 }
@@ -60,7 +62,7 @@ int main()
     async_set_runtime(&async, async_runtime_create());
     async_timer_init(&timer, on_timeout, NULL, 0, 1000, &async);
     async_timer_start(&timer);
-    async_call_worker_pool(&async, hello, NULL, on_complete);
+    async_call_worker_pool(&async, hello, NULL, NULL, on_complete);
     async_run_forever(&async);
 
     return (0);

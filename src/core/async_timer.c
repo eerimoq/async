@@ -41,8 +41,10 @@ static bool is_tail_timer(struct async_timer_list_t *self_p,
     return (timer_p == &self_p->tail);
 }
 
-static void on_timeout(struct async_timer_t *self_p)
+static void on_timeout(struct async_timer_t *self_p, void *arg_p)
 {
+    (void)arg_p;
+
     self_p->number_of_outstanding_timeouts--;
 
     if (self_p->number_of_timeouts_to_ignore > 0) {
@@ -199,7 +201,7 @@ void async_timer_list_tick(struct async_timer_list_t *self_p)
         timer_p = self_p->head_p;
         self_p->head_p = timer_p->next_p;
         timer_p->number_of_outstanding_timeouts++;
-        async_call(timer_p->async_p, (async_func_t)on_timeout, timer_p);
+        async_call(timer_p->async_p, (async_func_t)on_timeout, timer_p, NULL);
 
         /* Re-set periodic timers. */
         if (timer_p->repeat_ticks > 0) {
