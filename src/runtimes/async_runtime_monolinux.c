@@ -297,9 +297,19 @@ static void async_handle_tcp_client_connected(
     tcp_client(message_p->tcp_p)->on_connected.func(message_p->tcp_p, res);
 }
 
+static void async_tcp_client_data_complete_write(struct async_tcp_client_t *self_p)
+{
+    struct message_data_complete_t *ind_p;
+
+    ind_p = ml_message_alloc(&uid_tcp_data_complete, sizeof(*ind_p));
+    ind_p->tcp_p = self_p;
+    ml_queue_put(&tcp_runtime(self_p)->io.queue, ind_p);
+}
+
 static void async_handle_tcp_client_data(struct message_data_t *req_p)
 {
     tcp_client(req_p->tcp_p)->on_input(req_p->tcp_p);
+    async_tcp_client_data_complete_write(req_p->tcp_p);
 }
 
 static void async_handle_timeout(struct async_runtime_monolinux_t *self_p)
@@ -441,15 +451,6 @@ static void async_tcp_client_disconnect_write(struct async_tcp_client_t *self_p)
     ml_queue_put(&tcp_runtime(self_p)->io.queue, data_p);
 }
 
-static void async_tcp_client_data_complete_write(struct async_tcp_client_t *self_p)
-{
-    struct message_data_complete_t *ind_p;
-
-    ind_p = ml_message_alloc(&uid_tcp_data_complete, sizeof(*ind_p));
-    ind_p->tcp_p = self_p;
-    ml_queue_put(&tcp_runtime(self_p)->io.queue, ind_p);
-}
-
 static void tcp_client_init(struct async_tcp_client_t *self_p,
                             async_tcp_client_connected_t on_connected,
                             async_tcp_client_disconnected_t on_disconnected,
@@ -515,8 +516,6 @@ static size_t tcp_client_read(struct async_tcp_client_t *self_p,
     } else if (res == -1) {
         res = 0;
     }
-
-    async_tcp_client_data_complete_write(self_p);
 
     return (res);
 }
