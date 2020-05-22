@@ -26,6 +26,7 @@ examples:
 	$(MAKE) -C examples/http_get build
 	$(MAKE) -C examples/call_worker_pool build
 	$(MAKE) -C examples/call_threadsafe build
+	$(MAKE) -C examples/ping_pong build
 
 clean:
 	rm -rf $(BUILD)
@@ -40,6 +41,7 @@ clean:
 	$(MAKE) -C examples/http_get clean
 	$(MAKE) -C examples/call_worker_pool clean
 	$(MAKE) -C examples/call_threadsafe clean
+	$(MAKE) -C examples/ping_pong clean
 
 release:
 	rm -rf async-core-$(VERSION)
