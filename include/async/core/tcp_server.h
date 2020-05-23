@@ -57,6 +57,8 @@ typedef void (*async_tcp_server_client_input_t)(
 void async_tcp_server_init(struct async_tcp_server_t *self_p,
                            const char *host_p,
                            int port,
+                           struct async_tcp_server_client_t *clients_p,
+                           int number_of_clients,
                            async_tcp_server_client_connected_t on_connected,
                            async_tcp_server_client_disconnected_t on_disconnected,
                            async_tcp_server_client_input_t on_input,
