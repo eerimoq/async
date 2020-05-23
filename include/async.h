@@ -32,6 +32,7 @@
 #include "async/core.h"
 #include "async/modules/ssl.h"
 #include "async/modules/stcp_client.h"
+#include "async/modules/stcp_server.h"
 #include "async/modules/mqtt_client.h"
 #include "async/modules/shell.h"
 
