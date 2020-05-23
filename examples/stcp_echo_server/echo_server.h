@@ -26,15 +26,23 @@
  * This file is part of the Async project.
  */
 
-#ifndef ASYNC_CORE_H
-#define ASYNC_CORE_H
+#ifndef ECHO_SERVER_H
+#define ECHO_SERVER_H
 
-#define ASYNC_VERSION                          "0.9.0"
+#include "async.h"
 
-#include "async/core/core.h"
-#include "async/core/channel.h"
-#include "async/core/tcp_client.h"
-#include "async/core/tcp_server.h"
-#include "async/core/runtime.h"
+struct echo_server_t {
+    const char *name_p;
+    int port;
+    struct async_stcp_server_t stcp;
+    struct async_timer_t transmit_timer;
+    struct async_timer_t reconnect_timer;
+};
+
+void echo_server_init(struct echo_server_t *self_p,
+                      const char *name_p,
+                      int port,
+                      struct async_ssl_context_t *ssl_context_p,
+                      struct async_t *async_p);
 
 #endif
