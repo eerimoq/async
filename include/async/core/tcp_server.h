@@ -89,4 +89,9 @@ size_t async_tcp_server_client_read(struct async_tcp_server_client_t *self_p,
                                     void *buf_p,
                                     size_t size);
 
+/**
+ * Disconnect given client.
+ */
+size_t async_tcp_server_client_disconnect(struct async_tcp_server_client_t *self_p);
+
 #endif
