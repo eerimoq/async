@@ -91,6 +91,12 @@ static void tcp_server_init()
     exit(1);
 }
 
+static void tcp_server_add_client()
+{
+    fprintf(stderr, "async_tcp_server_add_client() not implemented.\n");
+    exit(1);
+}
+
 static void tcp_server_start()
 {
     fprintf(stderr, "async_tcp_server_start() not implemented.\n");
@@ -137,6 +143,7 @@ static struct async_runtime_t runtime = {
     },
     .tcp_server = {
         .init = tcp_server_init,
+        .add_client = tcp_server_add_client,
         .start = tcp_server_start,
         .stop = tcp_server_stop,
         .client = {

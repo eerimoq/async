@@ -122,6 +122,17 @@ TEST(tcp_server_init)
                              "async_tcp_server_init() not implemented.\n");
 }
 
+static void tcp_server_add_client_entry()
+{
+    async_runtime_null_create()->tcp_server.add_client(NULL, NULL);
+}
+
+TEST(tcp_server_add_client)
+{
+    assert_exit_1_and_output(tcp_server_add_client_entry,
+                             "async_tcp_server_add_client() not implemented.\n");
+}
+
 static void tcp_server_start_entry()
 {
     async_runtime_null_create()->tcp_server.start(NULL);

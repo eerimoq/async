@@ -19,7 +19,7 @@ Features
 
 - A simple shell.
 
-- A basic TCP client.
+- TCP client and server.
 
 - Secure communication with SSL/TLS.
 
