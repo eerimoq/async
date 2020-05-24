@@ -522,6 +522,46 @@ static size_t tcp_client_read(struct async_tcp_client_t *self_p,
     return (res);
 }
 
+static void tcp_server_init(struct async_tcp_server_t *self_p)
+{
+    (void)self_p;
+}
+
+static void tcp_server_start(struct async_tcp_server_t *self_p)
+{
+    (void)self_p;
+}
+
+static void tcp_server_stop(struct async_tcp_server_t *self_p)
+{
+    (void)self_p;
+}
+
+static void tcp_server_client_write(struct async_tcp_server_client_t *self_p,
+                                    const void *buf_p,
+                                    size_t size)
+{
+    (void)self_p;
+    (void)buf_p;
+    (void)size;
+}
+
+static size_t tcp_server_client_read(struct async_tcp_server_client_t *self_p,
+                                     void *buf_p,
+                                     size_t size)
+{
+    (void)self_p;
+    (void)buf_p;
+    (void)size;
+
+    return (0);
+}
+
+static void tcp_server_client_disconnect(struct async_tcp_server_client_t *self_p)
+{
+    (void)self_p;
+}
+
 static void on_put_signal_event(int *fd_p)
 {
     uint64_t value;
@@ -546,6 +586,12 @@ static int init(struct async_runtime_monolinux_t *self_p)
     runtime_p->tcp_client.disconnect = tcp_client_disconnect;
     runtime_p->tcp_client.write = tcp_client_write;
     runtime_p->tcp_client.read = tcp_client_read;
+    runtime_p->tcp_server.init = tcp_server_init;
+    runtime_p->tcp_server.start = tcp_server_start;
+    runtime_p->tcp_server.stop = tcp_server_stop;
+    runtime_p->tcp_server.client.write = tcp_server_client_write;
+    runtime_p->tcp_server.client.read = tcp_server_client_read;
+    runtime_p->tcp_server.client.disconnect = tcp_server_client_disconnect;
 
     self_p->io.fd = eventfd(0, EFD_SEMAPHORE);
 

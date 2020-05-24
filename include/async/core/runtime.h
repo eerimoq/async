@@ -31,6 +31,7 @@
 
 #include "async/core/core.h"
 #include "async/core/tcp_client.h"
+#include "async/core/tcp_server.h"
 
 typedef void (*async_runtime_set_async_t)(void *self_p, struct async_t *async_p);
 
@@ -71,6 +72,32 @@ typedef size_t (*async_runtime_tcp_client_read_t)(
     void *buf_p,
     size_t size);
 
+typedef void (*async_runtime_tcp_server_init_t)(
+    struct async_tcp_server_t *self_p);
+
+typedef void (*async_runtime_tcp_server_add_client_t)(
+    struct async_tcp_server_t *self_p,
+    struct async_tcp_server_client_t *client_p);
+
+typedef void (*async_runtime_tcp_server_start_t)(
+    struct async_tcp_server_t *self_p);
+
+typedef void (*async_runtime_tcp_server_stop_t)(
+    struct async_tcp_server_t *self_p);
+
+typedef void (*async_runtime_tcp_server_client_write_t)(
+    struct async_tcp_server_client_t *self_p,
+    const void *buf_p,
+    size_t size);
+
+typedef size_t (*async_runtime_tcp_server_client_read_t)(
+    struct async_tcp_server_client_t *self_p,
+    void *buf_p,
+    size_t size);
+
+typedef void (*async_runtime_tcp_server_client_disconnect_t)(
+    struct async_tcp_server_client_t *self_p);
+
 struct async_runtime_t {
     async_runtime_set_async_t set_async;
     async_runtime_call_worker_pool_t call_worker_pool;
@@ -83,6 +110,17 @@ struct async_runtime_t {
         async_runtime_tcp_client_write_t write;
         async_runtime_tcp_client_read_t read;
     } tcp_client;
+    struct {
+        async_runtime_tcp_server_init_t init;
+        async_runtime_tcp_server_add_client_t add_client;
+        async_runtime_tcp_server_start_t start;
+        async_runtime_tcp_server_stop_t stop;
+        struct {
+            async_runtime_tcp_server_client_write_t write;
+            async_runtime_tcp_server_client_read_t read;
+            async_runtime_tcp_server_client_disconnect_t disconnect;
+        } client;
+    } tcp_server;
     void *obj_p;
 };
 

@@ -21,6 +21,7 @@ SRC += $(ASYNC_ROOT)/tst/utils/utils.c
 SRC += $(shell $(NALA) c_sources)
 SRC += $(ASYNC_ROOT)/tst/utils/runtime_test.c
 SRC += $(ASYNC_ROOT)/tst/utils/runtime_test_impl.c
+SRC += $(ASYNC_ROOT)/tst/utils/subprocess.c
 SRC += $(BUILD)/nala_mocks.c
 SRC += $(TESTS)
 TESTS ?= main

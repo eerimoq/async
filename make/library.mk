@@ -4,6 +4,7 @@ SRC += $(ASYNC_ROOT)/src/core/async_core.c
 SRC += $(ASYNC_ROOT)/src/core/async_timer.c
 SRC += $(ASYNC_ROOT)/src/core/async_channel.c
 SRC += $(ASYNC_ROOT)/src/core/async_tcp_client.c
+SRC += $(ASYNC_ROOT)/src/core/async_tcp_server.c
 SRC += $(ASYNC_ROOT)/src/core/async_runtime_null.c
 SRC += $(ASYNC_ROOT)/src/modules/async_stcp_client.c
 SRC += $(ASYNC_ROOT)/src/modules/async_ssl.c

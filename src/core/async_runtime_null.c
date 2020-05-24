@@ -29,111 +29,98 @@
 #include <stdio.h>
 #include "async/core/runtime.h"
 
-static void set_async(void *self_p, struct async_t *async_p)
+static void set_async()
 {
-    (void)self_p;
-    (void)async_p;
-
-    fprintf(stderr, "set_async() not implemented.\n");
+    fprintf(stderr, "async_set_runtime() not implemented.\n");
     exit(1);
 }
 
-static void call_threadsafe(void *self_p,
-                            async_func_t func,
-                            void *obj_p,
-                            void *arg_p)
+static void call_threadsafe()
 {
-    (void)self_p;
-    (void)func;
-    (void)obj_p;
-    (void)arg_p;
-
     fprintf(stderr, "async_call_threadsafe() not implemented.\n");
     exit(1);
 }
 
-static int call_worker_pool(void *self_p,
-                            async_func_t entry,
-                            void *obj_p,
-                            void *arg_p,
-                            async_func_t on_complete)
+static int call_worker_pool()
 {
-    (void)self_p;
-    (void)entry;
-    (void)obj_p;
-    (void)arg_p;
-    (void)on_complete;
-
     fprintf(stderr, "async_call_worker_pool() not implemented.\n");
     exit(1);
 }
 
-static void run_forever(void *self_p)
+static void run_forever()
 {
-    (void)self_p;
-
     fprintf(stderr, "async_run_forever() not implemented.\n");
     exit(1);
 }
 
-static void tcp_client_init(struct async_tcp_client_t *self_p,
-                            async_tcp_client_connected_t on_connected,
-                            async_tcp_client_disconnected_t on_disconnected,
-                            async_tcp_client_input_t on_input)
+static void tcp_client_init()
 {
-    (void)self_p;
-    (void)on_connected;
-    (void)on_disconnected;
-    (void)on_input;
-
     fprintf(stderr, "async_tcp_client_init() not implemented.\n");
     exit(1);
 }
 
-static void tcp_client_connect(struct async_tcp_client_t *self_p,
-                               const char *host_p,
-                               int port)
+static void tcp_client_connect()
 {
-    (void)self_p;
-    (void)host_p;
-    (void)port;
-
     fprintf(stderr, "async_tcp_client_connect() not implemented.\n");
     exit(1);
 }
 
-static void tcp_client_disconnect(struct async_tcp_client_t *self_p)
+static void tcp_client_disconnect()
 {
-    (void)self_p;
-
     fprintf(stderr, "async_tcp_client_disconnect() not implemented.\n");
     exit(1);
 }
 
-static void tcp_client_write(struct async_tcp_client_t *self_p,
-                             const void *buf_p,
-                             size_t size)
+static void tcp_client_write()
 {
-    (void)self_p;
-    (void)buf_p;
-    (void)size;
-
     fprintf(stderr, "async_tcp_client_write() not implemented.\n");
     exit(1);
 }
 
-static size_t tcp_client_read(struct async_tcp_client_t *self_p,
-                              void *buf_p,
-                              size_t size)
+static size_t tcp_client_read()
 {
-    (void)self_p;
-    (void)buf_p;
-    (void)size;
-
     fprintf(stderr, "async_tcp_client_read() not implemented.\n");
     exit(1);
 
     return (0);
+}
+
+static void tcp_server_init()
+{
+    fprintf(stderr, "async_tcp_server_init() not implemented.\n");
+    exit(1);
+}
+
+static void tcp_server_start()
+{
+    fprintf(stderr, "async_tcp_server_start() not implemented.\n");
+    exit(1);
+}
+
+static void tcp_server_stop()
+{
+    fprintf(stderr, "async_tcp_server_stop() not implemented.\n");
+    exit(1);
+}
+
+static void tcp_server_client_write()
+{
+    fprintf(stderr, "async_tcp_server_client_write() not implemented.\n");
+    exit(1);
+}
+
+static size_t tcp_server_client_read()
+{
+    fprintf(stderr, "async_tcp_server_client_read() not implemented.\n");
+    exit(1);
+
+    return (0);
+}
+
+static void tcp_server_client_disconnect()
+{
+    fprintf(stderr, "async_tcp_server_client_disconnect() not implemented.\n");
+    exit(1);
 }
 
 static struct async_runtime_t runtime = {
@@ -147,6 +134,16 @@ static struct async_runtime_t runtime = {
         .disconnect = tcp_client_disconnect,
         .write = tcp_client_write,
         .read = tcp_client_read
+    },
+    .tcp_server = {
+        .init = tcp_server_init,
+        .start = tcp_server_start,
+        .stop = tcp_server_stop,
+        .client = {
+            .write = tcp_server_client_write,
+            .read = tcp_server_client_read,
+            .disconnect = tcp_server_client_disconnect
+        }
     }
 };
 

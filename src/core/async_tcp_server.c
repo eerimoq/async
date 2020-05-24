@@ -26,81 +26,88 @@
  * This file is part of the Async project.
  */
 
-#ifndef ASYNC_CORE_TCP_SERVER_H
-#define ASYNC_CORE_TCP_SERVER_H
+#include <stdio.h>
+#include <stdlib.h>
+#include "async/core.h"
+#include "async/core/runtime.h"
 
-#include "async/core/core.h"
+static void on_connected_default()
+{
+}
 
-struct async_tcp_server_client_t {
-    struct async_tcp_server_t *server_p;
-    struct async_tcp_server_client_t *next_p;
-    struct async_tcp_server_client_t *prev_p;
-    void *obj_p;
-};
+static void on_disconnected_default()
+{
+}
 
-struct async_tcp_server_t {
-    struct async_t *async_p;
-    struct {
-        struct async_tcp_server_client_t *used_p;
-        struct async_tcp_server_client_t *free_p;
-    } clients;
-    void *obj_p;
-};
+static void on_input_default(struct async_tcp_server_client_t *self_p)
+{
+    char buf[32];
 
-typedef void (*async_tcp_server_client_connected_t)(
-    struct async_tcp_server_client_t *self_p);
+    async_tcp_server_client_read(self_p, &buf[0], sizeof(buf));
+}
 
-typedef void (*async_tcp_server_client_disconnected_t)(
-    struct async_tcp_server_client_t *self_p);
-
-typedef void (*async_tcp_server_client_input_t)(
-    struct async_tcp_server_client_t *self_p);
-
-/**
- * Initialize given TCP server object.
- */
 void async_tcp_server_init(struct async_tcp_server_t *self_p,
                            const char *host_p,
                            int port,
                            async_tcp_server_client_connected_t on_connected,
                            async_tcp_server_client_disconnected_t on_disconnected,
                            async_tcp_server_client_input_t on_input,
-                           struct async_t *async_p);
+                           struct async_t *async_p)
+{
+    (void)host_p;
+    (void)port;
 
-/**
- * Add given client to given server.
- */
+    if (on_connected == NULL) {
+        on_connected = on_connected_default;
+    }
+
+    if (on_disconnected == NULL) {
+        on_disconnected = on_disconnected_default;
+    }
+
+    if (on_input == NULL) {
+        on_input = on_input_default;
+    }
+
+    self_p->async_p = async_p;
+    async_p->runtime_p->tcp_server.init(self_p);
+}
+
 void async_tcp_server_add_client(struct async_tcp_server_t *self_p,
-                                 struct async_tcp_server_client_t *client_p);
+                                 struct async_tcp_server_client_t *client_p)
+{
+    self_p->async_p->runtime_p->tcp_server.add_client(self_p, client_p);
+}
 
-/**
- * Start listening for clients.
- */
-void async_tcp_server_start(struct async_tcp_server_t *self_p);
+void async_tcp_server_start(struct async_tcp_server_t *self_p)
+{
+    self_p->async_p->runtime_p->tcp_server.start(self_p);
+}
 
-/**
- * Disconnect any connected clients and stop listening for clients.
- */
-void async_tcp_server_stop(struct async_tcp_server_t *self_p);
+void async_tcp_server_stop(struct async_tcp_server_t *self_p)
+{
+    self_p->async_p->runtime_p->tcp_server.stop(self_p);
+}
 
-/**
- * Write size bytes to the remote host.
- */
 void async_tcp_server_client_write(struct async_tcp_server_client_t *self_p,
                                    const void *buf_p,
-                                   size_t size);
+                                   size_t size)
+{
+    self_p->server_p->async_p->runtime_p->tcp_server.client.write(self_p,
+                                                                  buf_p,
+                                                                  size);
+}
 
-/**
- * Read up to size bytes from the remote host. Returns the number of
- * read bytes (0..size).
- */
 size_t async_tcp_server_client_read(struct async_tcp_server_client_t *self_p,
                                     void *buf_p,
-                                    size_t size);
+                                    size_t size)
+{
+    return (self_p->server_p->async_p->runtime_p->tcp_server.client.read(self_p,
+                                                                         buf_p,
+                                                                         size));
+}
 
-/**
- * Disconnect given client.
- */
-void async_tcp_server_client_disconnect(struct async_tcp_server_client_t *self_p);
-
-#endif
+void async_tcp_server_client_disconnect(struct async_tcp_server_client_t *self_p)
+{
+    self_p->server_p->async_p->runtime_p->tcp_server.client.disconnect(self_p);
+}
