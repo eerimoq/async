@@ -1,10 +1,10 @@
-INC += $(ASYNC_ROOT)/3pp/bitstream
+INC += $(ASYNC_ROOT)/3pp/bitstream/include
 INC += $(ASYNC_ROOT)/3pp/humanfriendly/include
 INC += $(ASYNC_ROOT)/3pp/monolinux-c-library/include
 INC += $(ASYNC_ROOT)/3pp/mbedtls/include
 INC += $(ASYNC_ROOT)/3pp/mbedtls/crypto/include
 
-SRC += $(ASYNC_ROOT)/3pp/bitstream/bitstream.c
+SRC += $(ASYNC_ROOT)/3pp/bitstream/src/bitstream.c
 
 SRC += $(ASYNC_ROOT)/3pp/humanfriendly/src/hf.c
 
