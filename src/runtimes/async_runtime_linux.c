@@ -524,19 +524,35 @@ static size_t tcp_client_read(struct async_tcp_client_t *self_p,
     return (res);
 }
 
-static void tcp_server_init(struct async_tcp_server_t *self_p)
+static void tcp_server_init(struct async_tcp_server_t *self_p,
+                            const char *host_p,
+                            int port,
+                            async_tcp_server_client_connected_t on_connected,
+                            async_tcp_server_client_disconnected_t on_disconnected,
+                            async_tcp_server_client_input_t on_input)
 {
     (void)self_p;
+    (void)host_p;
+    (void)port;
+    (void)on_connected;
+    (void)on_disconnected;
+    (void)on_input;
+
+    exit(1);
 }
 
 static void tcp_server_start(struct async_tcp_server_t *self_p)
 {
     (void)self_p;
+
+    exit(2);
 }
 
 static void tcp_server_stop(struct async_tcp_server_t *self_p)
 {
     (void)self_p;
+
+    exit(3);
 }
 
 static void tcp_server_client_write(struct async_tcp_server_client_t *self_p,
@@ -546,6 +562,8 @@ static void tcp_server_client_write(struct async_tcp_server_client_t *self_p,
     (void)self_p;
     (void)buf_p;
     (void)size;
+
+    exit(4);
 }
 
 static size_t tcp_server_client_read(struct async_tcp_server_client_t *self_p,
@@ -556,12 +574,16 @@ static size_t tcp_server_client_read(struct async_tcp_server_client_t *self_p,
     (void)buf_p;
     (void)size;
 
+    exit(5);
+
     return (0);
 }
 
 static void tcp_server_client_disconnect(struct async_tcp_server_client_t *self_p)
 {
     (void)self_p;
+
+    exit(6);
 }
 
 static void on_put_signal_event(int *fd_p)

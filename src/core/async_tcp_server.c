@@ -54,9 +54,6 @@ void async_tcp_server_init(struct async_tcp_server_t *self_p,
                            async_tcp_server_client_input_t on_input,
                            struct async_t *async_p)
 {
-    (void)host_p;
-    (void)port;
-
     if (on_connected == NULL) {
         on_connected = on_connected_default;
     }
@@ -70,7 +67,12 @@ void async_tcp_server_init(struct async_tcp_server_t *self_p,
     }
 
     self_p->async_p = async_p;
-    async_p->runtime_p->tcp_server.init(self_p);
+    async_p->runtime_p->tcp_server.init(self_p,
+                                        host_p,
+                                        port,
+                                        on_connected,
+                                        on_disconnected,
+                                        on_input);
 }
 
 void async_tcp_server_add_client(struct async_tcp_server_t *self_p,

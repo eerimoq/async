@@ -73,7 +73,12 @@ typedef size_t (*async_runtime_tcp_client_read_t)(
     size_t size);
 
 typedef void (*async_runtime_tcp_server_init_t)(
-    struct async_tcp_server_t *self_p);
+    struct async_tcp_server_t *self_p,
+    const char *host_p,
+    int port,
+    async_tcp_server_client_connected_t on_connected,
+    async_tcp_server_client_disconnected_t on_disconnected,
+    async_tcp_server_client_input_t on_input);
 
 typedef void (*async_runtime_tcp_server_add_client_t)(
     struct async_tcp_server_t *self_p,

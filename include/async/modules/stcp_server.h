@@ -55,20 +55,29 @@ struct async_stcp_server_t {
         struct async_ssl_context_t *context_p;
         struct async_ssl_connection_t connection;
     } ssl;
-    async_stcp_server_client_connected_t on_connected;
-    async_stcp_server_client_disconnected_t on_disconnected;
-    async_stcp_server_client_input_t on_input;
+    struct {
+        async_stcp_server_client_connected_t on_connected;
+        async_stcp_server_client_disconnected_t on_disconnected;
+        async_stcp_server_client_input_t on_input;
+    } client;
     struct async_t *async_p;
 };
 
 struct async_stcp_server_client_t {
+    struct async_stcp_server_t *server_p;
     struct async_tcp_server_client_t tcp;
+    struct {
+        struct async_ssl_context_t *context_p;
+        struct async_ssl_connection_t connection;
+    } ssl;
 };
 
 /**
  * Initialize given secure TCP server object.
  */
 void async_stcp_server_init(struct async_stcp_server_t *self_p,
+                            const char *host_p,
+                            int port,
                             struct async_ssl_context_t *ssl_context_p,
                             async_stcp_server_client_connected_t on_connected,
                             async_stcp_server_client_disconnected_t on_disconnected,

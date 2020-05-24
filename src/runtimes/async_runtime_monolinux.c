@@ -522,9 +522,19 @@ static size_t tcp_client_read(struct async_tcp_client_t *self_p,
     return (res);
 }
 
-static void tcp_server_init(struct async_tcp_server_t *self_p)
+static void tcp_server_init(struct async_tcp_server_t *self_p,
+                            const char *host_p,
+                            int port,
+                            async_tcp_server_client_connected_t on_connected,
+                            async_tcp_server_client_disconnected_t on_disconnected,
+                            async_tcp_server_client_input_t on_input)
 {
     (void)self_p;
+    (void)host_p;
+    (void)port;
+    (void)on_connected;
+    (void)on_disconnected;
+    (void)on_input;
 }
 
 static void tcp_server_start(struct async_tcp_server_t *self_p)

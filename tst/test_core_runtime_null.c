@@ -113,7 +113,7 @@ TEST(tcp_client_read)
 
 static void tcp_server_init_entry()
 {
-    async_runtime_null_create()->tcp_server.init(NULL);
+    async_runtime_null_create()->tcp_server.init(NULL, NULL, 0, NULL, NULL, NULL);
 }
 
 TEST(tcp_server_init)

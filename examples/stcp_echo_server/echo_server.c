@@ -65,6 +65,8 @@ void echo_server_init(struct echo_server_t *self_p,
     self_p->name_p = name_p;
     self_p->port = port;
     async_stcp_server_init(&self_p->stcp,
+                           "127.0.0.1",
+                           port,
                            ssl_context_p,
                            on_client_connected,
                            on_client_disconnected,
