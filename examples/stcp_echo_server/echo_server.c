@@ -30,12 +30,12 @@
 #include "async.h"
 #include "echo_server.h"
 
-static void on_client_connected(struct async_stcp_server_client_t *client_p, int res)
+static void on_client_connected()
 {
     printf("Client connected!\n");
 }
 
-static void on_client_disconnected(struct async_stcp_server_client_t *client_p)
+static void on_client_disconnected()
 {
     printf("Client disconnected!\n");
 }
@@ -70,5 +70,6 @@ void echo_server_init(struct echo_server_t *self_p,
                            on_client_disconnected,
                            on_client_input,
                            async_p);
+    async_stcp_server_add_client(&self_p->stcp, &self_p->client);
     async_stcp_server_start(&self_p->stcp);
 }

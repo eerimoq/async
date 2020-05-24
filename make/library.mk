@@ -7,6 +7,7 @@ SRC += $(ASYNC_ROOT)/src/core/async_tcp_client.c
 SRC += $(ASYNC_ROOT)/src/core/async_tcp_server.c
 SRC += $(ASYNC_ROOT)/src/core/async_runtime_null.c
 SRC += $(ASYNC_ROOT)/src/modules/async_stcp_client.c
+SRC += $(ASYNC_ROOT)/src/modules/async_stcp_server.c
 SRC += $(ASYNC_ROOT)/src/modules/async_ssl.c
 SRC += $(ASYNC_ROOT)/src/modules/async_shell.c
 SRC += $(ASYNC_ROOT)/src/modules/async_mqtt_client.c

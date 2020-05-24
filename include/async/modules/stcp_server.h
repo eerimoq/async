@@ -38,13 +38,16 @@
 #include "async/modules/ssl.h"
 
 struct async_stcp_server_t;
+struct async_stcp_server_client_t;
 
-typedef void (*async_stcp_server_connected_t)(struct async_stcp_server_t *self_p,
-                                              int res);
+typedef void (*async_stcp_server_client_connected_t)(
+    struct async_stcp_server_client_t *self_p);
 
-typedef void (*async_stcp_server_disconnected_t)(struct async_stcp_server_t *self_p);
+typedef void (*async_stcp_server_client_disconnected_t)(
+    struct async_stcp_server_client_t *self_p);
 
-typedef void (*async_stcp_server_input_t)(struct async_stcp_server_t *self_p);
+typedef void (*async_stcp_server_client_input_t)(
+    struct async_stcp_server_client_t *self_p);
 
 struct async_stcp_server_t {
     struct async_tcp_server_t tcp;
@@ -52,36 +55,46 @@ struct async_stcp_server_t {
         struct async_ssl_context_t *context_p;
         struct async_ssl_connection_t connection;
     } ssl;
-    async_stcp_server_connected_t on_connected;
-    async_stcp_server_disconnected_t on_disconnected;
-    async_stcp_server_input_t on_input;
+    async_stcp_server_client_connected_t on_connected;
+    async_stcp_server_client_disconnected_t on_disconnected;
+    async_stcp_server_client_input_t on_input;
     struct async_t *async_p;
 };
 
-typedef void (*async_stcp_server_connected_t)(
-    struct async_stcp_server_t *self_p,
-    int res);
-
-typedef void (*async_stcp_server_disconnected_t)(
-    struct async_stcp_server_t *self_p);
-
-typedef void (*async_stcp_server_input_t)(
-    struct async_stcp_server_t *self_p);
+struct async_stcp_server_client_t {
+    struct async_tcp_server_client_t tcp;
+};
 
 /**
  * Initialize given secure TCP server object.
  */
 void async_stcp_server_init(struct async_stcp_server_t *self_p,
                             struct async_ssl_context_t *ssl_context_p,
-                            async_stcp_server_connected_t on_connected,
-                            async_stcp_server_disconnected_t on_disconnected,
-                            async_stcp_server_input_t on_input,
+                            async_stcp_server_client_connected_t on_connected,
+                            async_stcp_server_client_disconnected_t on_disconnected,
+                            async_stcp_server_client_input_t on_input,
                             struct async_t *async_p);
+
+/**
+ * Add given client to given server.
+ */
+void async_stcp_server_add_client(struct async_stcp_server_t *self_p,
+                                  struct async_stcp_server_client_t *client_p);
+
+/**
+ * Start listening for clients.
+ */
+void async_stcp_server_start(struct async_stcp_server_t *self_p);
+
+/**
+ * Disconnect any connected clients and stop listening for clients.
+ */
+void async_stcp_server_stop(struct async_stcp_server_t *self_p);
 
 /**
  * Write size bytes to the remote host.
  */
-void async_stcp_server_client_write(struct async_stcp_server_t *self_p,
+void async_stcp_server_client_write(struct async_stcp_server_client_t *self_p,
                                     const void *buf_p,
                                     size_t size);
 
@@ -89,13 +102,13 @@ void async_stcp_server_client_write(struct async_stcp_server_t *self_p,
  * Read up to size bytes from the remote host. Returns the number of
  * read bytes (0..size).
  */
-size_t async_stcp_server_client_read(struct async_stcp_server_t *self_p,
+size_t async_stcp_server_client_read(struct async_stcp_server_client_t *self_p,
                                      void *buf_p,
                                      size_t size);
 
 /**
  * Disconnect from the remote host.
  */
-void async_stcp_server_client_disconnect(struct async_stcp_server_t *self_p);
+void async_stcp_server_client_disconnect(struct async_stcp_server_client_t *self_p);
 
 #endif

@@ -35,6 +35,7 @@ struct echo_server_t {
     const char *name_p;
     int port;
     struct async_stcp_server_t stcp;
+    struct async_stcp_server_client_t client;
     struct async_timer_t transmit_timer;
     struct async_timer_t reconnect_timer;
 };

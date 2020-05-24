@@ -31,12 +31,16 @@
 
 #include "async/core/core.h"
 
-struct async_tcp_server_client_t {
-    struct async_tcp_server_t *server_p;
-    struct async_tcp_server_client_t *next_p;
-    struct async_tcp_server_client_t *prev_p;
-    void *obj_p;
-};
+struct async_tcp_server_client_t;
+
+typedef void (*async_tcp_server_client_connected_t)(
+    struct async_tcp_server_client_t *self_p);
+
+typedef void (*async_tcp_server_client_disconnected_t)(
+    struct async_tcp_server_client_t *self_p);
+
+typedef void (*async_tcp_server_client_input_t)(
+    struct async_tcp_server_client_t *self_p);
 
 struct async_tcp_server_t {
     struct async_t *async_p;
@@ -47,14 +51,12 @@ struct async_tcp_server_t {
     void *obj_p;
 };
 
-typedef void (*async_tcp_server_client_connected_t)(
-    struct async_tcp_server_client_t *self_p);
-
-typedef void (*async_tcp_server_client_disconnected_t)(
-    struct async_tcp_server_client_t *self_p);
-
-typedef void (*async_tcp_server_client_input_t)(
-    struct async_tcp_server_client_t *self_p);
+struct async_tcp_server_client_t {
+    struct async_tcp_server_t *server_p;
+    struct async_tcp_server_client_t *next_p;
+    struct async_tcp_server_client_t *prev_p;
+    void *obj_p;
+};
 
 /**
  * Initialize given TCP server object.
