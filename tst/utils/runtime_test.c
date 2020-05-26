@@ -79,44 +79,29 @@ static size_t tcp_client_read(struct async_tcp_client_t *self_p,
     return (runtime_test_tcp_client_read(self_p, buf_p, size));
 }
 
-static void tcp_server_init(struct async_tcp_server_t *self_p)
+static void tcp_server_init()
 {
-    (void)self_p;
 }
 
-static void tcp_server_start(struct async_tcp_server_t *self_p)
+static void tcp_server_start()
 {
-    (void)self_p;
 }
 
-static void tcp_server_stop(struct async_tcp_server_t *self_p)
+static void tcp_server_stop()
 {
-    (void)self_p;
 }
 
-static void tcp_server_client_write(struct async_tcp_server_client_t *self_p,
-                                    const void *buf_p,
-                                    size_t size)
+static void tcp_server_client_write()
 {
-    (void)self_p;
-    (void)buf_p;
-    (void)size;
 }
 
-static size_t tcp_server_client_read(struct async_tcp_server_client_t *self_p,
-                                     void *buf_p,
-                                     size_t size)
+static size_t tcp_server_client_read()
 {
-    (void)self_p;
-    (void)buf_p;
-    (void)size;
-
     return (0);
 }
 
-static void tcp_server_client_disconnect(struct async_tcp_server_client_t *self_p)
+static void tcp_server_client_disconnect()
 {
-    (void)self_p;
 }
 
 static struct async_runtime_t runtime = {
