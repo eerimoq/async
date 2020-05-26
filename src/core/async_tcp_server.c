@@ -78,6 +78,7 @@ void async_tcp_server_init(struct async_tcp_server_t *self_p,
 void async_tcp_server_add_client(struct async_tcp_server_t *self_p,
                                  struct async_tcp_server_client_t *client_p)
 {
+    client_p->server_p = self_p;
     self_p->async_p->runtime_p->tcp_server.add_client(self_p, client_p);
 }
 

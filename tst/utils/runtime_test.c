@@ -44,6 +44,7 @@ static struct async_runtime_t runtime = {
     },
     .tcp_server = {
         .init = runtime_test_tcp_server_init,
+        .add_client = runtime_test_tcp_server_add_client,
         .start = runtime_test_tcp_server_start,
         .stop = runtime_test_tcp_server_stop,
         .client = {
