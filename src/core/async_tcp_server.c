@@ -42,8 +42,11 @@ static void on_disconnected_default()
 static void on_input_default(struct async_tcp_server_client_t *self_p)
 {
     char buf[32];
+    size_t size;
 
-    async_tcp_server_client_read(self_p, &buf[0], sizeof(buf));
+    do {
+        size = async_tcp_server_client_read(self_p, &buf[0], sizeof(buf));
+    } while (size > 0);
 }
 
 void async_tcp_server_init(struct async_tcp_server_t *self_p,
