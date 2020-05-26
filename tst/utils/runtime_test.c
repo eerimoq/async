@@ -32,96 +32,24 @@
 #include "async/runtimes/linux.h"
 #include "runtime_test.h"
 
-static void set_async(void *self_p, struct async_t *async_p)
-{
-    runtime_test_set_async(self_p, async_p);
-}
-
-static void run_forever(void *self_p)
-{
-    runtime_test_run_forever(self_p);
-}
-
-static void tcp_client_init(struct async_tcp_client_t *self_p,
-                            async_tcp_client_connected_t on_connected,
-                            async_tcp_client_disconnected_t on_disconnected,
-                            async_tcp_client_input_t on_input)
-{
-    runtime_test_tcp_client_init(self_p,
-                                 on_connected,
-                                 on_disconnected,
-                                 on_input);
-}
-
-static void tcp_client_connect(struct async_tcp_client_t *self_p,
-                               const char *host_p,
-                               int port)
-{
-    runtime_test_tcp_client_connect(self_p, host_p, port);
-}
-
-static void tcp_client_disconnect(struct async_tcp_client_t *self_p)
-{
-    runtime_test_tcp_client_disconnect(self_p);
-}
-
-static void tcp_client_write(struct async_tcp_client_t *self_p,
-                             const void *buf_p,
-                             size_t size)
-{
-    runtime_test_tcp_client_write(self_p, buf_p, size);
-}
-
-static size_t tcp_client_read(struct async_tcp_client_t *self_p,
-                              void *buf_p,
-                              size_t size)
-{
-    return (runtime_test_tcp_client_read(self_p, buf_p, size));
-}
-
-static void tcp_server_init()
-{
-}
-
-static void tcp_server_start()
-{
-}
-
-static void tcp_server_stop()
-{
-}
-
-static void tcp_server_client_write()
-{
-}
-
-static size_t tcp_server_client_read()
-{
-    return (0);
-}
-
-static void tcp_server_client_disconnect()
-{
-}
-
 static struct async_runtime_t runtime = {
-    .set_async = set_async,
-    .run_forever = run_forever,
+    .set_async = runtime_test_set_async,
+    .run_forever = runtime_test_run_forever,
     .tcp_client = {
-        .init = tcp_client_init,
-        .connect = tcp_client_connect,
-        .disconnect = tcp_client_disconnect,
-        .write = tcp_client_write,
-        .read = tcp_client_read
+        .init = runtime_test_tcp_client_init,
+        .connect = runtime_test_tcp_client_connect,
+        .disconnect = runtime_test_tcp_client_disconnect,
+        .write = runtime_test_tcp_client_write,
+        .read = runtime_test_tcp_client_read
     },
     .tcp_server = {
-        .init = tcp_server_init,
-        .start = tcp_server_start,
-        .stop = tcp_server_stop,
+        .init = runtime_test_tcp_server_init,
+        .start = runtime_test_tcp_server_start,
+        .stop = runtime_test_tcp_server_stop,
         .client = {
-            .write = tcp_server_client_write,
-            .read = tcp_server_client_read,
-            .disconnect = tcp_server_client_disconnect
+            .write = runtime_test_tcp_server_client_write,
+            .read = runtime_test_tcp_server_client_read,
+            .disconnect = runtime_test_tcp_server_client_disconnect
         }
     }
 };
