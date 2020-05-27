@@ -13,7 +13,6 @@ SRC += $(ASYNC_ROOT)/src/modules/async_shell.c
 SRC += $(ASYNC_ROOT)/src/modules/async_mqtt_client.c
 SRC += $(ASYNC_ROOT)/src/runtimes/async_runtime.c
 SRC += $(ASYNC_ROOT)/src/runtimes/async_runtime_linux.c
-SRC += $(ASYNC_ROOT)/src/runtimes/async_runtime_monolinux.c
 SRC += $(ASYNC_ROOT)/src/utils/async_utils_linux.c
 
 OBJ = $(patsubst %,$(BUILD)%,$(abspath $(SRC:%.c=%.o)))
