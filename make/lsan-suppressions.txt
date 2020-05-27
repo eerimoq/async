@@ -1,3 +1,4 @@
 # Known leaks
 leak:ml.c
 leak:async_runtime_linux_create
+leak:io_main

@@ -97,10 +97,12 @@ static void tcp_server_add_client()
     exit(1);
 }
 
-static void tcp_server_start()
+static int tcp_server_start()
 {
     fprintf(stderr, "async_tcp_server_start() not implemented.\n");
     exit(1);
+
+    return (0);
 }
 
 static void tcp_server_stop()
