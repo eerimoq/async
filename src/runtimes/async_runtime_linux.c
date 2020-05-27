@@ -43,6 +43,7 @@ static ML_UID(uid_timeout);
 static ML_UID(uid_tcp_client_connect);
 static ML_UID(uid_tcp_client_connect_complete);
 static ML_UID(uid_tcp_client_disconnect);
+static ML_UID(uid_tcp_client_write_error);
 static ML_UID(uid_tcp_client_data);
 static ML_UID(uid_tcp_client_data_complete);
 static ML_UID(uid_tcp_client_disconnected);
@@ -102,6 +103,11 @@ struct message_connect_complete_t {
 };
 
 struct message_disconnect_t {
+    int sockfd;
+};
+
+struct message_write_error_t {
+    struct async_tcp_client_t *tcp_p;
     int sockfd;
 };
 
@@ -240,6 +246,20 @@ static void io_handle_tcp_client_disconnect(int epoll_fd,
     close(ind_p->sockfd);
 }
 
+static void io_handle_tcp_client_write_error(struct async_runtime_linux_t *self_p,
+                                             int epoll_fd,
+                                             struct message_write_error_t *ind_p)
+{
+    struct message_disconnected_t *message_p;
+
+    epoll_ctl(epoll_fd, EPOLL_CTL_DEL, ind_p->sockfd, NULL);
+    close(ind_p->sockfd);
+    message_p = ml_message_alloc(&uid_tcp_client_disconnected,
+                                 sizeof(*message_p));
+    message_p->tcp_p = ind_p->tcp_p;
+    ml_queue_put(&self_p->async.queue, message_p);
+}
+
 static void io_handle_tcp_client_data_complete(struct async_runtime_linux_t *self_p,
                                                int epoll_fd,
                                                struct message_data_complete_t *ind_p)
@@ -308,6 +328,8 @@ static void io_handle_async(struct async_runtime_linux_t *self_p,
         io_handle_tcp_client_connect(self_p, epoll_fd, message_p);
     } else if (uid_p == &uid_tcp_client_disconnect) {
         io_handle_tcp_client_disconnect(epoll_fd, message_p);
+    } else if (uid_p == &uid_tcp_client_write_error) {
+        io_handle_tcp_client_write_error(self_p, epoll_fd, message_p);
     } else if (uid_p == &uid_tcp_client_data_complete) {
         io_handle_tcp_client_data_complete(self_p, epoll_fd, message_p);
     }
@@ -510,6 +532,16 @@ static void async_tcp_client_disconnect_write(struct async_tcp_client_t *self_p)
     ml_queue_put(&tcp_client_runtime(self_p)->io.queue, data_p);
 }
 
+static void async_tcp_client_write_error_write(struct async_tcp_client_t *self_p)
+{
+    struct message_write_error_t *data_p;
+
+    data_p = ml_message_alloc(&uid_tcp_client_write_error, sizeof(*data_p));
+    data_p->tcp_p = self_p;
+    data_p->sockfd = tcp_client(self_p)->sockfd;
+    ml_queue_put(&tcp_client_runtime(self_p)->io.queue, data_p);
+}
+
 static void tcp_client_init(struct async_tcp_client_t *self_p,
                             async_tcp_client_connected_t on_connected,
                             async_tcp_client_disconnected_t on_disconnected,
@@ -551,10 +583,15 @@ static void tcp_client_write(struct async_tcp_client_t *self_p,
 {
     ssize_t res;
 
+    if (tcp_client(self_p)->closed) {
+        return;
+    }
+
     res = write(tcp_client(self_p)->sockfd, buf_p, size);
 
     if (res != (ssize_t)size) {
-        fprintf(stderr, "TCP write failed %d %d.\n", (int)res, (int)size);
+        tcp_client(self_p)->closed = true;
+        async_tcp_client_write_error_write(self_p);
     }
 }
 
