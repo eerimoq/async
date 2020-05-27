@@ -128,11 +128,13 @@ void runtime_test_tcp_server_add_client(struct async_tcp_server_t *self_p,
     FAIL("This function must be mocked.");
 }
 
-void runtime_test_tcp_server_start(struct async_tcp_server_t *self_p)
+int runtime_test_tcp_server_start(struct async_tcp_server_t *self_p)
 {
     (void)self_p;
 
     FAIL("This function must be mocked.");
+
+    return (0);
 }
 
 void runtime_test_tcp_server_stop(struct async_tcp_server_t *self_p)

@@ -64,25 +64,20 @@ void runtime_test_tcp_server_init(
     async_tcp_server_client_disconnected_t on_disconnected,
     async_tcp_server_client_input_t on_input);
 
-void runtime_test_tcp_server_add_client(
-    struct async_tcp_server_t *self_p,
-    struct async_tcp_server_client_t *client_p);
+void runtime_test_tcp_server_add_client(struct async_tcp_server_t *self_p,
+                                        struct async_tcp_server_client_t *client_p);
 
-void runtime_test_tcp_server_start(
-    struct async_tcp_server_t *self_p);
+int runtime_test_tcp_server_start(struct async_tcp_server_t *self_p);
 
-void runtime_test_tcp_server_stop(
-    struct async_tcp_server_t *self_p);
+void runtime_test_tcp_server_stop(struct async_tcp_server_t *self_p);
 
-void runtime_test_tcp_server_client_write(
-    struct async_tcp_server_client_t *self_p,
-    const void *buf_p,
-    size_t size);
+void runtime_test_tcp_server_client_write(struct async_tcp_server_client_t *self_p,
+                                          const void *buf_p,
+                                          size_t size);
 
-size_t runtime_test_tcp_server_client_read(
-    struct async_tcp_server_client_t *self_p,
-    void *buf_p,
-    size_t size);
+size_t runtime_test_tcp_server_client_read(struct async_tcp_server_client_t *self_p,
+                                           void *buf_p,
+                                           size_t size);
 
 void runtime_test_tcp_server_client_disconnect(
     struct async_tcp_server_client_t *self_p);

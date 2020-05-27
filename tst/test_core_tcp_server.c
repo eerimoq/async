@@ -19,8 +19,8 @@ TEST(call_all_functions)
     runtime_test_tcp_server_add_client_mock_once();
     async_tcp_server_add_client(&server, &client);
 
-    runtime_test_tcp_server_start_mock_once();
-    async_tcp_server_start(&server);
+    runtime_test_tcp_server_start_mock_once(1);
+    ASSERT_EQ(async_tcp_server_start(&server), 1);
 
     runtime_test_tcp_server_client_write_mock_once(5);
     async_tcp_server_client_write(&client, NULL, 5);
@@ -54,8 +54,8 @@ TEST(call_default_callbacks)
     runtime_test_tcp_server_add_client_mock_once();
     async_tcp_server_add_client(&server, &client);
 
-    runtime_test_tcp_server_start_mock_once();
-    async_tcp_server_start(&server);
+    runtime_test_tcp_server_start_mock_once(0);
+    ASSERT_EQ(async_tcp_server_start(&server), 0);
 
     params_p = runtime_test_tcp_server_init_mock_get_params_in(handle);
 

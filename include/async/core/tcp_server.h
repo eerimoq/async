@@ -76,9 +76,9 @@ void async_tcp_server_add_client(struct async_tcp_server_t *self_p,
                                  struct async_tcp_server_client_t *client_p);
 
 /**
- * Start listening for clients.
+ * Start listening for clients. Returns zero(0) on success.
  */
-void async_tcp_server_start(struct async_tcp_server_t *self_p);
+int async_tcp_server_start(struct async_tcp_server_t *self_p);
 
 /**
  * Disconnect any connected clients and stop listening for clients.

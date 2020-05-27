@@ -84,7 +84,7 @@ typedef void (*async_runtime_tcp_server_add_client_t)(
     struct async_tcp_server_t *self_p,
     struct async_tcp_server_client_t *client_p);
 
-typedef void (*async_runtime_tcp_server_start_t)(
+typedef int (*async_runtime_tcp_server_start_t)(
     struct async_tcp_server_t *self_p);
 
 typedef void (*async_runtime_tcp_server_stop_t)(

@@ -40,12 +40,12 @@
 #include "ml/ml.h"
 
 static ML_UID(uid_timeout);
-static ML_UID(uid_tcp_connect);
-static ML_UID(uid_tcp_connect_complete);
-static ML_UID(uid_tcp_disconnect);
-static ML_UID(uid_tcp_data);
-static ML_UID(uid_tcp_data_complete);
-static ML_UID(uid_tcp_disconnected);
+static ML_UID(uid_tcp_client_connect);
+static ML_UID(uid_tcp_client_connect_complete);
+static ML_UID(uid_tcp_client_disconnect);
+static ML_UID(uid_tcp_client_data);
+static ML_UID(uid_tcp_client_data_complete);
+static ML_UID(uid_tcp_client_disconnected);
 static ML_UID(uid_worker_job);
 static ML_UID(uid_call_threadsafe);
 
@@ -67,6 +67,7 @@ struct async_runtime_linux_t {
     struct async_runtime_t runtime;
     struct {
         int fd;
+        int epoll_fd;
         struct ml_queue_t queue;
         pthread_t pthread;
     } io;
@@ -78,6 +79,15 @@ struct async_runtime_linux_t {
     struct ml_timer_handler_t timer_handler;
     struct ml_worker_pool_t worker_pool;
     struct async_t *async_p;
+};
+
+typedef void (*io_epoll_func_t)(struct async_runtime_linux_t *self_p,
+                                int epoll_fd,
+                                void *arg_p);
+
+struct io_epoll_data_t {
+    io_epoll_func_t func;
+    void *arg_p;
 };
 
 struct message_connect_t {
@@ -108,22 +118,48 @@ struct message_data_complete_t {
 };
 
 struct tcp_client_t {
-    struct {
-        async_tcp_client_connected_t func;
-        int res;
-    } on_connected;
+    async_tcp_client_connected_t on_connected;
     async_tcp_client_disconnected_t on_disconnected;
     async_tcp_client_input_t on_input;
     int sockfd;
     bool closed;
+    struct io_epoll_data_t *epoll_data_p;
 };
+
+struct tcp_server_t {
+    int listener;
+    const char *host_p;
+    int port;
+    async_tcp_server_client_connected_t on_connected;
+    async_tcp_server_client_disconnected_t on_disconnected;
+    async_tcp_server_client_input_t on_input;
+    struct io_epoll_data_t *epoll_data_p;
+};
+
+static struct io_epoll_data_t *io_epoll_data_create(io_epoll_func_t func,
+                                                    void *arg_p)
+{
+    struct io_epoll_data_t *data_p;
+
+    data_p = malloc(sizeof(*data_p));
+
+    if (data_p == NULL) {
+        async_utils_linux_fatal_perror("malloc");
+    }
+
+    data_p->func = func;
+    data_p->arg_p = arg_p;
+
+    return (data_p);
+}
 
 static struct tcp_client_t *tcp_client(struct async_tcp_client_t *self_p)
 {
     return ((struct tcp_client_t *)(self_p->obj_p));
 }
 
-static struct async_runtime_linux_t *tcp_runtime(struct async_tcp_client_t *self_p)
+static struct async_runtime_linux_t *tcp_client_runtime(
+    struct async_tcp_client_t *self_p)
 {
     return ((struct async_runtime_linux_t *)(self_p->async_p->runtime_p->obj_p));
 }
@@ -132,6 +168,21 @@ static void async_tcp_client_set_sockfd(struct async_tcp_client_t *self_p,
                                         int sockfd)
 {
     tcp_client(self_p)->sockfd = sockfd;
+}
+
+static void io_handle_tcp_client(struct async_runtime_linux_t *self_p,
+                                 int epoll_fd,
+                                 struct async_tcp_client_t *tcp_p)
+{
+    struct epoll_event event;
+    struct message_data_t *message_p;
+
+    event.events = 0;
+    event.data.ptr = tcp_client(tcp_p)->epoll_data_p;
+    epoll_ctl(epoll_fd, EPOLL_CTL_MOD, tcp_client(tcp_p)->sockfd, &event);
+    message_p = ml_message_alloc(&uid_tcp_client_data, sizeof(*message_p));
+    message_p->tcp_p = tcp_p;
+    ml_queue_put(&self_p->async.queue, message_p);
 }
 
 static void io_handle_tcp_client_connect(struct async_runtime_linux_t *self_p,
@@ -161,8 +212,11 @@ static void io_handle_tcp_client_connect(struct async_runtime_linux_t *self_p,
                         fcntl(sockfd, F_GETFL, 0) | O_NONBLOCK);
 
             if (res != -1) {
+                tcp_client(req_p->tcp_p)->epoll_data_p = io_epoll_data_create(
+                    (io_epoll_func_t)io_handle_tcp_client,
+                    req_p->tcp_p);
                 event.events = EPOLLIN;
-                event.data.ptr = req_p->tcp_p;
+                event.data.ptr = tcp_client(req_p->tcp_p)->epoll_data_p;
                 res = epoll_ctl(epoll_fd, EPOLL_CTL_ADD, sockfd, &event);
             }
         }
@@ -173,7 +227,7 @@ static void io_handle_tcp_client_connect(struct async_runtime_linux_t *self_p,
         }
     }
 
-    rsp_p = ml_message_alloc(&uid_tcp_connect_complete, sizeof(*rsp_p));
+    rsp_p = ml_message_alloc(&uid_tcp_client_connect_complete, sizeof(*rsp_p));
     rsp_p->tcp_p = req_p->tcp_p;
     rsp_p->sockfd = sockfd;
     ml_queue_put(&self_p->async.queue, rsp_p);
@@ -199,19 +253,44 @@ static void io_handle_tcp_client_data_complete(struct async_runtime_linux_t *sel
     if (tcp_client(ind_p->tcp_p)->closed) {
         epoll_ctl(epoll_fd, EPOLL_CTL_DEL, sockfd, NULL);
         close(sockfd);
-        message_p = ml_message_alloc(&uid_tcp_disconnected, sizeof(*message_p));
+        message_p = ml_message_alloc(&uid_tcp_client_disconnected,
+                                     sizeof(*message_p));
         message_p->tcp_p = ind_p->tcp_p;
         ml_queue_put(&self_p->async.queue, message_p);
     } else {
         event.events = EPOLLIN;
-        event.data.ptr = ind_p->tcp_p;
+        event.data.ptr = tcp_client(ind_p->tcp_p)->epoll_data_p;
         epoll_ctl(epoll_fd, EPOLL_CTL_MOD, sockfd, &event);
     }
 }
 
-static void io_handle_async(struct async_runtime_linux_t *self_p,
-                            int epoll_fd)
+static struct tcp_server_t *tcp_server(struct async_tcp_server_t *self_p)
 {
+    return ((struct tcp_server_t *)(self_p->obj_p));
+}
+
+static void io_handle_tcp_server_listener(struct async_runtime_linux_t *self_p,
+                                          int epoll_fd,
+                                          struct async_tcp_server_t *tcp_p)
+{
+    (void)self_p;
+    (void)epoll_fd;
+
+    int client_fd;
+
+    client_fd = accept(tcp_server(tcp_p)->listener, NULL, 0);
+
+    (void)client_fd;
+
+    exit(5);
+}
+
+static void io_handle_async(struct async_runtime_linux_t *self_p,
+                            int epoll_fd,
+                            void *arg_p)
+{
+    (void)arg_p;
+
     struct ml_uid_t *uid_p;
     void *message_p;
     uint64_t event;
@@ -225,64 +304,40 @@ static void io_handle_async(struct async_runtime_linux_t *self_p,
 
     uid_p = ml_queue_get(&self_p->io.queue, &message_p);
 
-    if (uid_p == &uid_tcp_connect) {
+    if (uid_p == &uid_tcp_client_connect) {
         io_handle_tcp_client_connect(self_p, epoll_fd, message_p);
-    } else if (uid_p == &uid_tcp_disconnect) {
+    } else if (uid_p == &uid_tcp_client_disconnect) {
         io_handle_tcp_client_disconnect(epoll_fd, message_p);
-    } else if (uid_p == &uid_tcp_data_complete) {
+    } else if (uid_p == &uid_tcp_client_data_complete) {
         io_handle_tcp_client_data_complete(self_p, epoll_fd, message_p);
     }
 
     ml_message_free(message_p);
 }
 
-static void io_handle_socket(struct async_runtime_linux_t *self_p,
-                             struct async_tcp_client_t *tcp_p,
-                             int epoll_fd)
-{
-    struct epoll_event event;
-    struct message_data_t *message_p;
-
-    event.events = 0;
-    event.data.ptr = tcp_p;
-    epoll_ctl(epoll_fd, EPOLL_CTL_MOD, tcp_client(tcp_p)->sockfd, &event);
-    message_p = ml_message_alloc(&uid_tcp_data, sizeof(*message_p));
-    message_p->tcp_p = tcp_p;
-    ml_queue_put(&self_p->async.queue, message_p);
-}
-
 static void *io_main(struct async_runtime_linux_t *self_p)
 {
     ssize_t res;
     int nfds;
-    int epoll_fd;
     struct epoll_event event;
+    struct io_epoll_data_t *data_p;
 
     pthread_setname_np(pthread_self(), "async_io");
 
-    epoll_fd = epoll_create1(0);
-
-    if (epoll_fd == -1) {
-        return (NULL);
-    }
-
     event.events = EPOLLIN;
-    event.data.ptr = &self_p->io.fd;
-    res = epoll_ctl(epoll_fd, EPOLL_CTL_ADD, self_p->io.fd, &event);
+    event.data.ptr = io_epoll_data_create((io_epoll_func_t)io_handle_async, NULL);
+    res = epoll_ctl(self_p->io.epoll_fd, EPOLL_CTL_ADD, self_p->io.fd, &event);
 
     if (res == -1) {
         return (NULL);
     }
 
     while (true) {
-        nfds = epoll_wait(epoll_fd, &event, 1, -1);
+        nfds = epoll_wait(self_p->io.epoll_fd, &event, 1, -1);
 
         if (nfds == 1) {
-            if (event.data.ptr == &self_p->io.fd) {
-                io_handle_async(self_p, epoll_fd);
-            } else {
-                io_handle_socket(self_p, event.data.ptr, epoll_fd);
-            }
+            data_p = (struct io_epoll_data_t *)event.data.ptr;
+            data_p->func(self_p, self_p->io.epoll_fd, data_p->arg_p);
         }
     }
 
@@ -296,16 +351,16 @@ static void async_handle_tcp_client_connected(
 
     async_tcp_client_set_sockfd(message_p->tcp_p, message_p->sockfd);
     res = (message_p->sockfd == -1 ? -1 : 0);
-    tcp_client(message_p->tcp_p)->on_connected.func(message_p->tcp_p, res);
+    tcp_client(message_p->tcp_p)->on_connected(message_p->tcp_p, res);
 }
 
 static void async_tcp_client_data_complete_write(struct async_tcp_client_t *self_p)
 {
     struct message_data_complete_t *ind_p;
 
-    ind_p = ml_message_alloc(&uid_tcp_data_complete, sizeof(*ind_p));
+    ind_p = ml_message_alloc(&uid_tcp_client_data_complete, sizeof(*ind_p));
     ind_p->tcp_p = self_p;
-    ml_queue_put(&tcp_runtime(self_p)->io.queue, ind_p);
+    ml_queue_put(&tcp_client_runtime(self_p)->io.queue, ind_p);
 }
 
 static void async_handle_tcp_client_data(struct message_data_t *req_p)
@@ -352,11 +407,11 @@ static void *async_main(struct async_runtime_linux_t *self_p)
 
         if (uid_p == &uid_timeout) {
             async_handle_timeout(self_p);
-        } else if (uid_p == &uid_tcp_connect_complete) {
+        } else if (uid_p == &uid_tcp_client_connect_complete) {
             async_handle_tcp_client_connected(message_p);
-        } else if (uid_p == &uid_tcp_data) {
+        } else if (uid_p == &uid_tcp_client_data) {
             async_handle_tcp_client_data(message_p);
-        } else if (uid_p == &uid_tcp_disconnected) {
+        } else if (uid_p == &uid_tcp_client_disconnected) {
             async_handle_tcp_client_disconnected(message_p);
         } else if (uid_p == &uid_worker_job) {
             async_handle_worker_job(message_p);
@@ -439,20 +494,20 @@ static void async_tcp_client_connect_write(struct async_tcp_client_t *self_p,
 {
     struct message_connect_t *data_p;
 
-    data_p = ml_message_alloc(&uid_tcp_connect, sizeof(*data_p));
+    data_p = ml_message_alloc(&uid_tcp_client_connect, sizeof(*data_p));
     data_p->tcp_p = self_p;
     data_p->host_p = strdup(host_p);
     data_p->port = port;
-    ml_queue_put(&tcp_runtime(self_p)->io.queue, data_p);
+    ml_queue_put(&tcp_client_runtime(self_p)->io.queue, data_p);
 }
 
 static void async_tcp_client_disconnect_write(struct async_tcp_client_t *self_p)
 {
     struct message_disconnect_t *data_p;
 
-    data_p = ml_message_alloc(&uid_tcp_disconnect, sizeof(*data_p));
+    data_p = ml_message_alloc(&uid_tcp_client_disconnect, sizeof(*data_p));
     data_p->sockfd = tcp_client(self_p)->sockfd;
-    ml_queue_put(&tcp_runtime(self_p)->io.queue, data_p);
+    ml_queue_put(&tcp_client_runtime(self_p)->io.queue, data_p);
 }
 
 static void tcp_client_init(struct async_tcp_client_t *self_p,
@@ -468,7 +523,7 @@ static void tcp_client_init(struct async_tcp_client_t *self_p,
         async_utils_linux_fatal_perror("tcp client malloc");
     }
 
-    rself_p->on_connected.func = on_connected;
+    rself_p->on_connected = on_connected;
     rself_p->on_disconnected = on_disconnected;
     rself_p->on_input = on_input;
     rself_p->sockfd = -1;
@@ -524,6 +579,12 @@ static size_t tcp_client_read(struct async_tcp_client_t *self_p,
     return (res);
 }
 
+static struct async_runtime_linux_t *tcp_server_runtime(
+    struct async_tcp_server_t *self_p)
+{
+    return ((struct async_runtime_linux_t *)(self_p->async_p->runtime_p->obj_p));
+}
+
 static void tcp_server_init(struct async_tcp_server_t *self_p,
                             const char *host_p,
                             int port,
@@ -531,21 +592,76 @@ static void tcp_server_init(struct async_tcp_server_t *self_p,
                             async_tcp_server_client_disconnected_t on_disconnected,
                             async_tcp_server_client_input_t on_input)
 {
-    (void)self_p;
-    (void)host_p;
-    (void)port;
-    (void)on_connected;
-    (void)on_disconnected;
-    (void)on_input;
+    struct tcp_server_t *rself_p;
 
-    exit(1);
+    rself_p = malloc(sizeof(*rself_p));
+
+    if (rself_p == NULL) {
+        async_utils_linux_fatal_perror("tcp server malloc");
+    }
+
+    rself_p->listener = -1;
+    rself_p->host_p = strdup(host_p);
+    rself_p->port = port;
+    rself_p->on_connected = on_connected;
+    rself_p->on_disconnected = on_disconnected;
+    rself_p->on_input = on_input;
+    self_p->obj_p = rself_p;
 }
 
-static void tcp_server_start(struct async_tcp_server_t *self_p)
+static void tcp_server_add_client(struct async_tcp_server_t *self_p,
+                                  struct async_tcp_server_client_t *client_p)
 {
     (void)self_p;
+    (void)client_p;
+}
 
-    exit(2);
+static int tcp_server_start(struct async_tcp_server_t *self_p)
+{
+    struct sockaddr_in addr;
+    int sockfd;
+    int res;
+    struct epoll_event event;
+    struct tcp_server_t *rself_p;
+
+    res = -1;
+    rself_p = tcp_server(self_p);
+
+    memset(&addr, 0, sizeof(addr));
+    addr.sin_family = AF_INET;
+    addr.sin_port = htons(rself_p->port);
+    inet_aton(rself_p->host_p, (struct in_addr *)&addr.sin_addr.s_addr);
+
+    sockfd = socket(AF_INET, SOCK_STREAM | SOCK_NONBLOCK, 0);
+
+    if (sockfd != -1) {
+        res = bind(sockfd, (struct sockaddr *)&addr, sizeof(addr));
+
+        if (res != -1) {
+            res = listen(sockfd, 5);
+
+            if (res != -1) {
+                rself_p->epoll_data_p = io_epoll_data_create(
+                    (io_epoll_func_t)io_handle_tcp_server_listener,
+                    self_p);
+                event.events = EPOLLIN;
+                event.data.ptr = rself_p->epoll_data_p;
+                res = epoll_ctl(tcp_server_runtime(self_p)->io.epoll_fd,
+                                EPOLL_CTL_ADD,
+                                sockfd,
+                                &event);
+            }
+        }
+
+        if (res == -1) {
+            close(sockfd);
+            sockfd = -1;
+        }
+    }
+
+    rself_p->listener = sockfd;
+
+    return (res);
 }
 
 static void tcp_server_stop(struct async_tcp_server_t *self_p)
@@ -611,6 +727,7 @@ static int init(struct async_runtime_linux_t *self_p)
     runtime_p->tcp_client.write = tcp_client_write;
     runtime_p->tcp_client.read = tcp_client_read;
     runtime_p->tcp_server.init = tcp_server_init;
+    runtime_p->tcp_server.add_client = tcp_server_add_client;
     runtime_p->tcp_server.start = tcp_server_start;
     runtime_p->tcp_server.stop = tcp_server_stop;
     runtime_p->tcp_server.client.write = tcp_server_client_write;
@@ -620,6 +737,12 @@ static int init(struct async_runtime_linux_t *self_p)
     self_p->io.fd = eventfd(0, EFD_SEMAPHORE);
 
     if (self_p->io.fd == -1) {
+        return (-1);
+    }
+
+    self_p->io.epoll_fd = epoll_create1(0);
+
+    if (self_p->io.epoll_fd == -1) {
         return (-1);
     }
 

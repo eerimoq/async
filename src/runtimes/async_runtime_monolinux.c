@@ -537,9 +537,11 @@ static void tcp_server_init(struct async_tcp_server_t *self_p,
     (void)on_input;
 }
 
-static void tcp_server_start(struct async_tcp_server_t *self_p)
+static int tcp_server_start(struct async_tcp_server_t *self_p)
 {
     (void)self_p;
+
+    return (-1);
 }
 
 static void tcp_server_stop(struct async_tcp_server_t *self_p)
