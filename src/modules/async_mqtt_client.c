@@ -565,7 +565,7 @@ static void on_stcp_disconnected(struct async_stcp_client_t *stcp_p)
     if (self_p->connected) {
         self_p->connected = false;
         async_timer_stop(&self_p->keep_alive_timer);
-        self_p->on_disconnected(self_p);
+        self_p->on_disconnected(self_p->obj_p);
     }
 
     start_reconnect_timer(self_p);
