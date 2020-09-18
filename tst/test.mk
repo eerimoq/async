@@ -147,7 +147,6 @@ CFLAGS += -no-pie
 CFLAGS += -coverage
 CFLAGS += -Wall
 CFLAGS += -Wextra
-CFLAGS += -Wpedantic
 CFLAGS += -Werror
 CFLAGS += -Wno-unused-command-line-argument
 CFLAGS += -std=gnu11
