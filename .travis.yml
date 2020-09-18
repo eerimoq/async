@@ -3,14 +3,22 @@ language: python
 python:
   - "3.7"
 
+addons:
+  apt:
+    update: true
+    sources:
+      - ubuntu-toolchain-r-test
+    packages:
+      - gcc-9
+
 install:
   - pip install nala
 
 script:
   - source setup.sh
-  - make -s -j $(nproc) SANITIZE=yes all
-  - make release
-  - make release-compile
+  - CC=gcc-9 make -s -j $(nproc) SANITIZE=yes all
+  - CC=gcc-9 make release
+  - CC=gcc-9 make release-compile
 
 after_success:
   - bash <(curl -s https://codecov.io/bash) -X coveragepy
