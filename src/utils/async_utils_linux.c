@@ -155,6 +155,8 @@ void async_utils_linux_channel_stdin_init(struct async_channel_t *channel_p,
                        NULL,
                        stdin_read,
                        stdin_write,
+                       NULL,
+                       NULL,
                        async_p);
 }
 

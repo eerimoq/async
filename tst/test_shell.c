@@ -50,6 +50,8 @@ static void setup(void)
                        channel_close,
                        channel_read,
                        channel_write,
+                       NULL,
+                       NULL,
                        &async);
 
     async_shell_init(&shell, &channel, &async);

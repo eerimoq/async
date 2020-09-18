@@ -66,8 +66,16 @@ static void null_write(struct async_channel_t *self_p,
     (void)size;
 }
 
-static void null_on()
+static size_t null_size(struct async_channel_t *self_p)
 {
+    (void)self_p;
+
+    return (0);
+}
+
+static void null_on(void *obj_p)
+{
+    (void)obj_p;
 }
 
 void async_channel_init(struct async_channel_t *self_p,
@@ -75,6 +83,8 @@ void async_channel_init(struct async_channel_t *self_p,
                         async_channel_close_t close_func,
                         async_channel_read_t read_func,
                         async_channel_write_t write_func,
+                        async_channel_readable_size_t readable_size_func,
+                        async_channel_writable_size_t writable_size_func,
                         struct async_t *async_p)
 {
     if (open_func == NULL) {
@@ -93,10 +103,20 @@ void async_channel_init(struct async_channel_t *self_p,
         write_func = null_write;
     }
 
+    if (readable_size_func == NULL) {
+        readable_size_func = null_size;
+    }
+
+    if (writable_size_func == NULL) {
+        writable_size_func = null_size;
+    }
+
     self_p->open = open_func;
     self_p->close = close_func;
     self_p->read = read_func;
     self_p->write = write_func;
+    self_p->readable_size = readable_size_func;
+    self_p->writable_size = writable_size_func;
     self_p->on.closed = null_on;
     self_p->on.input = null_on;
     self_p->on.obj_p = NULL;
@@ -143,6 +163,16 @@ void async_channel_write(struct async_channel_t *self_p,
                          size_t size)
 {
     self_p->write(self_p, buf_p, size);
+}
+
+size_t async_channel_readable_size(struct async_channel_t *self_p)
+{
+    return (self_p->readable_size(self_p));
+}
+
+size_t async_channel_writable_size(struct async_channel_t *self_p)
+{
+    return (self_p->writable_size(self_p));
 }
 
 void async_channel_closed(struct async_channel_t *self_p)

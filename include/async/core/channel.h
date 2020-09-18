@@ -57,6 +57,8 @@ typedef size_t (*async_channel_read_t)(struct async_channel_t *self_p,
 typedef void (*async_channel_write_t)(struct async_channel_t *self_p,
                                       const void *buf_p,
                                       size_t size);
+typedef size_t (*async_channel_readable_size_t)(struct async_channel_t *self_p);
+typedef size_t (*async_channel_writable_size_t)(struct async_channel_t *self_p);
 typedef void (*async_channel_on_closed_t)(void *obj_p);
 typedef void (*async_channel_on_input_t)(void *obj_p);
 
@@ -65,6 +67,8 @@ struct async_channel_t {
     async_channel_close_t close;
     async_channel_read_t read;
     async_channel_write_t write;
+    async_channel_readable_size_t readable_size;
+    async_channel_writable_size_t writable_size;
     struct {
         async_channel_on_closed_t closed;
         async_channel_on_input_t input;
@@ -81,6 +85,8 @@ void async_channel_init(struct async_channel_t *self_p,
                         async_channel_close_t close_func,
                         async_channel_read_t read_func,
                         async_channel_write_t write_func,
+                        async_channel_readable_size_t readable_size_func,
+                        async_channel_writable_size_t writable_size_func,
                         struct async_t *async_p);
 
 /**
@@ -117,6 +123,17 @@ size_t async_channel_read(struct async_channel_t *self_p,
 void async_channel_write(struct async_channel_t *self_p,
                          const void *buf_p,
                          size_t size);
+
+/**
+ * Number of bytes that can currently be read from the channel.
+ */
+size_t async_channel_readable_size(struct async_channel_t *self_p);
+
+/**
+ * Returns the number of bytes that can currently be written to given channel
+ * without blocking or dropping any data.
+ */
+size_t async_channel_writable_size(struct async_channel_t *self_p);
 
 /**
  * Call when closed be the peer.

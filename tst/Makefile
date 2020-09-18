@@ -8,4 +8,4 @@ TESTS += test_mqtt_client.c
 TESTS += test_shell.c
 TESTS += test_runtime.c
 
-include $(ASYNC_ROOT)/make/suite.mk
+include test.mk

@@ -8,7 +8,7 @@ install:
 
 script:
   - source setup.sh
-  - make -s -j $(nproc) SANITIZE=yes all
+  - make -s -j $(nproc) all
   - make release
   - make release-compile
 

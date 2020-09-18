@@ -10,10 +10,10 @@ default: run
 all: run examples
 
 run:
-	$(MAKE) -C tst run
+	$(MAKE) -C tst
 
 test:
-	$(MAKE) -C tst test
+	$(MAKE) -C tst
 
 examples:
 	$(MAKE) -C examples/timers build
