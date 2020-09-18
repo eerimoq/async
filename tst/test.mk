@@ -150,6 +150,7 @@ CFLAGS += -Wextra
 CFLAGS += -Wpedantic
 CFLAGS += -Werror
 CFLAGS += -Wno-unused-command-line-argument
+CFLAGS += -std=gnu11
 ifeq ($(SANITIZE), yes)
 CFLAGS += -fsanitize=address
 CFLAGS += -fsanitize=undefined
@@ -162,11 +163,14 @@ EXEARGS += $(ARGS)
 EXEARGS += $(JOBS:%=-j %)
 EXEARGS += $(REPORT_JSON:%=-r %)
 LIBS ?= pthread
+LSAN_OPTIONS = \
+	suppressions=$(ASYNC_ROOT)/make/lsan-suppressions.txt \
+	print_suppressions=0
 
 .PHONY: all build generate clean coverage gdb gdb-run auto auto-run help
 
 all: build
-	$(EXE) $(EXEARGS)
+	LSAN_OPTIONS="$(LSAN_OPTIONS)" $(EXE) $(EXEARGS)
 
 auto:
 	$(MAKE) || true
